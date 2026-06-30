@@ -1,0 +1,28 @@
+from abc import ABC, abstractmethod
+from uuid import UUID
+
+from shylock_trial.app.dtos.trial_progression_dto import (
+    AdvanceSceneResultDto,
+    GenerateEndingResultDto,
+    StartTrialResultDto,
+    SubmitChoiceInputDto,
+    SubmitChoiceResultDto,
+)
+from shylock_trial.domain.entities.trial_entity import Trial
+
+
+class TrialProgressionUseCase(ABC):
+    @abstractmethod
+    async def start(self) -> StartTrialResultDto: ...
+
+    @abstractmethod
+    async def submit_choice(self, input_dto: SubmitChoiceInputDto) -> SubmitChoiceResultDto: ...
+
+    @abstractmethod
+    async def advance_scene(self, trial_id: UUID) -> AdvanceSceneResultDto: ...
+
+    @abstractmethod
+    async def generate_ending(self, trial_id: UUID) -> GenerateEndingResultDto: ...
+
+    @abstractmethod
+    async def get_trial(self, trial_id: UUID) -> Trial: ...
