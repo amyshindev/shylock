@@ -69,9 +69,11 @@ export function ChoiceList({
   return (
     <div
       style={{
-        borderTop: "1px solid #2a1020",
         padding: "10px 12px 12px",
+        marginTop: 8,
         background: "rgba(18, 12, 24, 0.85)",
+        border: "1px solid #3a1028",
+        borderRadius: 10,
       }}
     >
       <div

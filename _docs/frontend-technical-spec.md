@@ -342,9 +342,9 @@ export async function submitChoice(
 
 이 결정이 내려지기 전까지, `lib/api-client/`의 호출 경로는 가정값(`/shylock-trial/...`)으로 두되 하드코딩하지 말고 상수 하나로 분리해, 결정 후 한 곳만 고치면 되도록 만들 것.
 
-### 9.3 인증 — 프론트는 Claude API 키를 모른다
+### 9.3 인증 — 프론트는 Gemini API 키를 모른다
 
-`backend-technical-spec.md` §1.1, 7.1절이 이미 해결한 문제를 프론트 쪽에서 재확인한다. **프론트엔드 코드 어디에도 `ANTHROPIC_API_KEY`가 등장하지 않는다.** `shylock-trial.jsx`의 기존 `callClaude` 함수(Claude API를 클라이언트에서 직접 호출하던 패턴)는 본 신규 구현에서 완전히 제거되며, 그 자리를 9.1절의 백엔드 API 클라이언트가 대신한다. Claude Code가 혹시라도 과거 코드 패턴을 참조해 `fetch("https://api.anthropic.com/...")` 같은 호출을 프론트에 작성하지 않도록 주의할 것 — 이는 명백한 퇴행이다.
+`backend-technical-spec.md` §1.1, 7.1절이 이미 해결한 문제를 프론트 쪽에서 재확인한다. **프론트엔드 코드 어디에도 `LLM_API_KEY`나 Gemini API 키가 등장하지 않는다.** `shylock-trial.jsx`의 기존 `callGemini` 함수(Gemini API를 클라이언트에서 직접 호출하던 패턴)는 본 신규 구현에서 완전히 제거되며, 그 자리를 9.1절의 백엔드 API 클라이언트가 대신한다. 과거 코드 패턴을 참조해 `fetch("https://generativelanguage.googleapis.com/...")` 같은 호출을 프론트에 작성하지 않도록 주의할 것 — 이는 명백한 퇴행이다.
 
 ### 9.4 증거 원문(quote)의 권위 소스
 
@@ -386,4 +386,4 @@ export async function submitChoice(
 - [ ] 9.2절의 API 경로 방식(Next.js 라우트 vs 독립 FastAPI)을 사용자에게 먼저 확인했는가 — 확인 없이 진행 금지
 - [ ] 1.2절의 `hath_not` 아이콘 부재 문제에 대해 (a)/(b)/(c) 중 어느 방식을 택할지 사용자에게 확인했는가
 - [ ] 6.2절의 `scene-hath-not.png` 실제 비율을 확인 없이 임의로 3:4 레이아웃 분기 코드를 작성하지 않았는가
-- [ ] `shylock-trial.jsx`의 `callClaude` 같은 Claude API 직접 호출 패턴이 신규 코드 어디에도 재등장하지 않았는가(9.3절)
+- [ ] `shylock-trial.jsx`의 `callGemini` 같은 Gemini API 직접 호출 패턴이 신규 코드 어디에도 재등장하지 않았는가(9.3절)

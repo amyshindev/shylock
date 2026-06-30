@@ -29,7 +29,7 @@ export const SCENES: Scene[] = [
     id: "opening",
     speaker: "NARRATOR",
     speakerLabel: "NARRATOR",
-    backgroundImage: "/assets/scene-opening.png",
+    backgroundImage: "/assets/scene-crowd-jeers.png",
     lines: [
       "베네치아 법정. 1596년.",
       "샤일록, 당신은 지금 이 법정에 서 있다.",
@@ -236,6 +236,47 @@ export const SCENES: Scene[] = [
       ],
     },
     availableEvidence: ["blood", "bond", "hath_not"],
+  },
+  {
+    id: "alien_law_reveal",
+    speaker: "PORTIA",
+    speakerLabel: "PORTIA · 판사",
+    backgroundImage: "/assets/scene-alien-law-reveal.png",
+    lines: [
+      "당신은 칼을 거둔다.",
+      "원금만이라도... 그것만은 받게 해주시오.",
+      "포샤가 손을 든다.",
+      '"기다리시오, 유대인."',
+      '"이 법에는 아직 다른 조항이 남아 있소."',
+    ],
+    challenge: {
+      header: "▶ 샤일록의 선택",
+      text: "외국인이라는 이유로, 법이 이번엔 당신의 목숨까지 가져가려 한다.",
+      options: [
+        {
+          id: "reject_conversion",
+          text: "개종이라니 — 차라리 죽음을 택하겠소",
+          evidence: "alien_law",
+          dignityChange: 25,
+          confidenceChange: -20,
+        },
+        {
+          id: "bow_accept",
+          text: "...그리하겠소. (고개를 숙인다)",
+          evidence: null,
+          dignityChange: -25,
+          confidenceChange: 15,
+        },
+        {
+          id: "mock_mercy",
+          text: "이것이 베네치아가 말하는 자비요?",
+          evidence: "alien_law",
+          dignityChange: 15,
+          confidenceChange: -5,
+        },
+      ],
+    },
+    availableEvidence: ["alien_law", "blood", "hath_not", "jessica"],
   },
 ];
 

@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 # Must stay in sync with frontend/data/scenes.ts (from shylock-trial.jsx)
-FINAL_SCENE_INDEX = 5
+# Scene indices 0–6 (7 scenes). Ending dignity thresholds unchanged — may need playtest tuning.
+FINAL_SCENE_INDEX = 6
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +27,9 @@ CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
     "blood_impossible": ChoiceEffect(15, -10),
     "drop_knife": ChoiceEffect(-10, -20),
     "take_principal_only": ChoiceEffect(5, 10),
+    "reject_conversion": ChoiceEffect(25, -20),
+    "bow_accept": ChoiceEffect(-25, 15),
+    "mock_mercy": ChoiceEffect(15, -5),
 }
 
 

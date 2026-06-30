@@ -8,7 +8,8 @@ body {
   padding: 0;
   background: #08030a;
   color: #c8a080;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic",
+    "Segoe UI", system-ui, sans-serif;
 }
 
 button {

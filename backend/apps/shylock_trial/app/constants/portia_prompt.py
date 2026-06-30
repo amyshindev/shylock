@@ -9,6 +9,7 @@ SCENE_BRIEFS: dict[int, str] = {
     3: "Portia invokes Jessica's elopement and conversion.",
     4: "Portia's final question — does Shylock know mercy? Climax: Hath not a Jew eyes?",
     5: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
+    6: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
 }
 
 CHOICE_BRIEFS: dict[str, str] = {
@@ -27,6 +28,9 @@ CHOICE_BRIEFS: dict[str, str] = {
     "blood_impossible": "Cutting flesh without blood is impossible!",
     "drop_knife": "Lowers the knife.",
     "take_principal_only": "Will take only the principal sum.",
+    "reject_conversion": "Death before forced conversion to Christianity.",
+    "bow_accept": "Bows head and accepts conversion.",
+    "mock_mercy": "Is this what Venice calls mercy?",
 }
 
 SYSTEM_PROMPT = """\
@@ -60,4 +64,4 @@ context: {prompt.context}
 dignity: {prompt.dignity} | confidence: {prompt.confidence}
 choices: {choices if choices else ["(none)"]}
 
-Use the portia_response tool with Korean text only."""
+Return JSON with a single "text" field containing Korean prose only."""

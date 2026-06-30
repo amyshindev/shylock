@@ -45,6 +45,18 @@ CURATED_EVIDENCE: list[Evidence] = [
         description="포샤의 역전 논리. 살은 잘라도 피는 흘리면 안 된다.",
         source_ftln_range=(1900, 1920),
     ),
+    Evidence(
+        evidence_id="alien_law",
+        quote=(
+            "It is enacted in the laws of Venice, if it be proved against an "
+            "alien... Shall seize one half his goods; the other half comes to the "
+            "privy coffer of the state."
+        ),
+        act_scene="4.1",
+        icon="alien_law",
+        description="베네치아 시민이 아닌 자가 시민의 목숨을 노리면 적용되는 법. 포샤의 두 번째 반전.",
+        source_ftln_range=(2000, 2040),
+    ),
 ]
 
 

@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { speakerTabStyle, textBox, textBoxPanelStyle } from "@/styles/text-box";
+import { speakerTabStyle, textBoxPanelStyle } from "@/styles/text-box";
 
 interface TextBoxProps {
   speaker?: string;
@@ -26,10 +26,11 @@ export function TextBox({
   footer,
 }: TextBoxProps) {
   const label = speakerLabel ?? speaker;
+  const showSpeakerTab = Boolean(speaker && speaker !== "NARRATOR" && label);
 
   return (
     <div style={{ ...textBoxPanelStyle(), ...style }}>
-      {label && speaker && (
+      {showSpeakerTab && speaker && (
         <div
           style={{
             display: "flex",
@@ -48,10 +49,11 @@ export function TextBox({
       <div
         onClick={onClick}
         style={{
-          padding: label ? "14px 20px 8px" : textBox.padding,
-          minHeight: label ? 72 : undefined,
+          padding: showSpeakerTab ? "14px 20px 8px" : "20px 24px 8px",
+          minHeight: showSpeakerTab ? 72 : undefined,
           cursor: onClick ? "pointer" : "default",
           position: "relative",
+          boxSizing: "border-box",
           ...bodyStyle,
         }}
       >

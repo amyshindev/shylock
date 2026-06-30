@@ -2,13 +2,16 @@ import type { CSSProperties } from "react";
 
 import type { Speaker } from "@/data/scenes";
 
+export const gameFontFamily =
+  '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif';
+
 export const textBox = {
   background: "rgba(18, 12, 24, 0.85)",
   border: "1px solid #3a1028",
   borderTopAccent: "3px solid #3a1028",
   borderRadius: 10,
   padding: "20px 24px 28px",
-  fontFamily: "Georgia, 'Times New Roman', serif",
+  fontFamily: gameFontFamily,
 } as const;
 
 const SPEAKER_TAB: Record<Speaker, { bg: string; color: string }> = {
@@ -38,9 +41,12 @@ export function dialogueTextStyle(speaker: string): CSSProperties {
   return {
     margin: 0,
     fontSize: 15,
-    lineHeight: 1.8,
+    lineHeight: 1.75,
+    fontFamily: gameFontFamily,
     color: speaker === "NARRATOR" ? "#9a8aaa" : "#e8e0d0",
     whiteSpace: "pre-wrap",
+    wordBreak: "break-word",
+    minHeight: "5.25em",
   };
 }
 
@@ -55,13 +61,29 @@ export function textBoxPanelStyle(): CSSProperties {
   };
 }
 
+export const TEXT_BOX_MAX_WIDTH = 640;
+
+/** Stable body height (~3 lines) so the box does not resize while typing. */
+export const DIALOGUE_BODY_MIN_HEIGHT = 84;
+
+/** Bottom padding always reserved for the advance arrow slot. */
+export const DIALOGUE_BODY_PADDING_BOTTOM = 28;
+
 export function textBoxDockStyle(): CSSProperties {
   return {
     flexShrink: 0,
     width: "100%",
-    background: "#08030a",
-    borderTop: textBox.borderTopAccent,
+    padding: "0 16px 20px",
     fontFamily: textBox.fontFamily,
+    background: "transparent",
+  };
+}
+
+export function textBoxDockInnerStyle(): CSSProperties {
+  return {
+    width: "100%",
+    maxWidth: TEXT_BOX_MAX_WIDTH,
+    margin: "0 auto",
   };
 }
 

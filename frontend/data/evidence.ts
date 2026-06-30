@@ -44,6 +44,14 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     desc: "포샤의 역전 논리. 살은 잘라도 피는 흘리면 안 된다.",
     act: "Act IV, Scene 1",
   },
+  {
+    id: "alien_law",
+    name: "외국인 조항",
+    icon: "",
+    iconFallback: "🛂",
+    desc: "베네치아 시민이 아닌 자가 시민의 목숨을 노리면 적용되는 법. 포샤의 두 번째 반전.",
+    act: "Act IV, Scene 1",
+  },
 ];
 
 export const EVIDENCE_BY_ID = Object.fromEntries(

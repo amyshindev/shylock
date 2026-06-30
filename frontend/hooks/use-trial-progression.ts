@@ -12,6 +12,7 @@ import {
 } from "@/lib/api-client/trial-progression";
 import type { EndingResponse, EvidenceFromApi } from "@/lib/api-client/types";
 import { listEvidence } from "@/lib/api-client/evidence-search";
+import { extractPortiaText } from "@/lib/portia-text";
 
 export type GamePhase = "game" | "ending";
 
@@ -191,7 +192,7 @@ export function useTrialProgression(trialId: string) {
         const res = await submitChoice(trialId, option.id);
         setDignity(res.dignity);
         setConfidence(res.confidence);
-        setPortiaReply(res.portia_response);
+        setPortiaReply(extractPortiaText(res.portia_response));
       } catch (e) {
         setError(e instanceof Error ? e.message : "Choice failed");
       } finally {

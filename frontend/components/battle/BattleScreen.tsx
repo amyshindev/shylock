@@ -1,7 +1,7 @@
 "use client";
 
 import { type Scene } from "@/data/scenes";
-import { textBoxDockStyle, nextSceneButtonStyle } from "@/styles/text-box";
+import { textBoxDockStyle, textBoxDockInnerStyle, nextSceneButtonStyle, gameFontFamily } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 import { ChoiceList } from "./ChoiceList";
@@ -70,7 +70,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         background: theme.background,
         color: theme.textBright,
         overflow: "hidden",
-        fontFamily: "Georgia, serif",
+        fontFamily: gameFontFamily,
       }}
     >
       <SceneBackground scene={scene} />
@@ -92,44 +92,46 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         </div>
 
         <div style={textBoxDockStyle()}>
-          <DialogueBox
-            speaker={portiaReply || loadingReply ? "PORTIA" : speaker}
-            speakerLabel={portiaReply || loadingReply ? "PORTIA · 판사" : speakerLabel}
-            text={dialogueText}
-            isPortiaReply={!!portiaReply || loadingReply}
-            loadingReply={loadingReply}
-            disabled={isTypingBlocked || showChallenge}
-            showAdvanceArrow={!showChallenge && !portiaReply && !loadingReply}
-            onAdvance={advance}
-          />
-
-          {showChallenge && scene.challenge && !portiaReply && (
-            <ChoiceList
-              header={scene.challenge.header}
-              prompt={scene.challenge.text}
-              options={scene.challenge.options}
-              onSelect={makeChoice}
-              disabled={loadingReply}
+          <div style={textBoxDockInnerStyle()}>
+            <DialogueBox
+              speaker={portiaReply || loadingReply ? "PORTIA" : speaker}
+              speakerLabel={portiaReply || loadingReply ? "PORTIA · 판사" : speakerLabel}
+              text={dialogueText}
+              isPortiaReply={!!portiaReply || loadingReply}
+              loadingReply={loadingReply}
+              disabled={isTypingBlocked || showChallenge}
+              showAdvanceArrow={!showChallenge && !portiaReply && !loadingReply}
+              onAdvance={advance}
             />
-          )}
 
-          {portiaReply && !loadingReply && (
-            <div style={{ padding: "8px 12px 12px", background: "rgba(18, 12, 24, 0.85)" }}>
-              <button
-                type="button"
-                onClick={() => void goNextScene()}
-                style={nextSceneButtonStyle()}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#2a0c18";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#1a0810";
-                }}
-              >
-                ▶ 다음 장면
-              </button>
-            </div>
-          )}
+            {showChallenge && scene.challenge && !portiaReply && (
+              <ChoiceList
+                header={scene.challenge.header}
+                prompt={scene.challenge.text}
+                options={scene.challenge.options}
+                onSelect={makeChoice}
+                disabled={loadingReply}
+              />
+            )}
+
+            {portiaReply && !loadingReply && (
+              <div style={{ padding: "8px 0 0", marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => void goNextScene()}
+                  style={nextSceneButtonStyle()}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#2a0c18";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#1a0810";
+                  }}
+                >
+                  ▶ 다음 장면
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

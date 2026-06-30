@@ -10,7 +10,7 @@ class EvidenceEmbeddingClient:
 
     def __init__(self) -> None:
         settings = get_settings()
-        self._client = cohere.AsyncClientV2(api_key=settings.cohere_api_key)
+        self._client = cohere.AsyncClientV2(api_key=settings.cohere_api_key_plain())
 
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
