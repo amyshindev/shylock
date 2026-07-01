@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 
+const ANTHROPIC_API_KEY = ""; // demo only — production uses backend ANTHROPIC_API_KEY
+
 // ── 증거 데이터 ───────────────────────────────────────────────
 const EVIDENCE = {
   gaberdine: {
@@ -210,37 +212,37 @@ function CrowdSilhouette() {
   );
 }
 
-// ── Gemini API ────────────────────────────────────────────────
-const GEMINI_MODEL = "gemini-2.0-flash";
+// ── Anthropic Claude API ──────────────────────────────────────
+const CLAUDE_MODEL = "claude-sonnet-4-6";
 
-async function callGemini(systemPrompt, userPrompt) {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-        generationConfig: { maxOutputTokens: 1024 },
-      }),
+async function callClaude(systemPrompt, userPrompt) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": ANTHROPIC_API_KEY,
+      "anthropic-version": "2023-06-01",
     },
-  );
+    body: JSON.stringify({
+      model: CLAUDE_MODEL,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+  });
   const data = await res.json();
-  return (
-    data.candidates?.[0]?.content?.parts?.map((p) => p.text || "").join("") || ""
-  );
+  return data.content?.map((p) => p.text || "").join("") || "";
 }
 
 async function getPortiaResponse(sceneId, choiceText, evidenceQuote, dignity, confidence) {
-  return callGemini(
+  return callClaude(
     `당신은 베니스의 상인에서 법학 박사로 변장한 포샤입니다. 냉정하고 논리적이며 겉으로는 공정하지만 기독교 사회의 편을 듭니다. 한국어로 2~3문장, 법정 연설체로만 응답하세요.`,
     `장면: ${sceneId} | 샤일록 선택: "${choiceText}" | 증거: ${evidenceQuote || "없음"} | 존엄: ${dignity} 확신도: ${confidence}\n포샤의 반응:`
   );
 }
 
 async function getEnding(dignity, confidence, choices) {
-  return callGemini(
+  return callClaude(
     `당신은 베니스의 상인의 내레이터입니다. 샤일록의 비극을 담담하고 문학적으로 서술합니다. antisemitism 피해자로서 샤일록의 인간성을 중심에 두세요. 한국어로 3~4문장.`,
     `존엄: ${dignity}/100 | 확신도: ${confidence}/100 | 선택들: ${choices.join(", ")}\n엔딩을 서술하세요.`
   );

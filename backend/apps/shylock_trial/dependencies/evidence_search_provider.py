@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.config import get_settings
-from core.database import get_optional_db_session
+from infrastructure.config import get_settings
+from infrastructure.database import get_optional_db_session
 from shylock_trial.adapter.outbound.memory.evidence_search_repository import (
     InMemoryEvidenceSearchRepository,
 )

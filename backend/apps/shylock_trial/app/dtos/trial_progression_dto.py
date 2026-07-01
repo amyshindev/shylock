@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from shylock_trial.app.constants.ending_type_map import EndingType
+from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueContent
 from shylock_trial.domain.entities.trial_entity import TrialPhase
 
 
@@ -9,10 +10,12 @@ from shylock_trial.domain.entities.trial_entity import TrialPhase
 class StartTrialResultDto:
     trial_id: UUID
     scene_index: int
-    dignity: int
-    confidence: int
+    shylock_hp: int
+    dp: int
+    portia_hp: int
+    alien_law_executed: bool
     phase: TrialPhase
-    narration_text: str
+    scene_dialogue: SceneDialogueContent
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,8 +28,10 @@ class SubmitChoiceInputDto:
 class SubmitChoiceResultDto:
     trial_id: UUID
     scene_index: int
-    dignity: int
-    confidence: int
+    shylock_hp: int
+    dp: int
+    portia_hp: int
+    alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
     ending_type: EndingType | None
@@ -38,6 +43,7 @@ class AdvanceSceneResultDto:
     trial_id: UUID
     scene_index: int
     scene_data: dict
+    scene_dialogue: SceneDialogueContent
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,5 +51,7 @@ class GenerateEndingResultDto:
     trial_id: UUID
     ending_type: EndingType
     ending_text: str
-    dignity: int
-    confidence: int
+    shylock_hp: int
+    dp: int
+    portia_hp: int
+    alien_law_executed: bool

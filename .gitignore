@@ -4,10 +4,8 @@ env/
 __pycache__/
 *.pyc
 
-# Node / Next.js
-frontend/node_modules/
-frontend/.next/
-frontend/out/
+# Folger TEI corpus (local seeding only)
+backend/apps/shylock_trial/adapter/outbound/seeding/MV.xml
 
 # 환경변수 (API 키 포함)
 .env

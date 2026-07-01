@@ -1,18 +1,33 @@
-from google import genai
-from google.genai import types
-from pydantic import BaseModel, Field
+import json
+import re
 
-from core.config import get_settings
-from shylock_trial.app.constants.portia_prompt import SYSTEM_PROMPT, build_user_message
+import anthropic
+from pydantic import BaseModel, Field, ValidationError
+
+from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDialogueLine
+
+from infrastructure.config import get_settings
+from shylock_trial.app.constants.portia_prompt import (
+    SCENE_DIALOGUE_SYSTEM_PROMPT,
+    SYSTEM_PROMPT,
+    build_scene_dialogue_message,
+    build_user_message,
+)
+from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue, get_scene_template
 from shylock_trial.app.dtos.portia_response_dto import (
     PortiaResponsePromptDto,
     PortiaResponseResultDto,
 )
+from shylock_trial.app.dtos.scene_dialogue_dto import (
+    SceneDialogueContent,
+    SceneDialoguePromptDto,
+    SceneDialogueResultDto,
+)
 from shylock_trial.app.ports.output.portia_response_port import PortiaResponsePort
+from shylock_trial.app.utils.dialogue_text import sanitize_dialogue_line, sanitize_game_text
 from shylock_trial.app.utils.portia_text import extract_portia_text
 
-# gemini-2.0-flash returns 429 (free-tier quota 0) on some keys; 2.5-flash works.
-MODEL_ID = "gemini-2.5-flash"
+MODEL_ID = "claude-sonnet-4-6"
 
 
 class PortiaResponseOutput(BaseModel):
@@ -24,28 +39,140 @@ class PortiaResponseOutput(BaseModel):
     )
 
 
+class SceneDialogueLineOutput(BaseModel):
+    text: str
+    kind: DialogueLineKind = DialogueLineKind.NARRATION
+
+
+class SceneDialogueOutput(BaseModel):
+    lines: list[SceneDialogueLineOutput] = Field(
+        description="Ordered lines with speech/narration kind.",
+    )
+    challenge_header: str = ""
+    challenge_text: str = ""
+    choice_texts: dict[str, str] = Field(default_factory=dict)
+
+
+def _resolve_line_kind(
+    parsed_kind: DialogueLineKind,
+    template_kind: DialogueLineKind,
+) -> DialogueLineKind:
+    return parsed_kind if parsed_kind in DialogueLineKind else template_kind
+
+
+def _build_scene_lines(
+    parsed: SceneDialogueOutput,
+    template,
+) -> tuple[SceneDialogueLine, ...]:
+    canonical_kinds = template.canonical_line_kinds
+    lines: list[SceneDialogueLine] = []
+    for index, line in enumerate(parsed.lines):
+        if not line.text.strip():
+            continue
+        fallback_kind = (
+            canonical_kinds[index]
+            if index < len(canonical_kinds)
+            else DialogueLineKind.NARRATION
+        )
+        kind = _resolve_line_kind(line.kind, fallback_kind)
+        lines.append(
+            SceneDialogueLine(
+                text=sanitize_dialogue_line(line.text),
+                kind=kind,
+            )
+        )
+    return tuple(lines)
+
+
+def _strip_json_fence(raw: str) -> str:
+    trimmed = raw.strip()
+    match = re.match(r"^```(?:json)?\s*\n?(.*?)\n?```\s*$", trimmed, re.DOTALL | re.IGNORECASE)
+    return match.group(1).strip() if match else trimmed
+
+
 class PortiaResponseClient(PortiaResponsePort):
     def __init__(self) -> None:
         settings = get_settings()
-        self._client = genai.Client(api_key=settings.gemini_api_key())
+        self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key_plain())
 
     async def generate(self, prompt: PortiaResponsePromptDto) -> PortiaResponseResultDto:
-        response = await self._client.aio.models.generate_content(
+        response = await self._client.messages.create(
             model=MODEL_ID,
-            contents=build_user_message(prompt),
-            config=types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                max_output_tokens=1024,
-                response_mime_type="application/json",
-                response_schema=PortiaResponseOutput,
-            ),
+            max_tokens=1024,
+            system=SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": build_user_message(prompt),
+                },
+            ],
         )
 
-        parsed = response.parsed
-        if isinstance(parsed, PortiaResponseOutput):
+        raw = "".join(
+            block.text for block in response.content if block.type == "text"
+        ).strip()
+
+        prose = extract_portia_text(raw)
+        if prose and not prose.startswith("{"):
+            return PortiaResponseResultDto(text=sanitize_game_text(prose))
+
+        try:
+            parsed = PortiaResponseOutput.model_validate_json(prose or raw)
             text = parsed.text.strip()
             if text:
-                return PortiaResponseResultDto(text=text)
+                return PortiaResponseResultDto(text=sanitize_game_text(text))
+        except (ValidationError, json.JSONDecodeError):
+            pass
 
-        raw = (response.text or "").strip()
-        return PortiaResponseResultDto(text=extract_portia_text(raw))
+        return PortiaResponseResultDto(text=sanitize_game_text(extract_portia_text(raw)))
+
+    async def generate_scene_dialogue(
+        self,
+        prompt: SceneDialoguePromptDto,
+    ) -> SceneDialogueResultDto:
+        response = await self._client.messages.create(
+            model=MODEL_ID,
+            max_tokens=1536,
+            system=SCENE_DIALOGUE_SYSTEM_PROMPT,
+            messages=[
+                {
+                    "role": "user",
+                    "content": build_scene_dialogue_message(prompt),
+                },
+            ],
+        )
+
+        raw = "".join(
+            block.text for block in response.content if block.type == "text"
+        ).strip()
+        payload = _strip_json_fence(raw)
+
+        try:
+            parsed = SceneDialogueOutput.model_validate_json(payload)
+            template = get_scene_template(prompt.scene_index)
+            content = SceneDialogueContent(
+                lines=_build_scene_lines(parsed, template),
+                challenge_header=parsed.challenge_header or template.challenge_header,
+                challenge_text=(
+                    sanitize_game_text(parsed.challenge_text)
+                    if parsed.challenge_text
+                    else None
+                ),
+                choice_texts={
+                    cid: sanitize_game_text(
+                        parsed.choice_texts.get(cid, template.canonical_choice_texts[cid])
+                    )
+                    for cid in template.choice_ids
+                }
+                if template.choice_ids
+                else {},
+            )
+            if content.lines:
+                return SceneDialogueResultDto(content=content)
+        except (ValidationError, json.JSONDecodeError, KeyError):
+            pass
+
+        return SceneDialogueResultDto(
+            content=fallback_scene_dialogue(prompt.scene_index),
+            fallback_used=True,
+        )

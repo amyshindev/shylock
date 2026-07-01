@@ -1,32 +1,34 @@
 "use client";
 
-import { type Scene } from "@/data/scenes";
-import { textBoxDockStyle, textBoxDockInnerStyle, nextSceneButtonStyle, gameFontFamily } from "@/styles/text-box";
+import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 import { ChoiceList } from "./ChoiceList";
 import { ClimaxOverlay } from "./ClimaxOverlay";
+import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
-import { EvidenceModal } from "./EvidenceModal";
 import { MeterDisplay } from "./MeterDisplay";
 import { ObjectionBanner } from "./ObjectionBanner";
+import { SkillPanel } from "./SkillPanel";
 
 import type { useTrialProgression } from "@/hooks/use-trial-progression";
 
 type TrialState = ReturnType<typeof useTrialProgression>;
 
+const TUBAL_SCENE_IMAGE = "/assets/scene-tubal.png";
+
 interface BattleScreenProps {
   trial: TrialState;
 }
 
-function SceneBackground({ scene }: { scene: Scene }) {
+function SceneBackground({ backgroundImage }: { backgroundImage: string }) {
   return (
     <div
       style={{
         position: "absolute",
         inset: 0,
-        backgroundImage: `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${scene.backgroundImage})`,
+        backgroundImage: `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center top",
         backgroundColor: theme.background,
@@ -38,27 +40,54 @@ function SceneBackground({ scene }: { scene: Scene }) {
 export function BattleScreen({ trial }: BattleScreenProps) {
   const {
     scene,
-    dignity,
-    confidence,
+    shylockHp,
+    dp,
+    portiaHp,
     speaker,
     speakerLabel,
+    showSpeakerTab,
     dialogueText,
     portiaReply,
+    tubalCourtRecords,
+    isTubalActive,
+    isTubalSearching,
     showChallenge,
     objection,
     climaxMode,
     climaxQuote,
-    evidenceModal,
+    evidenceDetailView,
     loadingReply,
+    loadingScene,
     isTypingBlocked,
     advance,
     goNextScene,
     makeChoice,
+    useSkill,
     dismissClimax,
+    dismissTubalMessage,
+    inspectCuratedEvidence,
+    inspectTubalEvidence,
+    presentCuratedEvidence,
+    presentTubalEvidence,
+    dismissEvidenceDetail,
   } = trial;
 
   const showEvidenceBar =
-    scene.availableEvidence.length > 0 && !showChallenge && !portiaReply;
+    (scene.availableEvidence.length > 0 || tubalCourtRecords.length > 0) &&
+    !showChallenge &&
+    !portiaReply &&
+    !isTubalActive;
+
+  const isHathNotClimax = climaxMode && scene.id === "hath_not_moment";
+  const backgroundImage = isTubalActive ? TUBAL_SCENE_IMAGE : scene.backgroundImage;
+
+  const handlePortiaComplete = () => {
+    if (isTubalActive) {
+      dismissTubalMessage();
+      return;
+    }
+    void goNextScene();
+  };
 
   return (
     <div
@@ -73,7 +102,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         fontFamily: gameFontFamily,
       }}
     >
-      <SceneBackground scene={scene} />
+      <SceneBackground backgroundImage={backgroundImage} />
 
       <div
         style={{
@@ -85,65 +114,109 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         }}
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-          <MeterDisplay dignity={dignity} confidence={confidence} />
-          {showEvidenceBar && (
-            <EvidenceList evidenceIds={scene.availableEvidence} />
-          )}
+          <MeterDisplay shylockHp={shylockHp} dp={dp} portiaHp={portiaHp} />
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              bottom: 20,
+              zIndex: 11,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              alignItems: "flex-start",
+            }}
+          >
+            {showEvidenceBar && (
+              <EvidenceList
+                curatedIds={scene.availableEvidence}
+                tubalRecords={tubalCourtRecords}
+                onSelectCurated={inspectCuratedEvidence}
+                onSelectTubal={inspectTubalEvidence}
+              />
+            )}
+            <SkillPanel
+              dp={dp}
+              disabled={
+                loadingReply || loadingScene || isTubalActive || !!portiaReply
+              }
+              onUseSkill={useSkill}
+            />
+          </div>
         </div>
 
         <div style={textBoxDockStyle()}>
           <div style={textBoxDockInnerStyle()}>
             <DialogueBox
-              speaker={portiaReply || loadingReply ? "PORTIA" : speaker}
-              speakerLabel={portiaReply || loadingReply ? "PORTIA · 판사" : speakerLabel}
-              text={dialogueText}
-              isPortiaReply={!!portiaReply || loadingReply}
-              loadingReply={loadingReply}
-              disabled={isTypingBlocked || showChallenge}
-              showAdvanceArrow={!showChallenge && !portiaReply && !loadingReply}
+              speaker={isTubalActive ? "PORTIA" : speaker}
+              speakerLabel={isTubalActive ? "투발" : portiaReply || loadingReply ? "포샤" : speakerLabel}
+              showSpeakerTab={showSpeakerTab}
+              text={loadingScene ? "" : dialogueText}
+              replyMode={
+                isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
+              }
+              loadingReply={isTubalSearching || loadingReply}
+              disabled={isTypingBlocked || showChallenge || loadingScene}
+              showAdvanceArrow={
+                !showChallenge &&
+                !portiaReply &&
+                !isTubalActive &&
+                !loadingReply &&
+                !loadingScene
+              }
               onAdvance={advance}
+              onPortiaComplete={handlePortiaComplete}
             />
 
-            {showChallenge && scene.challenge && !portiaReply && (
+            {showChallenge && scene.challenge && !portiaReply && !isTubalActive && (
               <ChoiceList
                 header={scene.challenge.header}
                 prompt={scene.challenge.text}
                 options={scene.challenge.options}
                 onSelect={makeChoice}
-                disabled={loadingReply}
+                disabled={loadingReply || loadingScene}
               />
-            )}
-
-            {portiaReply && !loadingReply && (
-              <div style={{ padding: "8px 0 0", marginTop: 8 }}>
-                <button
-                  type="button"
-                  onClick={() => void goNextScene()}
-                  style={nextSceneButtonStyle()}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#2a0c18";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#1a0810";
-                  }}
-                >
-                  ▶ 다음 장면
-                </button>
-              </div>
             )}
           </div>
         </div>
       </div>
 
+      {loadingScene && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 20,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(8, 3, 10, 0.75)",
+            color: theme.textMuted,
+            fontSize: 14,
+            letterSpacing: 2,
+          }}
+        >
+          다음 장면을 준비하는 중…
+        </div>
+      )}
       {objection && <ObjectionBanner />}
-      {climaxMode && (
+      {isHathNotClimax && (
+        <ClimaxOverlay
+          quote={climaxQuote}
+          onContinue={dismissClimax}
+          curatedEvidenceIds={scene.availableEvidence}
+          tubalRecords={tubalCourtRecords}
+          onPresentCurated={presentCuratedEvidence}
+          onPresentTubal={presentTubalEvidence}
+        />
+      )}
+      {climaxMode && !isHathNotClimax && (
         <ClimaxOverlay quote={climaxQuote} onContinue={dismissClimax} />
       )}
-      {evidenceModal && !objection && (
-        <EvidenceModal
-          evidenceId={evidenceModal.evidenceId}
-          name={evidenceModal.name}
-          quote={evidenceModal.quote}
+      {evidenceDetailView && !objection && (
+        <CourtEvidenceModal
+          detail={evidenceDetailView}
+          onClose={evidenceDetailView.dismissible ? dismissEvidenceDetail : undefined}
         />
       )}
     </div>

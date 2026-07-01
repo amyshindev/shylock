@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 
-# Must stay in sync with frontend/data/scenes.ts (from shylock-trial.jsx)
-# Scene indices 0–6 (7 scenes). Ending dignity thresholds unchanged — may need playtest tuning.
+# Must stay in sync with frontend scene-templates (choice stat deltas).
+# Scene indices 0–6 (7 scenes).
 FINAL_SCENE_INDEX = 6
 
 
 @dataclass(frozen=True, slots=True)
 class ChoiceEffect:
-    dignity_delta: int
-    confidence_delta: int
+    dp_delta: int
+    shylock_hp_delta: int
 
 
 CHOICE_EFFECTS: dict[str, ChoiceEffect] = {

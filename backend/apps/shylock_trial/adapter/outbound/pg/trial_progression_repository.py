@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from shylock_trial.adapter.outbound.mappers.trial_progression_mapper import to_entity, to_orm
 from shylock_trial.adapter.outbound.orm.trial_orm import TrialChoiceHistoryOrm, TrialOrm
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
+from shylock_trial.app.utils.scene_dialogue_store import serialize_scene_dialogues
 from shylock_trial.domain.entities.trial_entity import Trial
 
 
@@ -31,10 +32,17 @@ class TrialProgressionPgRepository(TrialProgressionPort):
             return await self.create(trial)
 
         existing.scene_index = trial.scene_index
-        existing.dignity = trial.dignity.value
-        existing.confidence = trial.confidence.value
+        existing.shylock_hp = trial.shylock_hp.value
+        existing.dp = trial.dp.value
+        existing.portia_hp = trial.portia_hp.value
+        existing.alien_law_executed = trial.alien_law_executed
         existing.phase = trial.phase.value
         existing.narration_text = trial.narration_text
+        existing.scene_dialogues_json = (
+            serialize_scene_dialogues(trial.scene_dialogues)
+            if trial.scene_dialogues
+            else None
+        )
         existing.choice_history.clear()
         for choice_id in trial.choice_history:
             existing.choice_history.append(

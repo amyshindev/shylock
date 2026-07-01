@@ -1,9 +1,18 @@
 from uuid import UUID, uuid4
 
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
+from shylock_trial.app.constants.game_balance import (
+    PORTIA_HP_MAX,
+    SHYLOCK_DP_START,
+    SHYLOCK_HP_MAX,
+)
 from shylock_trial.app.constants.scene_choices import get_choice_effect
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
+from shylock_trial.app.dtos.scene_dialogue_dto import (
+    SceneDialogueContent,
+    SceneDialoguePromptDto,
+)
 from shylock_trial.app.dtos.trial_progression_dto import (
     AdvanceSceneResultDto,
     GenerateEndingResultDto,
@@ -16,8 +25,9 @@ from shylock_trial.app.ports.input.portia_response_use_case import PortiaRespons
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
-from shylock_trial.domain.value_objects.confidence_score_vo import ConfidenceScore
-from shylock_trial.domain.value_objects.dignity_score_vo import DignityScore
+from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
+from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
 class TrialProgressionInteractor(TrialProgressionUseCase):
@@ -35,35 +45,26 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         trial = Trial(
             trial_id=uuid4(),
             scene_index=0,
-            dignity=DignityScore(50),
-            confidence=ConfidenceScore(40),
+            shylock_hp=ShylockHpScore(SHYLOCK_HP_MAX),
+            dp=DpScore(SHYLOCK_DP_START),
+            portia_hp=PortiaHpScore(PORTIA_HP_MAX),
+            alien_law_executed=True,
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
         )
         trial = await self._port.create(trial)
-
-        narration = await self._portia.generate(
-            PortiaResponsePromptDto(
-                trial_id=trial.trial_id,
-                scene_index=trial.scene_index,
-                dignity=trial.dignity.value,
-                confidence=trial.confidence.value,
-                phase=trial.phase,
-                choice_history=tuple(trial.choice_history),
-                context="scene_1_opening",
-                request_type="narration",
-            )
-        )
-        trial.narration_text = narration.text
+        scene_dialogue = await self._ensure_scene_dialogue(trial, 0)
         trial = await self._port.save(trial)
 
         return StartTrialResultDto(
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
-            dignity=trial.dignity.value,
-            confidence=trial.confidence.value,
+            shylock_hp=trial.shylock_hp.value,
+            dp=trial.dp.value,
+            portia_hp=trial.portia_hp.value,
+            alien_law_executed=trial.alien_law_executed,
             phase=trial.phase,
-            narration_text=narration.text,
+            scene_dialogue=scene_dialogue,
         )
 
     async def submit_choice(self, input_dto: SubmitChoiceInputDto) -> SubmitChoiceResultDto:
@@ -71,8 +72,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
 
         effect = get_choice_effect(input_dto.choice_id)
         trial.choice_history.append(input_dto.choice_id)
-        trial.dignity = trial.dignity.apply_delta(effect.dignity_delta)
-        trial.confidence = trial.confidence.apply_delta(effect.confidence_delta)
+        trial.dp = trial.dp.apply_delta(effect.dp_delta)
+        trial.shylock_hp = trial.shylock_hp.apply_delta(effect.shylock_hp_delta)
 
         await self._evidence.search(
             EvidenceSearchInputDto(query=input_dto.choice_id, limit=3)
@@ -82,8 +83,9 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             PortiaResponsePromptDto(
                 trial_id=trial.trial_id,
                 scene_index=trial.scene_index,
-                dignity=trial.dignity.value,
-                confidence=trial.confidence.value,
+                dp=trial.dp.value,
+                shylock_hp=trial.shylock_hp.value,
+                alien_law_executed=trial.alien_law_executed,
                 phase=trial.phase,
                 choice_history=tuple(trial.choice_history),
                 context=f"choice:{input_dto.choice_id}",
@@ -91,7 +93,6 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             )
         )
 
-        # Ending only via generate_ending; never cut the trial short mid-game.
         is_ending = False
 
         trial = await self._port.save(trial)
@@ -99,8 +100,10 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         return SubmitChoiceResultDto(
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
-            dignity=trial.dignity.value,
-            confidence=trial.confidence.value,
+            shylock_hp=trial.shylock_hp.value,
+            dp=trial.dp.value,
+            portia_hp=trial.portia_hp.value,
+            alien_law_executed=trial.alien_law_executed,
             phase=trial.phase,
             portia_response=portia.text,
             ending_type=None,
@@ -110,24 +113,27 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
     async def advance_scene(self, trial_id: UUID) -> AdvanceSceneResultDto:
         trial = await self._require_trial(trial_id)
         trial.scene_index += 1
+        scene_dialogue = await self._ensure_scene_dialogue(trial, trial.scene_index)
         trial = await self._port.save(trial)
 
         return AdvanceSceneResultDto(
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
             scene_data={"scene_index": trial.scene_index},
+            scene_dialogue=scene_dialogue,
         )
 
     async def generate_ending(self, trial_id: UUID) -> GenerateEndingResultDto:
         trial = await self._require_trial(trial_id)
-        ending_type = resolve_ending_type(trial.dignity.value)
+        ending_type = resolve_ending_type(trial.dp.value, trial.alien_law_executed)
 
         ending = await self._portia.generate(
             PortiaResponsePromptDto(
                 trial_id=trial.trial_id,
                 scene_index=trial.scene_index,
-                dignity=trial.dignity.value,
-                confidence=trial.confidence.value,
+                dp=trial.dp.value,
+                shylock_hp=trial.shylock_hp.value,
+                alien_law_executed=trial.alien_law_executed,
                 phase=trial.phase,
                 choice_history=tuple(trial.choice_history),
                 context="final_ending",
@@ -143,12 +149,39 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=trial.trial_id,
             ending_type=ending_type,
             ending_text=ending.text,
-            dignity=trial.dignity.value,
-            confidence=trial.confidence.value,
+            shylock_hp=trial.shylock_hp.value,
+            dp=trial.dp.value,
+            portia_hp=trial.portia_hp.value,
+            alien_law_executed=trial.alien_law_executed,
         )
 
     async def get_trial(self, trial_id: UUID) -> Trial:
-        return await self._require_trial(trial_id)
+        trial = await self._require_trial(trial_id)
+        if not trial.is_ended():
+            await self._ensure_scene_dialogue(trial, trial.scene_index)
+            trial = await self._port.save(trial)
+        return trial
+
+    async def _ensure_scene_dialogue(
+        self,
+        trial: Trial,
+        scene_index: int,
+    ) -> SceneDialogueContent:
+        cached = trial.scene_dialogues.get(scene_index)
+        if cached is not None:
+            return cached
+
+        result = await self._portia.generate_scene_dialogue(
+            SceneDialoguePromptDto(
+                trial_id=trial.trial_id,
+                scene_index=scene_index,
+                dp=trial.dp.value,
+                shylock_hp=trial.shylock_hp.value,
+                choice_history=tuple(trial.choice_history),
+            )
+        )
+        trial.scene_dialogues[scene_index] = result.content
+        return result.content
 
     async def _require_trial(self, trial_id: UUID) -> Trial:
         trial = await self._port.find_by_id(trial_id)

@@ -1,6 +1,8 @@
-from sqlalchemy import select
+from pgvector.sqlalchemy import Vector
+from sqlalchemy import select, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from shylock_trial.adapter.outbound.client.evidence_embedding_client import EvidenceEmbeddingClient
 from shylock_trial.adapter.outbound.mappers.evidence_search_mapper import (
     evidence_to_entity,
     play_line_to_entity,
@@ -15,13 +17,18 @@ from shylock_trial.domain.entities.play_line_entity import PlayLine
 class EvidenceSearchPgRepository(EvidenceSearchPort):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+        self._embedder = EvidenceEmbeddingClient()
 
     async def search_similar_play_lines(
         self,
         input_dto: EvidenceSearchInputDto,
     ) -> list[PlayLine]:
-        # TODO: embed query via EvidenceEmbeddingClient and pgvector cosine search
-        result = await self._session.execute(select(PlayLineOrm).limit(input_dto.limit))
+        query_vector = await self._embedder.embed_query(input_dto.query)
+        result = await self._session.execute(
+            select(PlayLineOrm)
+            .order_by(PlayLineOrm.embedding.cosine_distance(query_vector))
+            .limit(input_dto.limit)
+        )
         return [play_line_to_entity(row) for row in result.scalars().all()]
 
     async def list_curated_evidence(self) -> list[Evidence]:

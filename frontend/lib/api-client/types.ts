@@ -1,36 +1,64 @@
 export type TrialPhase = "in_progress" | "ended";
 
+export type DialogueLineKind = "speech" | "narration";
+
+export interface SceneDialogueLineFromApi {
+  text: string;
+  kind: DialogueLineKind;
+}
+
+export interface SceneDialogueFromApi {
+  lines: SceneDialogueLineFromApi[];
+  challenge_header?: string | null;
+  challenge_text?: string | null;
+  choice_texts?: Record<string, string>;
+}
+
 export interface TrialState {
   trial_id: string;
   scene_index: number;
-  dignity: number;
-  confidence: number;
+  shylock_hp: number;
+  dp: number;
+  portia_hp: number;
+  alien_law_executed: boolean;
   phase: TrialPhase;
   choice_history?: string[];
   narration_text?: string | null;
+  scene_dialogue?: SceneDialogueFromApi | null;
 }
 
 export interface StartTrialResponse extends TrialState {
-  narration_text: string;
+  scene_dialogue: SceneDialogueFromApi;
 }
 
 export interface SubmitChoiceResponse {
   trial_id: string;
   scene_index: number;
-  dignity: number;
-  confidence: number;
+  shylock_hp: number;
+  dp: number;
+  portia_hp: number;
+  alien_law_executed: boolean;
   phase: TrialPhase;
   portia_response: string;
   ending_type: string | null;
   is_ending: boolean;
 }
 
+export interface AdvanceSceneResponse {
+  trial_id: string;
+  scene_index: number;
+  scene_data: { scene_index: number };
+  scene_dialogue: SceneDialogueFromApi;
+}
+
 export interface EndingResponse {
   trial_id: string;
   ending_type: string;
   ending_text: string;
-  dignity: number;
-  confidence: number;
+  shylock_hp: number;
+  dp: number;
+  portia_hp: number;
+  alien_law_executed: boolean;
 }
 
 export interface EvidenceFromApi {
@@ -41,4 +69,17 @@ export interface EvidenceFromApi {
   description: string;
   source_ftln_start: number;
   source_ftln_end: number;
+}
+
+export interface TubalSkillResponse {
+  trial_id: string;
+  dp: number;
+  shylock_hp: number;
+  portia_hp: number;
+  success: boolean;
+  ftln: number | null;
+  passage: string | null;
+  speaker: string | null;
+  act_scene: string | null;
+  tubal_comment: string | null;
 }

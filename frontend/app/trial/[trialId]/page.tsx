@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 
 import { BattleScreen } from "@/components/battle/BattleScreen";
+import { GameOverScreen } from "@/components/battle/GameOverScreen";
 import { EndingScreen } from "@/components/ending/EndingScreen";
 import { useTrialProgression } from "@/hooks/use-trial-progression";
 import { theme } from "@/styles/theme";
@@ -60,6 +61,15 @@ export default function TrialPage() {
           타이틀로
         </button>
       </div>
+    );
+  }
+
+  if (trial.phase === "gameover" && trial.gameOverReason) {
+    return (
+      <GameOverScreen
+        reason={trial.gameOverReason}
+        onRestart={() => router.push("/")}
+      />
     );
   }
 

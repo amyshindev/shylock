@@ -1,19 +1,17 @@
 from enum import StrEnum
 
+from shylock_trial.app.constants.game_balance import DP_GOOD_ENDING_THRESHOLD
+
 
 class EndingType(StrEnum):
-    VICTORY = "victory"
-    STANDARD_DEFEAT = "standard_defeat"
-    SILENT_DEFEAT = "silent_defeat"
+    DIGNITY = "dignity_ending"
+    BAD = "bad_ending"
+    HISTORY_CHANGED = "history_changed_ending"
+    SURVIVAL = "survival_ending"
 
 
-VICTORY_DIGNITY_THRESHOLD = 70
-STANDARD_DEFEAT_DIGNITY_THRESHOLD = 40
-
-
-def resolve_ending_type(dignity: int) -> EndingType:
-    if dignity >= VICTORY_DIGNITY_THRESHOLD:
-        return EndingType.VICTORY
-    if dignity >= STANDARD_DEFEAT_DIGNITY_THRESHOLD:
-        return EndingType.STANDARD_DEFEAT
-    return EndingType.SILENT_DEFEAT
+def resolve_ending_type(dp: int, alien_law_executed: bool) -> EndingType:
+    good = dp >= DP_GOOD_ENDING_THRESHOLD
+    if alien_law_executed:
+        return EndingType.DIGNITY if good else EndingType.BAD
+    return EndingType.HISTORY_CHANGED if good else EndingType.SURVIVAL

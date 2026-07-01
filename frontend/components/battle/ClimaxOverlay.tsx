@@ -1,14 +1,31 @@
 "use client";
 
 import { TextBox } from "@/components/ui/TextBox";
+import type { TubalCourtRecord } from "@/lib/tubal-evidence";
 import { theme } from "@/styles/theme";
+
+import { EvidenceList } from "./EvidenceList";
 
 interface ClimaxOverlayProps {
   quote: string;
   onContinue: () => void;
+  curatedEvidenceIds?: string[];
+  tubalRecords?: TubalCourtRecord[];
+  onPresentCurated?: (evidenceId: string) => void;
+  onPresentTubal?: (record: TubalCourtRecord) => void;
 }
 
-export function ClimaxOverlay({ quote, onContinue }: ClimaxOverlayProps) {
+export function ClimaxOverlay({
+  quote,
+  onContinue,
+  curatedEvidenceIds = [],
+  tubalRecords = [],
+  onPresentCurated,
+  onPresentTubal,
+}: ClimaxOverlayProps) {
+  const canPresent =
+    curatedEvidenceIds.length > 0 || tubalRecords.length > 0;
+
   return (
     <div
       style={{
@@ -22,60 +39,84 @@ export function ClimaxOverlay({ quote, onContinue }: ClimaxOverlayProps) {
         padding: 24,
       }}
     >
-      <TextBox
-        speaker="NARRATOR"
-        speakerLabel="ACT III · SCENE 1"
+      <div
         style={{
-          maxWidth: 480,
-          border: `2px solid ${theme.gold}`,
-          boxShadow: "0 0 60px rgba(255, 215, 0, 0.19)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 16,
+          width: "min(520px, 100%)",
         }}
-        bodyStyle={{ padding: "24px 28px", textAlign: "center" }}
-        footer={
-          <div style={{ padding: "0 12px 16px", textAlign: "center" }}>
-            <div
-              style={{
-                color: "#6a4a2a",
-                fontSize: 11,
-                marginBottom: 16,
-                letterSpacing: 2,
-              }}
-            >
-              — William Shakespeare
-            </div>
-            <button
-              type="button"
-              onClick={onContinue}
-              style={{
-                background: theme.red,
-                color: theme.gold,
-                border: "none",
-                padding: "10px 28px",
-                borderRadius: 2,
-                cursor: "pointer",
-                fontFamily: "Georgia, serif",
-                fontSize: 13,
-                letterSpacing: 2,
-              }}
-            >
-              계속
-            </button>
-          </div>
-        }
       >
-        <p
+        <TextBox
+          speaker="NARRATOR"
+          speakerLabel="ACT III · SCENE 1"
           style={{
-            margin: 0,
-            color: "#f0d090",
-            fontSize: 14,
-            lineHeight: 2.2,
-            fontStyle: "italic",
-            whiteSpace: "pre-wrap",
+            maxWidth: 480,
+            width: "100%",
+            border: `2px solid ${theme.gold}`,
+            boxShadow: "0 0 60px rgba(255, 215, 0, 0.19)",
           }}
+          bodyStyle={{ padding: "24px 28px", textAlign: "center" }}
+          footer={
+            <div style={{ padding: "0 12px 16px", textAlign: "center" }}>
+              <div
+                style={{
+                  color: "#6a4a2a",
+                  fontSize: 11,
+                  marginBottom: 16,
+                  letterSpacing: 2,
+                }}
+              >
+                — William Shakespeare
+              </div>
+              <button
+                type="button"
+                onClick={onContinue}
+                style={{
+                  background: theme.red,
+                  color: theme.gold,
+                  border: "none",
+                  padding: "10px 28px",
+                  borderRadius: 2,
+                  cursor: "pointer",
+                  fontFamily: "Georgia, serif",
+                  fontSize: 13,
+                  letterSpacing: 2,
+                }}
+              >
+                계속
+              </button>
+            </div>
+          }
         >
-          {quote}
-        </p>
-      </TextBox>
+          <p
+            style={{
+              margin: 0,
+              color: "#f0d090",
+              fontSize: 14,
+              lineHeight: 2.2,
+              fontStyle: "italic",
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {quote}
+          </p>
+        </TextBox>
+
+        {canPresent && (
+          <div style={{ width: "100%", maxWidth: 320 }}>
+            <EvidenceList
+              curatedIds={curatedEvidenceIds}
+              tubalRecords={tubalRecords}
+              onSelectCurated={onPresentCurated}
+              onSelectTubal={onPresentTubal}
+              presentMode
+              compact
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

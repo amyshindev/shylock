@@ -5,16 +5,31 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     AdvanceSceneResponse,
     EndingResponse,
+    SceneDialogueLineResponse,
+    SceneDialogueResponse,
     StartTrialResponse,
     SubmitChoiceRequest,
     SubmitChoiceResponse,
     TrialResponse,
+    scene_dialogue_from_trial,
 )
 from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
 from shylock_trial.dependencies.trial_progression_provider import get_trial_progression_use_case
 
 trial_progression_router = APIRouter(prefix="/trials", tags=["trial-progression"])
+
+
+def _scene_dialogue_response(content) -> SceneDialogueResponse:
+    return SceneDialogueResponse(
+        lines=[
+            SceneDialogueLineResponse(text=line.text, kind=line.kind.value)
+            for line in content.lines
+        ],
+        challenge_header=content.challenge_header,
+        challenge_text=content.challenge_text,
+        choice_texts=content.choice_text_map(),
+    )
 
 
 @trial_progression_router.post(
@@ -26,7 +41,16 @@ async def start_trial(
     use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
 ) -> StartTrialResponse:
     result = await use_case.start()
-    return StartTrialResponse.model_validate(result, from_attributes=True)
+    return StartTrialResponse(
+        trial_id=result.trial_id,
+        scene_index=result.scene_index,
+        shylock_hp=result.shylock_hp,
+        dp=result.dp,
+        portia_hp=result.portia_hp,
+        alien_law_executed=result.alien_law_executed,
+        phase=result.phase,
+        scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
+    )
 
 
 @trial_progression_router.get("/{trial_id}", response_model=TrialResponse)
@@ -41,11 +65,14 @@ async def get_trial(
     return TrialResponse(
         trial_id=trial.trial_id,
         scene_index=trial.scene_index,
-        dignity=trial.dignity.value,
-        confidence=trial.confidence.value,
+        shylock_hp=trial.shylock_hp.value,
+        dp=trial.dp.value,
+        portia_hp=trial.portia_hp.value,
+        alien_law_executed=trial.alien_law_executed,
         phase=trial.phase,
         choice_history=trial.choice_history,
         narration_text=trial.narration_text,
+        scene_dialogue=scene_dialogue_from_trial(trial),
     )
 
 
@@ -64,8 +91,10 @@ async def submit_choice(
     return SubmitChoiceResponse(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
-        dignity=result.dignity,
-        confidence=result.confidence,
+        shylock_hp=result.shylock_hp,
+        dp=result.dp,
+        portia_hp=result.portia_hp,
+        alien_law_executed=result.alien_law_executed,
         phase=result.phase,
         portia_response=result.portia_response,
         ending_type=result.ending_type.value if result.ending_type else None,
@@ -82,7 +111,12 @@ async def advance_scene(
         result = await use_case.advance_scene(trial_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
-    return AdvanceSceneResponse.model_validate(result, from_attributes=True)
+    return AdvanceSceneResponse(
+        trial_id=result.trial_id,
+        scene_index=result.scene_index,
+        scene_data=result.scene_data,
+        scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
+    )
 
 
 @trial_progression_router.get("/{trial_id}/ending", response_model=EndingResponse)
@@ -98,6 +132,8 @@ async def generate_ending(
         trial_id=result.trial_id,
         ending_type=result.ending_type.value,
         ending_text=result.ending_text,
-        dignity=result.dignity,
-        confidence=result.confidence,
+        shylock_hp=result.shylock_hp,
+        dp=result.dp,
+        portia_hp=result.portia_hp,
+        alien_law_executed=result.alien_law_executed,
     )

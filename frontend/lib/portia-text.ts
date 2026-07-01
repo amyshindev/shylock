@@ -1,27 +1,34 @@
 /**
  * Normalize Portia LLM output — strip JSON wrappers when parsing fails upstream.
  */
+import { sanitizeDialogueLine, sanitizeGameText } from "@/lib/game-text";
+
 export function extractPortiaText(raw: string): string {
-  const trimmed = raw.trim();
+  let trimmed = raw.trim();
   if (!trimmed) return "";
+
+  const fence = trimmed.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/i);
+  if (fence?.[1]) trimmed = fence[1].trim();
 
   if (trimmed.startsWith("{")) {
     try {
       const data = JSON.parse(trimmed) as { text?: unknown };
-      if (typeof data.text === "string") return data.text.trim();
+      if (typeof data.text === "string") return sanitizeGameText(data.text);
     } catch {
       const match = trimmed.match(/"text"\s*:\s*"((?:[^"\\]|\\.)*)(?:"|$)/);
       if (match?.[1]) {
         try {
-          return JSON.parse(`"${match[1]}"`) as string;
+          return sanitizeGameText(JSON.parse(`"${match[1]}"`) as string);
         } catch {
-          return match[1].replace(/\\n/g, "\n").replace(/\\"/g, '"').trim();
+          return sanitizeGameText(
+            match[1].replace(/\\n/g, "\n").replace(/\\"/g, '"'),
+          );
         }
       }
     }
   }
 
-  return trimmed;
+  return sanitizeGameText(trimmed);
 }
 
 /** Split prose into one sentence per click-to-continue step. */
@@ -34,7 +41,9 @@ export function splitIntoSentences(text: string): string[] {
   );
   if (!matches) return [normalized];
 
-  const sentences = matches.map((s) => s.trim()).filter(Boolean);
+  const sentences = matches
+    .map((s) => sanitizeDialogueLine(s))
+    .filter(Boolean);
   return sentences.length > 0 ? sentences : [normalized];
 }
 

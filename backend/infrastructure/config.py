@@ -35,26 +35,31 @@ class Settings(BaseSettings):
     log_level: str = Field(validation_alias="LOG_LEVEL")
 
     database_url: str = Field(validation_alias="DATABASE_URL")
+    direct_url: str | None = Field(default=None, validation_alias="DIRECT_URL")
     redis_url: str = Field(validation_alias="REDIS_URL")
     use_memory_store: bool = Field(validation_alias="USE_MEMORY_STORE")
     cors_origins: str = Field(validation_alias="CORS_ORIGINS")
 
-    llm_api_key: SecretStr = Field(
-        validation_alias="LLM_API_KEY",
-        description="Google Gemini API key (google-genai).",
+    anthropic_api_key: SecretStr = Field(
+        validation_alias="ANTHROPIC_API_KEY",
+        description="Anthropic API key (Claude).",
     )
     cohere_api_key: SecretStr = Field(
         validation_alias="COHERE_API_KEY",
         description="Cohere API key for evidence embeddings.",
     )
 
+    def migration_database_url(self) -> str:
+        """Direct DB URL for Alembic (bypasses pooler). Falls back to DATABASE_URL."""
+        return self.direct_url or self.database_url
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
-    def gemini_api_key(self) -> str:
-        """Plain Gemini key for outbound clients. Never log this value."""
-        return self.llm_api_key.get_secret_value()
+    def anthropic_api_key_plain(self) -> str:
+        """Plain Anthropic key for outbound clients. Never log this value."""
+        return self.anthropic_api_key.get_secret_value()
 
     def cohere_api_key_plain(self) -> str:
         """Plain Cohere key for outbound clients. Never log this value."""

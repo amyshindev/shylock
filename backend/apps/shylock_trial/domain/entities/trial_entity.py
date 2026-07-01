@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import StrEnum
 from uuid import UUID
 
-from shylock_trial.domain.value_objects.confidence_score_vo import ConfidenceScore
-from shylock_trial.domain.value_objects.dignity_score_vo import DignityScore
+from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueContent
+from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
+from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
 class TrialPhase(StrEnum):
@@ -17,8 +19,8 @@ class TrialPhase(StrEnum):
 class Choice:
     choice_id: str
     label: str
-    dignity_delta: int
-    confidence_delta: int
+    dp_delta: int
+    shylock_hp_delta: int
     evidence_id: str | None = None
     is_climax: bool = False
 
@@ -35,11 +37,14 @@ class Scene:
 class Trial:
     trial_id: UUID
     scene_index: int
-    dignity: DignityScore
-    confidence: ConfidenceScore
+    shylock_hp: ShylockHpScore
+    dp: DpScore
+    portia_hp: PortiaHpScore
+    alien_law_executed: bool
     choice_history: list[str]
     phase: TrialPhase
     narration_text: str | None = None
+    scene_dialogues: dict[int, SceneDialogueContent] = field(default_factory=dict)
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

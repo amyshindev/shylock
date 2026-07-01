@@ -9,6 +9,15 @@ class FakePortiaUseCase:
 
         return PortiaResponseResultDto(text="Portia speaks.", fallback_used=False)
 
+    async def generate_scene_dialogue(self, prompt):
+        from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
+        from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueResultDto
+
+        return SceneDialogueResultDto(
+            content=fallback_scene_dialogue(prompt.scene_index),
+            fallback_used=False,
+        )
+
 
 class FakeEvidenceUseCase:
     async def search(self, input_dto):
@@ -40,7 +49,7 @@ class InMemoryTrialPort:
 
 
 @pytest.mark.asyncio
-async def test_start_trial_returns_narration() -> None:
+async def test_start_trial_returns_scene_dialogue() -> None:
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
 
     interactor = TrialProgressionInteractor(
@@ -50,5 +59,6 @@ async def test_start_trial_returns_narration() -> None:
     )
     result = await interactor.start()
 
-    assert result.narration_text == "Portia speaks."
+    assert result.scene_dialogue.lines
     assert result.phase.value == "in_progress"
+

@@ -1,8 +1,9 @@
 import cohere
 
-from core.config import get_settings
+from infrastructure.config import get_settings
 
 EMBED_MODEL = "embed-v4.0"
+EMBED_DIMENSION = 1536
 
 
 class EvidenceEmbeddingClient:

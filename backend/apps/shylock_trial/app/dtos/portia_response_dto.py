@@ -8,8 +8,9 @@ from shylock_trial.domain.entities.trial_entity import TrialPhase
 class PortiaResponsePromptDto:
     trial_id: UUID
     scene_index: int
-    dignity: int
-    confidence: int
+    dp: int
+    shylock_hp: int
+    alien_law_executed: bool
     phase: TrialPhase
     choice_history: tuple[str, ...]
     context: str

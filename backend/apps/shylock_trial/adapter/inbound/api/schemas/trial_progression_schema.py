@@ -1,8 +1,37 @@
 from uuid import UUID
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from shylock_trial.domain.entities.trial_entity import TrialPhase
+from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
+
+
+class SceneDialogueLineResponse(BaseModel):
+    text: str
+    kind: Literal["speech", "narration"]
+
+
+class SceneDialogueResponse(BaseModel):
+    lines: list[SceneDialogueLineResponse]
+    challenge_header: str | None = None
+    challenge_text: str | None = None
+    choice_texts: dict[str, str] = Field(default_factory=dict)
+
+
+def scene_dialogue_from_trial(trial: Trial) -> SceneDialogueResponse | None:
+    content = trial.scene_dialogues.get(trial.scene_index)
+    if content is None:
+        return None
+    return SceneDialogueResponse(
+        lines=[
+            SceneDialogueLineResponse(text=line.text, kind=line.kind.value)
+            for line in content.lines
+        ],
+        challenge_header=content.challenge_header,
+        challenge_text=content.challenge_text,
+        choice_texts=content.choice_text_map(),
+    )
 
 
 class StartTrialResponse(BaseModel):
@@ -12,10 +41,17 @@ class StartTrialResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 0,
-                    "dignity": 50,
-                    "confidence": 50,
+                    "shylock_hp": 60,
+                    "dp": 50,
+                    "portia_hp": 100,
+                    "alien_law_executed": True,
                     "phase": "in_progress",
-                    "narration_text": "The court of Venice assembles...",
+                    "scene_dialogue": {
+                        "lines": [{"text": "베네치아 법정. 1596년.", "kind": "narration"}],
+                        "challenge_header": None,
+                        "challenge_text": None,
+                        "choice_texts": {},
+                    },
                 }
             ]
         }
@@ -23,10 +59,12 @@ class StartTrialResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    dignity: int = Field(ge=0, le=100)
-    confidence: int = Field(ge=0, le=100)
+    shylock_hp: int = Field(ge=0)
+    dp: int = Field(ge=0, le=100)
+    portia_hp: int = Field(ge=0)
+    alien_law_executed: bool
     phase: TrialPhase
-    narration_text: str
+    scene_dialogue: SceneDialogueResponse
 
 
 class TrialResponse(BaseModel):
@@ -36,11 +74,21 @@ class TrialResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 1,
-                    "dignity": 55,
-                    "confidence": 48,
+                    "shylock_hp": 48,
+                    "dp": 55,
+                    "portia_hp": 100,
+                    "alien_law_executed": True,
                     "phase": "in_progress",
                     "choice_history": ["appeal_mercy"],
                     "narration_text": None,
+                    "scene_dialogue": {
+                        "lines": [
+                            {"text": "샤일록, 당신은 안토니오의 살 1파운드를 요구하오.", "kind": "speech"}
+                        ],
+                        "challenge_header": "▶ 샤일록의 선택",
+                        "challenge_text": "자비를 베풀라고?",
+                        "choice_texts": {"appeal_contract": "계약은 법적으로 유효합니다"},
+                    },
                 }
             ]
         }
@@ -48,11 +96,14 @@ class TrialResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    dignity: int = Field(ge=0, le=100)
-    confidence: int = Field(ge=0, le=100)
+    shylock_hp: int = Field(ge=0)
+    dp: int = Field(ge=0, le=100)
+    portia_hp: int = Field(ge=0)
+    alien_law_executed: bool
     phase: TrialPhase
     choice_history: list[str]
     narration_text: str | None = None
+    scene_dialogue: SceneDialogueResponse | None = None
 
 
 class SubmitChoiceRequest(BaseModel):
@@ -70,8 +121,10 @@ class SubmitChoiceResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 1,
-                    "dignity": 60,
-                    "confidence": 52,
+                    "shylock_hp": 52,
+                    "dp": 60,
+                    "portia_hp": 100,
+                    "alien_law_executed": True,
                     "phase": "in_progress",
                     "portia_response": "The quality of mercy is not strained...",
                     "ending_type": None,
@@ -83,8 +136,10 @@ class SubmitChoiceResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    dignity: int
-    confidence: int
+    shylock_hp: int
+    dp: int
+    portia_hp: int
+    alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
     ending_type: str | None = None
@@ -99,6 +154,12 @@ class AdvanceSceneResponse(BaseModel):
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 2,
                     "scene_data": {"scene_index": 2},
+                    "scene_dialogue": {
+                        "lines": [{"text": '"저 유대인을 보라!"', "kind": "speech"}],
+                        "challenge_header": "▶ 샤일록의 선택",
+                        "challenge_text": "군중의 조롱에 당신은—",
+                        "choice_texts": {"show_gaberdine": "외투의 침 자국을 보여준다"},
+                    },
                 }
             ]
         }
@@ -107,6 +168,7 @@ class AdvanceSceneResponse(BaseModel):
     trial_id: UUID
     scene_index: int
     scene_data: dict
+    scene_dialogue: SceneDialogueResponse
 
 
 class EndingResponse(BaseModel):
@@ -114,11 +176,13 @@ class EndingResponse(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "ending_type": "victory",
+                    "trial_id": "3fa85f64-5717-5717-4562-b3fc-2c963f66afa6",
+                    "ending_type": "dignity_ending",
                     "ending_text": "Justice tempered with mercy prevails.",
-                    "dignity": 72,
-                    "confidence": 65,
+                    "shylock_hp": 45,
+                    "dp": 72,
+                    "portia_hp": 100,
+                    "alien_law_executed": True,
                 }
             ]
         }
@@ -127,5 +191,7 @@ class EndingResponse(BaseModel):
     trial_id: UUID
     ending_type: str
     ending_text: str
-    dignity: int
-    confidence: int
+    shylock_hp: int
+    dp: int
+    portia_hp: int
+    alien_law_executed: bool

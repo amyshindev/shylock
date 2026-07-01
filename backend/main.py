@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from core.config import get_settings
+from infrastructure.config import get_settings
 from shylock_trial.adapter.inbound.api.router_registry import shylock_trial_router
 
 

@@ -37,7 +37,7 @@
                  │
         app/ports/output (Port)
                  │
-    [ PG / ORM / CSV / Gemini / sklearn ]  ← adapter/outbound
+    [ PG / ORM / CSV / Claude / sklearn ]  ← adapter/outbound
 ```
 
 - **Inbound adapter:** 요청을 받아 Use Case를 호출한다.
@@ -130,7 +130,7 @@ SmithCaptainInteractor
   ├── Cal     → test 평가
   ├── Andrews → Kiwi 의도 분석
   ├── Hartley → 상관·히트맵
-  └── Repository → Gemini 채팅 (outbound)
+  └── Repository → Claude 채팅 (outbound)
 ```
 
 다른 프로젝트에서 “퍼사드/오케스트레이터”가 필요하면 **별도 슬라이스 하나**로 두고, provider에서 하위 Use Case를 `Depends`로 조립한다.
@@ -232,7 +232,7 @@ Client
   → Depends(get_smith_captain_use_case)
   → SmithCaptainInteractor.chat()
        → (필요 시) 다른 Use Case 호출
-       → SmithCaptainPort.chat()  →  Gemini / DB
+       → SmithCaptainPort.chat()  →  Claude / DB
   → ChatResponse
 ```
 
@@ -302,7 +302,7 @@ backend/
     titanic/                 ← 이 문서의 기준 앱
     automata/
     ontology/
-  core/                      ← DB, Gemini keymaker, Neo4j 등 공유 인프라
+  core/                      ← DB, Claude keymaker, Neo4j 등 공유 인프라
 ```
 
 ```python

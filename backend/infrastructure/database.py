@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from core.config import get_settings
+from infrastructure.config import get_settings
 
 _engine: AsyncEngine | None = None
 _session_factory: async_sessionmaker[AsyncSession] | None = None
@@ -20,6 +20,7 @@ def get_engine() -> AsyncEngine:
         _engine = create_async_engine(
             settings.database_url,
             echo=settings.app_env == "development",
+            connect_args={"prepare_threshold": None},
         )
     return _engine
 

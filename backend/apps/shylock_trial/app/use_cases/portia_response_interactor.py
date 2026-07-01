@@ -4,6 +4,11 @@ from shylock_trial.app.dtos.portia_response_dto import (
     PortiaResponsePromptDto,
     PortiaResponseResultDto,
 )
+from shylock_trial.app.dtos.scene_dialogue_dto import (
+    SceneDialoguePromptDto,
+    SceneDialogueResultDto,
+)
+from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
 from shylock_trial.app.ports.output.portia_response_port import PortiaResponsePort
 
@@ -22,3 +27,19 @@ class PortiaResponseInteractor(PortiaResponseUseCase):
         except Exception:
             logger.exception("Portia LLM request failed; returning fallback text")
             return PortiaResponseResultDto(text=FALLBACK_TEXT, fallback_used=True)
+
+    async def generate_scene_dialogue(
+        self,
+        prompt: SceneDialoguePromptDto,
+    ) -> SceneDialogueResultDto:
+        try:
+            return await self._port.generate_scene_dialogue(prompt)
+        except Exception:
+            logger.exception(
+                "Scene dialogue LLM failed for scene_index=%s; using canonical fallback",
+                prompt.scene_index,
+            )
+            return SceneDialogueResultDto(
+                content=fallback_scene_dialogue(prompt.scene_index),
+                fallback_used=True,
+            )

@@ -4,12 +4,13 @@ import { TextBox } from "@/components/ui/TextBox";
 import { useDialoguePages } from "@/hooks/use-dialogue-pages";
 import { useTypingEffect } from "@/hooks/use-typing-effect";
 import { extractPortiaText } from "@/lib/portia-text";
+import { sanitizeDialogueLine } from "@/lib/game-text";
 import { dialogueTextStyle, gameFontFamily, DIALOGUE_BODY_MIN_HEIGHT, DIALOGUE_BODY_PADDING_BOTTOM } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 const SPEAKER_LABEL: Record<string, string> = {
   NARRATOR: "NARRATOR",
-  PORTIA: "PORTIA",
+  PORTIA: "포샤",
   CROWD: "군중",
 };
 
@@ -27,71 +28,89 @@ const portiaReplyStyle = {
 interface DialogueBoxProps {
   speaker: string;
   speakerLabel?: string;
+  showSpeakerTab?: boolean;
   text: string;
-  isPortiaReply?: boolean;
+  /** Portia/Tubal reply flow: paging, typing, click-to-dismiss. */
+  replyMode?: "portia" | "tubal";
   loadingReply?: boolean;
   disabled?: boolean;
   showAdvanceArrow?: boolean;
   onAdvance?: () => void;
+  onPortiaComplete?: () => void;
 }
 
 export function DialogueBox({
   speaker,
   speakerLabel,
+  showSpeakerTab = false,
   text,
-  isPortiaReply,
+  replyMode,
   loadingReply,
   disabled,
   showAdvanceArrow,
   onAdvance,
+  onPortiaComplete,
 }: DialogueBoxProps) {
-  const cleanPortiaText = extractPortiaText(text);
+  const isReply = replyMode != null;
+  const cleanReplyText = extractPortiaText(text);
   const {
-    currentPage: portiaPage,
-    hasNext: portiaHasNext,
+    currentPage: replyPage,
+    hasNext: replyHasNext,
     advancePage,
-  } = useDialoguePages(cleanPortiaText, "sentences");
+  } = useDialoguePages(cleanReplyText, "sentences");
 
   const typingSource =
-    loadingReply ? "" : isPortiaReply ? portiaPage : text;
+    loadingReply ? "" : isReply ? replyPage : sanitizeDialogueLine(text);
 
   const { displayedText, isTyping, skipToEnd } = useTypingEffect(typingSource);
   const content = displayedText;
-  const canAdvanceLine = !disabled && !isTyping && !isPortiaReply && !loadingReply;
-  const canAdvancePortia =
-    isPortiaReply && !loadingReply && (isTyping || portiaHasNext);
-  const showPortiaArrow = isPortiaReply && !loadingReply && !isTyping && portiaHasNext;
+  const canAdvanceLine = !disabled && !isTyping && !isReply && !loadingReply;
+  const canAdvanceReply =
+    isReply && !loadingReply && (isTyping || replyHasNext);
+  const canCompleteReply =
+    isReply && !loadingReply && !isTyping && !replyHasNext;
+  const showReplyArrow = isReply && !loadingReply && !isTyping && replyHasNext;
+  const showReplyCompleteArrow = canCompleteReply;
   const resolvedLabel = speakerLabel ?? SPEAKER_LABEL[speaker] ?? speaker;
 
   const handleClick = () => {
     if (loadingReply) return;
-    if (isPortiaReply) {
+    if (isReply) {
       if (isTyping) skipToEnd();
-      else if (portiaHasNext) advancePage();
+      else if (replyHasNext) advancePage();
+      else onPortiaComplete?.();
       return;
     }
     if (isTyping) skipToEnd();
     else if (canAdvanceLine && onAdvance) onAdvance();
   };
 
-  const showArrow = (showAdvanceArrow && canAdvanceLine) || showPortiaArrow;
+  const showArrow =
+    (showAdvanceArrow && canAdvanceLine) || showReplyArrow || showReplyCompleteArrow;
+  const isClickable = canAdvanceLine || canAdvanceReply || canCompleteReply;
+
+  const loadingMessage =
+    replyMode === "tubal"
+      ? sanitizeDialogueLine(text) || "투발이 증거를 찾고 있다..."
+      : "포샤가 반응하고 있다...";
 
   return (
     <TextBox
-      speaker={isPortiaReply || loadingReply ? "PORTIA" : speaker}
-      speakerLabel={isPortiaReply || loadingReply ? "PORTIA · 판사" : resolvedLabel}
-      onClick={canAdvanceLine || canAdvancePortia ? handleClick : undefined}
+      speaker={speaker}
+      speakerLabel={resolvedLabel}
+      showSpeakerTab={showSpeakerTab}
+      onClick={isClickable ? handleClick : undefined}
       showAdvanceArrow={showArrow}
       bodyStyle={{
         minHeight: DIALOGUE_BODY_MIN_HEIGHT,
         paddingBottom: DIALOGUE_BODY_PADDING_BOTTOM,
-        cursor: canAdvanceLine || canAdvancePortia ? "pointer" : "default",
+        cursor: isClickable ? "pointer" : "default",
       }}
     >
-      {isPortiaReply ? (
+      {isReply ? (
         loadingReply ? (
           <p style={{ ...portiaReplyStyle, color: "#5a4a3a", fontSize: 13 }}>
-            포샤가 반응하고 있다...
+            {loadingMessage}
           </p>
         ) : (
           <p style={portiaReplyStyle}>

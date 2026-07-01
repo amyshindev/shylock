@@ -2,6 +2,7 @@ from pgvector.sqlalchemy import Vector
 from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
+from shylock_trial.adapter.outbound.client.evidence_embedding_client import EMBED_DIMENSION
 from shylock_trial.adapter.outbound.orm.trial_orm import Base
 
 
@@ -12,7 +13,7 @@ class PlayLineOrm(Base):
     speaker: Mapped[str] = mapped_column(String(128))
     text: Mapped[str] = mapped_column(Text)
     act_scene: Mapped[str] = mapped_column(String(32))
-    embedding: Mapped[list[float] | None] = mapped_column(Vector(1024), nullable=True)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBED_DIMENSION), nullable=True)
 
 
 class EvidenceOrm(Base):
