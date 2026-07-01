@@ -22,12 +22,28 @@ export interface Scene {
   speakerLabel?: string;
   backgroundImage: string;
   lines: SceneLine[];
+  interactionType?: "choice" | "pressPresent";
   challenge: {
     header?: string;
     text: string;
     options: ChoiceOption[];
   } | null;
+  pressPresent?: PressPresentConfig;
   availableEvidence: string[];
+}
+
+export interface PressPresentTestimony {
+  id: string;
+  text: string;
+  pressReaction: string;
+}
+
+export interface PressPresentConfig {
+  testimony: PressPresentTestimony[];
+  contradiction: {
+    statementId: string;
+    evidenceId: string;
+  };
 }
 
 export interface FallbackLine {
@@ -50,10 +66,12 @@ export interface SceneTemplate {
   speakerLabel?: string;
   backgroundImage: string;
   fallbackLines: FallbackLine[];
+  interactionType?: "choice" | "pressPresent";
   challengeTemplate: {
     header?: string;
     fallbackText: string;
     options: ChoiceTemplate[];
   } | null;
+  pressPresent?: PressPresentConfig;
   availableEvidence: string[];
 }

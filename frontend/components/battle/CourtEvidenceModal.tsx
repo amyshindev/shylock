@@ -5,6 +5,7 @@ import Image from "next/image";
 import { TextBox } from "@/components/ui/TextBox";
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { EvidenceDetailView } from "@/lib/tubal-evidence";
+import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface CourtEvidenceModalProps {
@@ -54,7 +55,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
                 <p
                   style={{
                     margin: "0 0 16px",
-                    fontSize: 13,
+                    fontSize: gameFontSize.md,
                     lineHeight: 1.6,
                     color: theme.textBright,
                   }}
@@ -66,7 +67,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
                 <p
                   style={{
                     margin: "0 0 8px",
-                    fontSize: 10,
+                    fontSize: gameFontSize.nm,
                     letterSpacing: 1,
                     color: "#7ab86a",
                     textTransform: "uppercase",
@@ -80,7 +81,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
                   margin: 0,
                   padding: "12px 16px",
                   borderLeft: "3px solid #5a8a4a",
-                  fontSize: 12,
+                  fontSize: gameFontSize.md,
                   lineHeight: 1.7,
                   fontStyle: "italic",
                   color: theme.textMuted,
@@ -120,7 +121,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
                   {meta?.iconFallback ?? "✦"}
                 </div>
               )}
-              <h3 style={{ color: theme.gold, margin: "16px 0 12px", fontSize: 16 }}>
+              <h3 style={{ color: theme.gold, margin: "16px 0 12px", fontSize: gameFontSize.lg }}>
                 {detail.name}
               </h3>
               <p
@@ -148,7 +149,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
                 marginTop: 20,
                 width: "100%",
                 padding: "10px 16px",
-                fontSize: 11,
+                fontSize: gameFontSize.sm,
                 letterSpacing: 1,
                 cursor: "pointer",
                 background: isTubal ? "rgba(90, 138, 74, 0.15)" : "rgba(255, 215, 0, 0.12)",

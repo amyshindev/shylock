@@ -1,6 +1,7 @@
 "use client";
 
 import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
+import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 import { ChoiceList } from "./ChoiceList";
@@ -10,6 +11,7 @@ import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
 import { MeterDisplay } from "./MeterDisplay";
 import { ObjectionBanner } from "./ObjectionBanner";
+import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
 
 import type { useTrialProgression } from "@/hooks/use-trial-progression";
@@ -52,9 +54,15 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isTubalActive,
     isTubalSearching,
     showChallenge,
+    showPressPresent,
+    pressPresentComplete,
+    pressedTestimonyIds,
+    testimonyIndex,
+    loadingPresent,
     objection,
     climaxMode,
     climaxQuote,
+    shylockPressReply,
     evidenceDetailView,
     loadingReply,
     loadingScene,
@@ -67,18 +75,18 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     dismissTubalMessage,
     inspectCuratedEvidence,
     inspectTubalEvidence,
-    presentCuratedEvidence,
-    presentTubalEvidence,
+    handlePressTestimony,
+    handlePresentEvidence,
     dismissEvidenceDetail,
   } = trial;
 
   const showEvidenceBar =
     (scene.availableEvidence.length > 0 || tubalCourtRecords.length > 0) &&
     !showChallenge &&
+    !showPressPresent &&
     !portiaReply &&
     !isTubalActive;
 
-  const isHathNotClimax = climaxMode && scene.id === "hath_not_moment";
   const backgroundImage = isTubalActive ? TUBAL_SCENE_IMAGE : scene.backgroundImage;
 
   const handlePortiaComplete = () => {
@@ -86,7 +94,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       dismissTubalMessage();
       return;
     }
-    void goNextScene();
+    if (pressPresentComplete || portiaReply) {
+      void goNextScene();
+    }
   };
 
   return (
@@ -138,7 +148,12 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             <SkillPanel
               dp={dp}
               disabled={
-                loadingReply || loadingScene || isTubalActive || !!portiaReply
+                loadingReply ||
+                loadingScene ||
+                loadingPresent ||
+                isTubalActive ||
+                showPressPresent ||
+                !!portiaReply
               }
               onUseSkill={useSkill}
             />
@@ -149,24 +164,45 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           <div style={textBoxDockInnerStyle()}>
             <DialogueBox
               speaker={isTubalActive ? "PORTIA" : speaker}
-              speakerLabel={isTubalActive ? "투발" : portiaReply || loadingReply ? "포샤" : speakerLabel}
+              speakerLabel={
+                isTubalActive ? "투발" : portiaReply || loadingReply ? "포샤" : speakerLabel
+              }
               showSpeakerTab={showSpeakerTab}
               text={loadingScene ? "" : dialogueText}
               replyMode={
                 isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
               }
               loadingReply={isTubalSearching || loadingReply}
-              disabled={isTypingBlocked || showChallenge || loadingScene}
+              disabled={
+                isTypingBlocked ||
+                showChallenge ||
+                loadingScene ||
+                (showPressPresent && !shylockPressReply)
+              }
               showAdvanceArrow={
-                !showChallenge &&
-                !portiaReply &&
-                !isTubalActive &&
-                !loadingReply &&
-                !loadingScene
+                (!showChallenge &&
+                  !portiaReply &&
+                  !isTubalActive &&
+                  !loadingReply &&
+                  !loadingScene &&
+                  (!showPressPresent || !!shylockPressReply))
               }
               onAdvance={advance}
               onPortiaComplete={handlePortiaComplete}
             />
+
+            {showPressPresent && scene.pressPresent && !portiaReply && !shylockPressReply && (
+              <PressPresentPanel
+                config={scene.pressPresent}
+                testimonyIndex={testimonyIndex}
+                pressedIds={pressedTestimonyIds}
+                loadingPresent={loadingPresent}
+                onPress={handlePressTestimony}
+                onPresent={() => void handlePresentEvidence()}
+                onContinue={() => void goNextScene()}
+                canContinue={pressPresentComplete}
+              />
+            )}
 
             {showChallenge && scene.challenge && !portiaReply && !isTubalActive && (
               <ChoiceList
@@ -192,7 +228,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             justifyContent: "center",
             background: "rgba(8, 3, 10, 0.75)",
             color: theme.textMuted,
-            fontSize: 14,
+            fontSize: gameFontSize.md,
             letterSpacing: 2,
           }}
         >
@@ -200,17 +236,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         </div>
       )}
       {objection && <ObjectionBanner />}
-      {isHathNotClimax && (
-        <ClimaxOverlay
-          quote={climaxQuote}
-          onContinue={dismissClimax}
-          curatedEvidenceIds={scene.availableEvidence}
-          tubalRecords={tubalCourtRecords}
-          onPresentCurated={presentCuratedEvidence}
-          onPresentTubal={presentTubalEvidence}
-        />
-      )}
-      {climaxMode && !isHathNotClimax && (
+      {climaxMode && (
         <ClimaxOverlay quote={climaxQuote} onContinue={dismissClimax} />
       )}
       {evidenceDetailView && !objection && (

@@ -78,14 +78,10 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
             DialogueLineKind.SPEECH,
             DialogueLineKind.NARRATION,
         ),
-        challenge_header="▶ 샤일록의 선택",
-        canonical_challenge_text="군중의 조롱에 당신은—",
-        choice_ids=("show_gaberdine", "ignore_court", "rage_at_crowd"),
-        canonical_choice_texts={
-            "show_gaberdine": "외투의 침 자국을 보여준다",
-            "ignore_court": "무시하고 판사를 바라본다",
-            "rage_at_crowd": "분노로 맞선다",
-        },
+        challenge_header=None,
+        canonical_challenge_text=None,
+        choice_ids=(),
+        canonical_choice_texts={},
     ),
     SceneTemplate(
         scene_id="jessica_attack",

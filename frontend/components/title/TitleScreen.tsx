@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { TextBox } from "@/components/ui/TextBox";
 import { startTrial } from "@/lib/api-client/trial-progression";
+import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 export function TitleScreen() {
@@ -42,7 +43,7 @@ export function TitleScreen() {
         style={{
           color: "#6a2a3a",
           letterSpacing: 8,
-          fontSize: 11,
+          fontSize: gameFontSize.sm,
           marginBottom: 14,
           textTransform: "uppercase",
         }}
@@ -61,7 +62,7 @@ export function TitleScreen() {
       >
         샤일록의 법정
       </h1>
-      <p style={{ color: "#7a5a4a", fontSize: 13, fontStyle: "italic", marginBottom: 28 }}>
+      <p style={{ color: "#7a5a4a", fontSize: gameFontSize.md, fontStyle: "italic", marginBottom: 28 }}>
         당신은 유죄인가, 피해자인가.
       </p>
 
@@ -71,7 +72,7 @@ export function TitleScreen() {
         style={{ maxWidth: 380, marginBottom: 32 }}
         bodyStyle={{ textAlign: "center", padding: "16px 20px" }}
       >
-        <p style={{ color: theme.textBright, fontSize: 13, lineHeight: 2, margin: 0 }}>
+        <p style={{ color: theme.textBright, fontSize: gameFontSize.md, lineHeight: 2, margin: 0 }}>
           베네치아, 1596년.
           <br />
           당신은 <span style={{ color: theme.gold }}>샤일록</span>이다.
@@ -88,7 +89,7 @@ export function TitleScreen() {
         disabled={loading}
         style={{
           padding: "14px 48px",
-          fontSize: 15,
+          fontSize: gameFontSize.base,
           fontWeight: 700,
           letterSpacing: 4,
           textTransform: "uppercase",
@@ -103,7 +104,7 @@ export function TitleScreen() {
         {loading ? "법정으로 들어가는 중…" : "법정에 서다"}
       </button>
       {error && (
-        <p style={{ color: "#c44", marginTop: 20, fontSize: 13 }}>{error}</p>
+        <p style={{ color: "#c44", marginTop: 20, fontSize: gameFontSize.md }}>{error}</p>
       )}
     </div>
   );

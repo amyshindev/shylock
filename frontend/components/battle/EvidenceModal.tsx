@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { TextBox } from "@/components/ui/TextBox";
 import { EVIDENCE_BY_ID } from "@/data/evidence";
+import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface EvidenceModalProps {
@@ -68,12 +69,12 @@ export function EvidenceModal({ evidenceId, name, quote }: EvidenceModalProps) {
             {meta?.iconFallback ?? "✦"}
           </div>
         )}
-        <h3 style={{ color: theme.gold, margin: "16px 0 12px", fontSize: 16 }}>{name}</h3>
+        <h3 style={{ color: theme.gold, margin: "16px 0 12px", fontSize: gameFontSize.lg }}>{name}</h3>
         <p
           style={{
             margin: 0,
             color: "#d4b060",
-            fontSize: 13,
+            fontSize: gameFontSize.md,
             lineHeight: 1.8,
             fontStyle: "italic",
             borderLeft: "2px solid rgba(255, 215, 0, 0.25)",

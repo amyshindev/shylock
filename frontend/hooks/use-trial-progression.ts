@@ -9,6 +9,7 @@ import {
   generateEnding,
   getTrial,
   invokeTubalSkill,
+  presentEvidence,
   submitChoice,
 } from "@/lib/api-client/trial-progression";
 import type {
@@ -91,6 +92,12 @@ export function useTrialProgression(trialId: string) {
   const [showChallenge, setShowChallenge] = useState(false);
   const [objection, setObjection] = useState(false);
   const [climaxMode, setClimaxMode] = useState(false);
+  const [showPressPresent, setShowPressPresent] = useState(false);
+  const [testimonyIndex, setTestimonyIndex] = useState(0);
+  const [shylockPressReply, setShylockPressReply] = useState<string | null>(null);
+  const [pressedTestimonyIds, setPressedTestimonyIds] = useState<string[]>([]);
+  const [loadingPresent, setLoadingPresent] = useState(false);
+  const [pressPresentComplete, setPressPresentComplete] = useState(false);
   const [evidenceDetailView, setEvidenceDetailView] = useState<EvidenceDetailView | null>(null);
   const [tubalCourtRecords, setTubalCourtRecords] = useState<TubalCourtRecord[]>([]);
   const [tubalPhase, setTubalPhase] = useState<TubalSkillPhase>("idle");
@@ -120,20 +127,57 @@ export function useTrialProgression(trialId: string) {
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
 
+  const currentTestimony = scene.pressPresent?.testimony[testimonyIndex];
+
   const dialogueText = useMemo(() => {
     if (loadingScene) return "";
     if (tubalPhase === "intro") return TUBAL_INTRO_LINE;
     if (isTubalSearching) return TUBAL_SEARCHING_LINE;
     if (tubalMessage) return tubalMessage;
     if (portiaReply) return portiaReply;
+    if (shylockPressReply) return shylockPressReply;
+    if (showPressPresent && currentTestimony) return currentTestimony.text;
     return currentLine;
-  }, [loadingScene, tubalPhase, isTubalSearching, tubalMessage, portiaReply, currentLine]);
+  }, [
+    loadingScene,
+    tubalPhase,
+    isTubalSearching,
+    tubalMessage,
+    portiaReply,
+    shylockPressReply,
+    showPressPresent,
+    pressPresentComplete,
+    currentTestimony,
+    currentLine,
+  ]);
 
-  const speaker = portiaReply || isTubalActive ? "PORTIA" : scene.speaker;
-  const speakerLabel = isTubalActive ? "투발" : portiaReply ? "포샤" : scene.speakerLabel;
+  const speaker = portiaReply || isTubalActive
+    ? "PORTIA"
+    : shylockPressReply
+      ? "SHYLOCK"
+      : showPressPresent
+        ? "CROWD"
+        : scene.speaker;
+  const speakerLabel = isTubalActive
+    ? "투발"
+    : portiaReply
+      ? "포샤"
+      : shylockPressReply
+        ? "샤일록"
+        : showPressPresent
+          ? scene.speakerLabel ?? "군중"
+          : scene.speakerLabel;
   const showSpeakerTab =
     !loadingScene &&
-    (portiaReply ? true : isTubalActive ? true : currentLineEntry?.kind === "speech");
+    (portiaReply
+      ? true
+      : isTubalActive
+        ? true
+        : shylockPressReply
+          ? true
+          : showPressPresent
+            ? true
+            : currentLineEntry?.kind === "speech");
 
   const buildCuratedDetail = useCallback(
     (evidenceId: string): EvidenceDetailView => {
@@ -276,6 +320,11 @@ export function useTrialProgression(trialId: string) {
     setPortiaReply("");
     setTubalPhase("idle");
     setTubalMessage(null);
+    setShowPressPresent(false);
+    setTestimonyIndex(0);
+    setShylockPressReply(null);
+    setPressedTestimonyIds([]);
+    setPressPresentComplete(false);
     setClimaxMode(false);
     setShowChallenge(false);
     setLineIdx(0);
@@ -318,8 +367,25 @@ export function useTrialProgression(trialId: string) {
     }
     if (portiaReply || tubalMessage || tubalPhase === "intro") return;
 
+    if (shylockPressReply) {
+      setShylockPressReply(null);
+      if (
+        scene.pressPresent &&
+        testimonyIndex < scene.pressPresent.testimony.length - 1
+      ) {
+        setTestimonyIndex((index) => index + 1);
+      }
+      return;
+    }
+
     if (!isLastLine) {
       setLineIdx((i) => i + 1);
+      return;
+    }
+
+    if (scene.pressPresent && !showPressPresent && !pressPresentComplete) {
+      setShowPressPresent(true);
+      setTestimonyIndex(0);
       return;
     }
 
@@ -342,6 +408,11 @@ export function useTrialProgression(trialId: string) {
     showChallenge,
     isLastScene,
     goNextScene,
+    showPressPresent,
+    pressPresentComplete,
+    scene.pressPresent,
+    shylockPressReply,
+    testimonyIndex,
   ]);
 
   const runChoiceSequence = useCallback(
@@ -364,13 +435,6 @@ export function useTrialProgression(trialId: string) {
 
       if (option.evidence) {
         await showEvidenceFlow();
-      }
-
-      if (option.special === "climax") {
-        setClimaxMode(true);
-        await new Promise<void>((resolve) => {
-          climaxResolveRef.current = resolve;
-        });
       }
 
       if (triggerGameOverIfNeeded(nextHp, nextDp)) {
@@ -498,6 +562,62 @@ export function useTrialProgression(trialId: string) {
     [phase, loadingReply, loadingScene, loadingTubal, isTubalActive, dp, startTubalSkill],
   );
 
+  const handlePressTestimony = useCallback(() => {
+    if (!scene.pressPresent) return;
+    const testimony = scene.pressPresent.testimony[testimonyIndex];
+    if (!testimony || pressedTestimonyIds.includes(testimony.id)) return;
+    setPressedTestimonyIds((prev) => [...prev, testimony.id]);
+    setShylockPressReply(testimony.pressReaction);
+  }, [scene.pressPresent, testimonyIndex, pressedTestimonyIds]);
+
+  const handlePresentEvidence = useCallback(async () => {
+    if (!scene.pressPresent || loadingPresent) return;
+
+    const evidenceId = scene.pressPresent.contradiction.evidenceId;
+    const evidenceText =
+      quotesById[evidenceId]?.quote ?? EVIDENCE_BY_ID[evidenceId]?.desc ?? "";
+    if (!evidenceText) return;
+
+    setLoadingPresent(true);
+    setError(null);
+
+    try {
+      await presentEvidenceDetail(buildCuratedDetail(evidenceId));
+      const res = await presentEvidence(trialId, {
+        scene_id: scene.id,
+        evidence_id: evidenceId,
+        evidence_text: evidenceText,
+      });
+
+      setShylockHp(res.shylock_hp);
+      setDp(res.dp);
+      setPortiaHp(res.portia_hp);
+
+      if (res.contradiction_valid) {
+        setClimaxMode(true);
+        await new Promise<void>((resolve) => {
+          climaxResolveRef.current = resolve;
+        });
+      }
+
+      setPortiaReply(extractPortiaText(res.portia_response));
+      setShowPressPresent(false);
+      setPressPresentComplete(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Present evidence failed");
+    } finally {
+      setLoadingPresent(false);
+    }
+  }, [
+    scene.pressPresent,
+    scene.id,
+    loadingPresent,
+    quotesById,
+    trialId,
+    buildCuratedDetail,
+    presentEvidenceDetail,
+  ]);
+
   const dismissTubalMessage = useCallback(() => {
     if (tubalPhase === "intro") {
       void executeTubalSearch();
@@ -531,9 +651,15 @@ export function useTrialProgression(trialId: string) {
     loadingReply,
     loadingScene,
     showChallenge,
+    showPressPresent,
+    pressPresentComplete,
+    pressedTestimonyIds,
+    testimonyIndex,
+    loadingPresent,
     objection,
     climaxMode,
     climaxQuote: HATH_NOT_QUOTE,
+    shylockPressReply,
     evidenceDetailView,
     ending,
     error,
@@ -542,6 +668,7 @@ export function useTrialProgression(trialId: string) {
       loadingReply ||
       loadingScene ||
       loadingTubal ||
+      loadingPresent ||
       !!evidenceDetailView ||
       climaxMode ||
       objection ||
@@ -554,9 +681,10 @@ export function useTrialProgression(trialId: string) {
     useSkill,
     dismissClimax,
     dismissTubalMessage,
+    handlePressTestimony,
+    handlePresentEvidence,
     inspectCuratedEvidence,
     inspectTubalEvidence,
-    presentCuratedEvidence,
     presentTubalEvidence,
     dismissEvidenceDetail,
   };

@@ -5,6 +5,36 @@ import type { Speaker } from "@/data/scenes";
 export const gameFontFamily =
   '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif';
 
+/** Shared in-game typography scale (px). */
+export const gameFontSize = {
+  xs: 11,
+  sm: 13,
+  nm: 14,
+  md: 15,
+  base: 17,
+  lg: 19,
+  xl: 22,
+} as const;
+
+/** Shared HUD panel chrome (meters, evidence, skills). */
+export function hudPanelStyle(padding = "6px 11px"): CSSProperties {
+  return {
+    background: "rgba(12, 6, 16, 0.94)",
+    borderRadius: 4,
+    padding,
+    border: "1px solid #4a2838",
+    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.45)",
+  };
+}
+
+export function hudLabelStyle(color: string): CSSProperties {
+  return {
+    color,
+    fontWeight: 600,
+    textShadow: "0 1px 2px rgba(0, 0, 0, 0.6)",
+  };
+}
+
 export const textBox = {
   background: "rgba(18, 12, 24, 0.85)",
   border: "1px solid #3a1028",
@@ -27,8 +57,8 @@ export function speakerTabStyle(speaker: string): CSSProperties {
     background: palette.bg,
     color: palette.color,
     border: "1px solid #3a1028",
-    padding: "5px 18px",
-    fontSize: 11,
+    padding: "6px 20px",
+    fontSize: gameFontSize.sm,
     fontWeight: 700,
     letterSpacing: 3,
     textTransform: "uppercase",
@@ -40,7 +70,7 @@ export function speakerTabStyle(speaker: string): CSSProperties {
 export function dialogueTextStyle(speaker: string): CSSProperties {
   return {
     margin: 0,
-    fontSize: 15,
+    fontSize: gameFontSize.base,
     lineHeight: 1.75,
     fontFamily: gameFontFamily,
     color: speaker === "NARRATOR" ? "#9a8aaa" : "#e8e0d0",
@@ -61,10 +91,10 @@ export function textBoxPanelStyle(): CSSProperties {
   };
 }
 
-export const TEXT_BOX_MAX_WIDTH = 640;
+export const TEXT_BOX_MAX_WIDTH = 680;
 
 /** Stable body height (~3 lines) so the box does not resize while typing. */
-export const DIALOGUE_BODY_MIN_HEIGHT = 84;
+export const DIALOGUE_BODY_MIN_HEIGHT = 96;
 
 /** Bottom padding always reserved for the advance arrow slot. */
 export const DIALOGUE_BODY_PADDING_BOTTOM = 28;
@@ -94,14 +124,14 @@ export function choiceButtonStyle(): CSSProperties {
     justifyContent: "space-between",
     gap: 12,
     width: "100%",
-    padding: "9px 14px",
+    padding: "11px 16px",
     textAlign: "left",
     background: "#100510",
     border: "1px solid #3a1828",
     borderRadius: 2,
     color: "#e0c090",
     cursor: "pointer",
-    fontSize: 13,
+    fontSize: gameFontSize.md,
     fontFamily: textBox.fontFamily,
     lineHeight: 1.5,
     transition: "all 0.15s",
@@ -111,14 +141,14 @@ export function choiceButtonStyle(): CSSProperties {
 export function nextSceneButtonStyle(): CSSProperties {
   return {
     width: "100%",
-    padding: "10px",
+    padding: "12px",
     background: "#1a0810",
     color: "#c0a060",
     border: "1px solid #4a1828",
     borderRadius: 2,
     cursor: "pointer",
     fontFamily: textBox.fontFamily,
-    fontSize: 12,
+    fontSize: gameFontSize.nm,
     letterSpacing: 3,
     transition: "all 0.15s",
   };

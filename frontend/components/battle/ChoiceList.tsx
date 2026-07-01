@@ -4,7 +4,7 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { ChoiceOption } from "@/data/scenes";
-import { choiceButtonStyle } from "@/styles/text-box";
+import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface ChoiceListProps {
@@ -26,7 +26,7 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
         alignItems: "center",
         gap: 6,
         flexShrink: 0,
-        fontSize: 11,
+        fontSize: gameFontSize.sm,
         color: "#8b6040",
       }}
     >
@@ -48,7 +48,7 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 11,
+            fontSize: gameFontSize.sm,
           }}
         >
           {ev.iconFallback ?? "✦"}
@@ -69,8 +69,8 @@ export function ChoiceList({
   return (
     <div
       style={{
-        padding: "10px 12px 12px",
-        marginTop: 8,
+        padding: "12px 14px 14px",
+        marginTop: 10,
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -78,10 +78,10 @@ export function ChoiceList({
     >
       <div
         style={{
-          fontSize: 10,
+          fontSize: gameFontSize.nm,
           color: "#5a3a4a",
           letterSpacing: 2,
-          marginBottom: 8,
+          marginBottom: 10,
           paddingLeft: 4,
         }}
       >
@@ -91,7 +91,7 @@ export function ChoiceList({
         style={{
           margin: "0 0 8px",
           paddingLeft: 4,
-          fontSize: 12,
+          fontSize: gameFontSize.md,
           lineHeight: 1.6,
           color: "#7a5a6a",
           fontStyle: "italic",

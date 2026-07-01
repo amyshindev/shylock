@@ -7,6 +7,7 @@ import type {
   SubmitChoiceResponse,
   TrialState,
   TubalSkillResponse,
+  PresentEvidenceResponse,
 } from "./types";
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -77,4 +78,22 @@ export async function invokeTubalSkill(
     body: JSON.stringify(body),
   });
   return parseJson<TubalSkillResponse>(res);
+}
+
+export interface PresentEvidenceBody {
+  scene_id: string;
+  evidence_id: string;
+  evidence_text: string;
+}
+
+export async function presentEvidence(
+  trialId: string,
+  body: PresentEvidenceBody,
+): Promise<PresentEvidenceResponse> {
+  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/present-evidence`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return parseJson<PresentEvidenceResponse>(res);
 }

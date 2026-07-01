@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { TubalCourtRecord } from "@/lib/tubal-evidence";
+import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface EvidenceListProps {
@@ -15,8 +16,10 @@ interface EvidenceListProps {
   compact?: boolean;
 }
 
-const TUBAL_BORDER = "#5a8a4a";
-const CURATED_BORDER = "#3a1028";
+const TUBAL_BORDER = "#6aaa5a";
+const TUBAL_LABEL = "#b8f0a0";
+const CURATED_BORDER = "#c8a060";
+const CURATED_LABEL = "#f0d8b8";
 
 export function EvidenceList({
   curatedIds,
@@ -31,37 +34,25 @@ export function EvidenceList({
 
   if (!hasItems) return null;
 
-  const iconSize = compact ? 40 : 48;
-  const itemWidth = compact ? 48 : 56;
+  const iconSize = compact ? 44 : 52;
+  const itemWidth = compact ? 52 : 64;
 
   return (
     <div
       style={{
+        ...hudPanelStyle("8px 11px"),
         display: "flex",
         flexDirection: "column-reverse",
         alignItems: "flex-start",
         gap: 8,
         maxHeight: compact ? "min(28vh, 200px)" : "min(40vh, 280px)",
         overflowY: "auto",
-        padding: "8px 10px",
-        background: "rgba(18, 12, 24, 0.85)",
-        borderRadius: 10,
-        border: `1px solid ${presentMode ? theme.gold : CURATED_BORDER}`,
+        border: `1px solid ${presentMode ? theme.gold : "#4a2838"}`,
+        boxShadow: presentMode
+          ? "0 2px 12px rgba(255, 215, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.45)"
+          : "0 2px 8px rgba(0, 0, 0, 0.45)",
       }}
     >
-      {presentMode && (
-        <div
-          style={{
-            fontSize: 9,
-            letterSpacing: 1,
-            color: theme.gold,
-            marginBottom: 2,
-          }}
-        >
-          증거 제시
-        </div>
-      )}
-
       {tubalRecords.map((record) => {
         const clickable = Boolean(onSelectTubal);
         return (
@@ -87,8 +78,9 @@ export function EvidenceList({
                   width: iconSize,
                   height: iconSize,
                   borderRadius: "50%",
-                  background: "rgba(20, 32, 16, 0.95)",
+                  background: "rgba(20, 32, 16, 0.98)",
                   border: `2px solid ${TUBAL_BORDER}`,
+                  boxShadow: `0 0 8px ${TUBAL_BORDER}44`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -100,9 +92,9 @@ export function EvidenceList({
             </div>
             <div
               style={{
-                fontSize: 9,
-                color: "#7ab86a",
-                marginTop: 4,
+                ...hudLabelStyle(TUBAL_LABEL),
+                fontSize: gameFontSize.xs,
+                marginTop: 5,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -144,6 +136,7 @@ export function EvidenceList({
                   borderRadius: "50%",
                   objectFit: "cover",
                   border: `2px solid ${CURATED_BORDER}`,
+                  boxShadow: `0 0 8px ${CURATED_BORDER}44`,
                 }}
                 onError={(e) => {
                   const el = e.target as HTMLImageElement;
@@ -157,8 +150,9 @@ export function EvidenceList({
                   height: iconSize,
                   margin: 0,
                   borderRadius: "50%",
-                  background: theme.border,
+                  background: "#2a1828",
                   border: `2px solid ${CURATED_BORDER}`,
+                  boxShadow: `0 0 8px ${CURATED_BORDER}44`,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -171,9 +165,9 @@ export function EvidenceList({
             )}
             <div
               style={{
-                fontSize: 9,
-                color: theme.textMuted,
-                marginTop: 4,
+                ...hudLabelStyle(CURATED_LABEL),
+                fontSize: gameFontSize.xs,
+                marginTop: 5,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap",
@@ -185,6 +179,18 @@ export function EvidenceList({
           </button>
         );
       })}
+
+      <div
+        style={{
+          ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
+          fontSize: gameFontSize.xs,
+          letterSpacing: presentMode ? 1 : 0.8,
+          marginBottom: 2,
+          flexShrink: 0,
+        }}
+      >
+        {presentMode ? "증거 제시" : "증거"}
+      </div>
     </div>
   );
 }

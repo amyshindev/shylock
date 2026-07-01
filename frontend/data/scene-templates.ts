@@ -63,39 +63,32 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     speaker: "CROWD",
     speakerLabel: "군중",
     backgroundImage: "/assets/scene-crowd-jeers.png",
+    interactionType: "pressPresent",
     fallbackLines: [
       { text: '"저 유대인을 보라!"', kind: S },
       { text: '"자비도 모르는 자가!"', kind: S },
       { text: "웅성거림이 법정을 가득 채운다.", kind: N },
     ],
-    challengeTemplate: {
-      header: "▶ 샤일록의 선택",
-      fallbackText: "군중의 조롱에 당신은—",
-      options: [
+    challengeTemplate: null,
+    pressPresent: {
+      testimony: [
         {
-          id: "show_gaberdine",
-          fallbackText: "외투의 침 자국을 보여준다",
-          evidence: "gaberdine",
-          dpChange: 15,
-          shylockHpChange: 10,
+          id: "t1",
+          text: "저 유대인을 보라! 자비도 모르는 자가!",
+          pressReaction: "그렇소! 법만 따를 뿐이오!",
         },
         {
-          id: "ignore_court",
-          fallbackText: "무시하고 판사를 바라본다",
-          evidence: null,
-          dpChange: 5,
-          shylockHpChange: 5,
-        },
-        {
-          id: "rage_at_crowd",
-          fallbackText: "분노로 맞선다",
-          evidence: null,
-          dpChange: -10,
-          shylockHpChange: -10,
+          id: "t2",
+          text: "이 자는 인간이 아니라 짐승이오.",
+          pressReaction: "짐승이라니... 계속하시오.",
         },
       ],
+      contradiction: {
+        statementId: "t2",
+        evidenceId: "hath_not",
+      },
     },
-    availableEvidence: ["gaberdine", "bond"],
+    availableEvidence: ["hath_not", "gaberdine", "bond"],
   },
   {
     id: "jessica_attack",
@@ -156,7 +149,6 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
           evidence: "hath_not",
           dpChange: 30,
           shylockHpChange: 5,
-          special: "climax",
         },
         {
           id: "bond_only",

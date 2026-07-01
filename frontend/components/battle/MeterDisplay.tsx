@@ -5,7 +5,7 @@ import {
   PORTIA_HP_MAX,
   SHYLOCK_HP_MAX,
 } from "@/lib/constants/game-balance";
-import { theme } from "@/styles/theme";
+import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 
 interface MeterDisplayProps {
   shylockHp: number;
@@ -18,56 +18,66 @@ function MeterBar({
   value,
   max,
   color,
+  labelColor = "#e8dce4",
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
+  labelColor?: string;
 }) {
   const clamped = Math.max(0, Math.min(max, value));
   const pct = max > 0 ? (clamped / max) * 100 : 0;
 
   return (
-    <div
-      style={{
-        background: "rgba(8, 3, 10, 0.75)",
-        borderRadius: 3,
-        padding: "4px 9px",
-        border: "1px solid #2a1020",
-      }}
-    >
+    <div style={hudPanelStyle()}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: 9,
+          fontSize: gameFontSize.xs,
           letterSpacing: 0.8,
-          marginBottom: 3,
+          marginBottom: 5,
           gap: 6,
         }}
       >
-        <span style={{ color: "#5a3a4a", whiteSpace: "nowrap" }}>{label}</span>
-        <span style={{ color, fontWeight: 700, fontSize: 9 }}>
+        <span
+          style={{
+            ...hudLabelStyle(labelColor),
+            whiteSpace: "nowrap",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            color,
+            fontWeight: 700,
+            fontSize: gameFontSize.xs,
+            textShadow: `0 0 6px ${color}66`,
+          }}
+        >
           {clamped}/{max}
         </span>
       </div>
       <div
         style={{
-          background: "#1a0814",
-          height: 4,
+          background: "#120810",
+          height: 5,
           borderRadius: 2,
           overflow: "hidden",
+          border: "1px solid #2a1828",
         }}
       >
         <div
           style={{
             width: `${pct}%`,
             height: "100%",
-            background: `linear-gradient(90deg, ${color}80, ${color})`,
+            background: `linear-gradient(90deg, ${color}99, ${color})`,
             borderRadius: 2,
             transition: "width 0.5s ease",
-            boxShadow: `0 0 5px ${color}55`,
+            boxShadow: `0 0 6px ${color}88`,
           }}
         />
       </div>
@@ -77,22 +87,23 @@ function MeterBar({
 
 function shylockHpColor(value: number): string {
   const ratio = value / SHYLOCK_HP_MAX;
-  if (ratio > 0.5) return "#ff6666";
-  if (ratio > 0.25) return "#ff4444";
-  return "#cc2222";
+  if (ratio > 0.5) return "#ff7777";
+  if (ratio > 0.25) return "#ff5555";
+  return "#ee3333";
 }
 
 function dpColor(value: number): string {
-  if (value > 60) return theme.gold;
-  if (value > 30) return "#ffaa44";
-  return "#ff8844";
+  const ratio = value / DP_MAX;
+  if (ratio > 0.6) return "#66bbff";
+  if (ratio > 0.3) return "#4499ee";
+  return "#3388dd";
 }
 
 function portiaHpColor(value: number): string {
   const ratio = value / PORTIA_HP_MAX;
-  if (ratio > 0.5) return "#44aaff";
-  if (ratio > 0.25) return "#3388dd";
-  return "#2266bb";
+  if (ratio > 0.5) return "#ff6666";
+  if (ratio > 0.25) return "#ff4444";
+  return "#dd3333";
 }
 
 const LEFT_METER_COLUMN_WIDTH = 336;
@@ -100,7 +111,7 @@ const PORTIA_METER_COLUMN_WIDTH = 336;
 const LEFT_HUD_INSET = 10;
 const LEFT_HUD_TOP = 8;
 /** Approx. height of HP + DP bars (used to stack skill panel below). */
-const LEFT_METERS_STACK_HEIGHT = 58;
+const LEFT_METERS_STACK_HEIGHT = 66;
 
 export {
   LEFT_METER_COLUMN_WIDTH,
@@ -140,8 +151,15 @@ export function MeterDisplay({ shylockHp, dp, portiaHp }: MeterDisplayProps) {
           value={shylockHp}
           max={SHYLOCK_HP_MAX}
           color={shylockHpColor(shylockHp)}
+          labelColor="#ffc8c8"
         />
-        <MeterBar label="존엄 (DP)" value={dp} max={DP_MAX} color={dpColor(dp)} />
+        <MeterBar
+          label="존엄 (DP)"
+          value={dp}
+          max={DP_MAX}
+          color={dpColor(dp)}
+          labelColor="#b8dcff"
+        />
       </div>
 
       <div style={{ width: PORTIA_METER_COLUMN_WIDTH, flexShrink: 0 }}>
@@ -150,6 +168,7 @@ export function MeterDisplay({ shylockHp, dp, portiaHp }: MeterDisplayProps) {
           value={portiaHp}
           max={PORTIA_HP_MAX}
           color={portiaHpColor(portiaHp)}
+          labelColor="#ffb8b8"
         />
       </div>
     </div>

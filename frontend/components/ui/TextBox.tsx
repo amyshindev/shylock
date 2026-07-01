@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
-import { speakerTabStyle, textBoxPanelStyle } from "@/styles/text-box";
+import { speakerTabStyle, textBoxPanelStyle, gameFontSize } from "@/styles/text-box";
 
 interface TextBoxProps {
   speaker?: string;
@@ -51,8 +51,8 @@ export function TextBox({
       <div
         onClick={onClick}
         style={{
-          padding: displayTab ? "14px 20px 8px" : "20px 24px 8px",
-          minHeight: displayTab ? 72 : undefined,
+          padding: displayTab ? "16px 22px 10px" : "22px 26px 10px",
+          minHeight: displayTab ? 84 : undefined,
           cursor: onClick ? "pointer" : "default",
           position: "relative",
           boxSizing: "border-box",
@@ -70,7 +70,7 @@ export function TextBox({
               right: 16,
               bottom: 8,
               color: "#ffd700",
-              fontSize: 12,
+              fontSize: gameFontSize.nm,
               lineHeight: 1,
             }}
           >

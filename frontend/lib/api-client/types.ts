@@ -83,3 +83,13 @@ export interface TubalSkillResponse {
   act_scene: string | null;
   tubal_comment: string | null;
 }
+
+export interface PresentEvidenceResponse {
+  trial_id: string;
+  shylock_hp: number;
+  dp: number;
+  portia_hp: number;
+  contradiction_valid: boolean;
+  portia_response: string;
+  portia_hp_change: number;
+}

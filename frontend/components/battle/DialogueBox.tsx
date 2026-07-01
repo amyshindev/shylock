@@ -5,7 +5,7 @@ import { useDialoguePages } from "@/hooks/use-dialogue-pages";
 import { useTypingEffect } from "@/hooks/use-typing-effect";
 import { extractPortiaText } from "@/lib/portia-text";
 import { sanitizeDialogueLine } from "@/lib/game-text";
-import { dialogueTextStyle, gameFontFamily, DIALOGUE_BODY_MIN_HEIGHT, DIALOGUE_BODY_PADDING_BOTTOM } from "@/styles/text-box";
+import { dialogueTextStyle, gameFontFamily, DIALOGUE_BODY_MIN_HEIGHT, DIALOGUE_BODY_PADDING_BOTTOM, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 const SPEAKER_LABEL: Record<string, string> = {
@@ -17,7 +17,7 @@ const SPEAKER_LABEL: Record<string, string> = {
 const portiaReplyStyle = {
   margin: 0,
   color: "#e8e0d0",
-  fontSize: 15,
+  fontSize: gameFontSize.base,
   lineHeight: 1.75,
   fontFamily: gameFontFamily,
   whiteSpace: "pre-wrap" as const,
@@ -109,7 +109,7 @@ export function DialogueBox({
     >
       {isReply ? (
         loadingReply ? (
-          <p style={{ ...portiaReplyStyle, color: "#5a4a3a", fontSize: 13 }}>
+          <p style={{ ...portiaReplyStyle, color: "#5a4a3a", fontSize: gameFontSize.md }}>
             {loadingMessage}
           </p>
         ) : (

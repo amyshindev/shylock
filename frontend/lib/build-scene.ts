@@ -32,6 +32,20 @@ export function buildScene(
 ): Scene {
   const lines = mergeLines(template, dialogue);
 
+  if (template.interactionType === "pressPresent" && template.pressPresent) {
+    return {
+      id: template.id,
+      speaker: template.speaker,
+      speakerLabel: template.speakerLabel,
+      backgroundImage: template.backgroundImage,
+      lines,
+      interactionType: "pressPresent",
+      challenge: null,
+      pressPresent: template.pressPresent,
+      availableEvidence: template.availableEvidence,
+    };
+  }
+
   if (!template.challengeTemplate) {
     return {
       id: template.id,
