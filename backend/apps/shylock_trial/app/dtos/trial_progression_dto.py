@@ -56,3 +56,14 @@ class GenerateEndingResultDto:
     dp: int
     portia_hp: int
     alien_law_executed: bool
+
+
+@dataclass(frozen=True, slots=True)
+class LauncelotSkillResultDto:
+    trial_id: UUID
+    dp: int
+    portia_hp: int
+    launcelot_comment: str = (
+        "론슬롯이 갑자기 법정으로 뛰어들었다! "
+        "포샤가 당황하여 잠시 말을 잃었다."
+    )

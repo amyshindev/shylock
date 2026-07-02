@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     AdvanceSceneResponse,
     EndingResponse,
+    LauncelotSkillResponse,
     SceneDialogueLineResponse,
     SceneDialogueResponse,
     StartTrialResponse,
@@ -144,3 +145,23 @@ async def generate_ending(
         portia_hp=result.portia_hp,
         alien_law_executed=result.alien_law_executed,
     )
+
+
+@trial_progression_router.post(
+    "/{trial_id}/skills/launcelot",
+    response_model=LauncelotSkillResponse,
+)
+async def use_launcelot_skill(
+    trial_id: UUID,
+    use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
+) -> LauncelotSkillResponse:
+    try:
+        result = await use_case.use_launcelot_skill(trial_id)
+        return LauncelotSkillResponse(
+            trial_id=result.trial_id,
+            dp=result.dp,
+            portia_hp=result.portia_hp,
+            launcelot_comment=result.launcelot_comment,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

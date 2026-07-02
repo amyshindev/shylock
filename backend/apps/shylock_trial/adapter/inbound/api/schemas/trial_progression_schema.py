@@ -197,3 +197,10 @@ class EndingResponse(BaseModel):
     dp: int
     portia_hp: int
     alien_law_executed: bool
+
+
+class LauncelotSkillResponse(BaseModel):
+    trial_id: UUID
+    dp: int
+    portia_hp: int
+    launcelot_comment: str

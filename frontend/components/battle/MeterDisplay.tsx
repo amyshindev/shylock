@@ -11,6 +11,7 @@ interface MeterDisplayProps {
   shylockHp: number;
   dp: number;
   portiaHp: number;
+  portiaHpTransition?: string;
 }
 
 function MeterBar({
@@ -19,12 +20,14 @@ function MeterBar({
   max,
   color,
   labelColor = "#e8dce4",
+  barTransition = "width 0.5s ease",
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
   labelColor?: string;
+  barTransition?: string;
 }) {
   const clamped = Math.max(0, Math.min(max, value));
   const pct = max > 0 ? (clamped / max) * 100 : 0;
@@ -76,7 +79,7 @@ function MeterBar({
             height: "100%",
             background: `linear-gradient(90deg, ${color}99, ${color})`,
             borderRadius: 2,
-            transition: "width 0.5s ease",
+            transition: barTransition,
             boxShadow: `0 0 6px ${color}88`,
           }}
         />
@@ -121,7 +124,12 @@ export {
   LEFT_METERS_STACK_HEIGHT,
 };
 
-export function MeterDisplay({ shylockHp, dp, portiaHp }: MeterDisplayProps) {
+export function MeterDisplay({
+  shylockHp,
+  dp,
+  portiaHp,
+  portiaHpTransition = "width 0.5s ease",
+}: MeterDisplayProps) {
   return (
     <div
       style={{
@@ -169,6 +177,7 @@ export function MeterDisplay({ shylockHp, dp, portiaHp }: MeterDisplayProps) {
           max={PORTIA_HP_MAX}
           color={portiaHpColor(portiaHp)}
           labelColor="#ffb8b8"
+          barTransition={portiaHpTransition}
         />
       </div>
     </div>

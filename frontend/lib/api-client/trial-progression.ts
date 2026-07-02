@@ -7,6 +7,7 @@ import type {
   SubmitChoiceResponse,
   TrialState,
   TubalSkillResponse,
+  LauncelotSkillResponse,
   PresentEvidenceResponse,
 } from "./types";
 
@@ -86,6 +87,13 @@ export async function invokeTubalSkill(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+}
+
+export async function useLauncelotSkill(trialId: string): Promise<LauncelotSkillResponse> {
+  return requestJson<LauncelotSkillResponse>(
+    `${API_BASE}${API_PREFIX}/trials/${trialId}/skills/launcelot`,
+    { method: "POST" },
+  );
 }
 
 export interface PresentEvidenceBody {

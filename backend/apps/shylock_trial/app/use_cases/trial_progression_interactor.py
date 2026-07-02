@@ -4,6 +4,8 @@ import asyncio
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
+    LAUNCELOT_PORTIA_HP_DAMAGE,
+    LAUNCELOT_SKILL_COST,
     PORTIA_HP_MAX,
     SHYLOCK_DP_START,
     SHYLOCK_HP_MAX,
@@ -24,6 +26,7 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
 from shylock_trial.app.dtos.trial_progression_dto import (
     AdvanceSceneResultDto,
     GenerateEndingResultDto,
+    LauncelotSkillResultDto,
     StartTrialResultDto,
     SubmitChoiceInputDto,
     SubmitChoiceResultDto,
@@ -171,6 +174,22 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             await self._ensure_scene_dialogue(trial, trial.scene_index)
             trial = await self._port.save(trial)
         return trial
+
+    async def use_launcelot_skill(self, trial_id: UUID) -> LauncelotSkillResultDto:
+        trial = await self._require_trial(trial_id)
+
+        if trial.dp.value < LAUNCELOT_SKILL_COST:
+            raise ValueError("DP가 부족합니다")
+
+        trial.dp = trial.dp.apply_delta(-LAUNCELOT_SKILL_COST)
+        trial.portia_hp = trial.portia_hp.apply_delta(-LAUNCELOT_PORTIA_HP_DAMAGE)
+        trial = await self._port.save(trial)
+
+        return LauncelotSkillResultDto(
+            trial_id=trial.trial_id,
+            dp=trial.dp.value,
+            portia_hp=trial.portia_hp.value,
+        )
 
     async def _ensure_scene_dialogue(
         self,

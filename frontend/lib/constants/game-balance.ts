@@ -8,6 +8,18 @@ export const SKILL_OBJECTION_COST = 20;
 export const SKILL_TUBAL_COST = 30;
 export const SKILL_CROWD_COST = 40;
 
+export const LAUNCELOT_SKILL_COST = 20;
+export const LAUNCELOT_PORTIA_HP_DAMAGE = 20;
+
+export const LAUNCELOT_INTRUSION_LINE = "론슬롯이 갑자기 법정으로 뛰어들었다!";
+export const LAUNCELOT_LINES = [
+  "기독교인이 자꾸 늘어나면~",
+  "돼지고기 값이 오른다네~",
+  "그게 이 재판과 무슨 상관이냐고?~",
+  "모르겠네, 모르겠네, 나도 몰라~",
+] as const;
+export const LAUNCELOT_PORTIA_REACTION_LINE = "포샤가 당황해 말문이 막혔다!";
+
 export type SkillId = "objection" | "tubal" | "crowd";
 
 export const TUBAL_INTRO_LINE = "잠깐, 내가 증거를 가져왔소.";

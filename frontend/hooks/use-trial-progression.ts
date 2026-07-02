@@ -11,6 +11,7 @@ import {
   invokeTubalSkill,
   presentEvidence,
   submitChoice,
+  useLauncelotSkill,
 } from "@/lib/api-client/trial-progression";
 import type {
   EndingResponse,
@@ -32,6 +33,10 @@ import {
   SHYLOCK_DP_START,
   SHYLOCK_HP_MAX,
   SKILLS,
+  LAUNCELOT_SKILL_COST,
+  LAUNCELOT_LINES,
+  LAUNCELOT_INTRUSION_LINE,
+  LAUNCELOT_PORTIA_REACTION_LINE,
   TUBAL_INTRO_LINE,
   TUBAL_SEARCHING_LINE,
   TUBAL_SEARCH_FAILURE_LINE,
@@ -44,6 +49,8 @@ import { extractPortiaText } from "@/lib/portia-text";
 export type GamePhase = "game" | "gameover" | "ending";
 
 export type TubalSkillPhase = "idle" | "intro" | "searching" | "result";
+
+export type LauncelotSkillPhase = "idle" | "intrusion" | "speaking" | "reaction";
 
 export type { EvidenceDetailView, TubalCourtRecord } from "@/lib/tubal-evidence";
 
@@ -105,6 +112,9 @@ export function useTrialProgression(trialId: string) {
   const [tubalPhase, setTubalPhase] = useState<TubalSkillPhase>("idle");
   const [tubalMessage, setTubalMessage] = useState<string | null>(null);
   const [loadingTubal, setLoadingTubal] = useState(false);
+  const [loadingLauncelot, setLoadingLauncelot] = useState(false);
+  const [launcelotPhase, setLauncelotPhase] = useState<LauncelotSkillPhase>("idle");
+  const [launcelotLineIdx, setLauncelotLineIdx] = useState(0);
   const [ending, setEnding] = useState<EndingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quotesById, setQuotesById] = useState<Record<string, EvidenceFromApi>>({});
@@ -122,6 +132,7 @@ export function useTrialProgression(trialId: string) {
   const choiceLockRef = useRef(false);
   const sceneAdvanceLockRef = useRef(false);
   const climaxResolveRef = useRef<(() => void) | null>(null);
+  const pendingPortiaHpRef = useRef<number | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -135,11 +146,15 @@ export function useTrialProgression(trialId: string) {
 
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
+  const isLauncelotActive = launcelotPhase !== "idle";
 
   const currentTestimony = scene.pressPresent?.testimony[testimonyIndex];
 
   const dialogueText = useMemo(() => {
     if (loadingScene) return "";
+    if (launcelotPhase === "intrusion") return LAUNCELOT_INTRUSION_LINE;
+    if (launcelotPhase === "speaking") return LAUNCELOT_LINES[launcelotLineIdx] ?? "";
+    if (launcelotPhase === "reaction") return LAUNCELOT_PORTIA_REACTION_LINE;
     if (tubalPhase === "intro") return TUBAL_INTRO_LINE;
     if (isTubalSearching) return TUBAL_SEARCHING_LINE;
     if (tubalMessage) return tubalMessage;
@@ -149,6 +164,8 @@ export function useTrialProgression(trialId: string) {
     return currentLine;
   }, [
     loadingScene,
+    launcelotPhase,
+    launcelotLineIdx,
     tubalPhase,
     isTubalSearching,
     tubalMessage,
@@ -160,33 +177,43 @@ export function useTrialProgression(trialId: string) {
     currentLine,
   ]);
 
-  const speaker = portiaReply || isTubalActive
-    ? "PORTIA"
-    : shylockPressReply
-      ? "SHYLOCK"
-      : showPressPresent
-        ? "CROWD"
-        : scene.speaker;
-  const speakerLabel = isTubalActive
-    ? "투발"
-    : portiaReply
-      ? "포샤"
+  const speaker = isLauncelotActive
+    ? launcelotPhase === "speaking"
+      ? "PORTIA"
+      : "NARRATOR"
+    : portiaReply || isTubalActive
+      ? "PORTIA"
       : shylockPressReply
-        ? "샤일록"
+        ? "SHYLOCK"
         : showPressPresent
-          ? scene.speakerLabel ?? "군중"
-          : scene.speakerLabel;
+          ? "CROWD"
+          : scene.speaker;
+  const speakerLabel = isLauncelotActive
+    ? launcelotPhase === "speaking"
+      ? "론슬롯"
+      : undefined
+    : isTubalActive
+      ? "투발"
+      : portiaReply
+        ? "포샤"
+        : shylockPressReply
+          ? "샤일록"
+          : showPressPresent
+            ? scene.speakerLabel ?? "군중"
+            : scene.speakerLabel;
   const showSpeakerTab =
     !loadingScene &&
-    (portiaReply
-      ? true
-      : isTubalActive
+    (isLauncelotActive
+      ? launcelotPhase === "speaking"
+      : portiaReply
         ? true
-        : shylockPressReply
+        : isTubalActive
           ? true
-          : showPressPresent
+          : shylockPressReply
             ? true
-            : currentLineEntry?.kind === "speech");
+            : showPressPresent
+              ? true
+              : currentLineEntry?.kind === "speech");
 
   const buildCuratedDetail = useCallback(
     (evidenceId: string): EvidenceDetailView => {
@@ -335,6 +362,9 @@ export function useTrialProgression(trialId: string) {
     setPortiaReply("");
     setTubalPhase("idle");
     setTubalMessage(null);
+    setLauncelotPhase("idle");
+    setLauncelotLineIdx(0);
+    pendingPortiaHpRef.current = null;
     setShowPressPresent(false);
     setTestimonyIndex(0);
     setShylockPressReply(null);
@@ -370,17 +400,55 @@ export function useTrialProgression(trialId: string) {
     }
   }, [isLastScene, trialId, finishToEnding, loadingScene]);
 
+  const advanceLauncelotStep = useCallback(() => {
+    if (launcelotPhase === "intrusion") {
+      setLauncelotPhase("speaking");
+      setLauncelotLineIdx(0);
+      return;
+    }
+
+    if (launcelotPhase === "speaking") {
+      if (launcelotLineIdx < LAUNCELOT_LINES.length - 1) {
+        setLauncelotLineIdx((index) => index + 1);
+        return;
+      }
+      setLauncelotPhase("reaction");
+      const nextPortiaHp = pendingPortiaHpRef.current;
+      if (nextPortiaHp != null) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setPortiaHp(nextPortiaHp);
+          });
+        });
+      }
+      return;
+    }
+
+    if (launcelotPhase === "reaction") {
+      pendingPortiaHpRef.current = null;
+      setLauncelotPhase("idle");
+      setLauncelotLineIdx(0);
+    }
+  }, [launcelotPhase, launcelotLineIdx]);
+
   const advance = useCallback(() => {
     if (
       loadingReply ||
       loadingScene ||
       loadingTubal ||
+      loadingLauncelot ||
       choiceLockRef.current ||
       climaxMode ||
       evidenceDetailView
     ) {
       return;
     }
+
+    if (isLauncelotActive) {
+      advanceLauncelotStep();
+      return;
+    }
+
     if (portiaReply || tubalMessage || tubalPhase === "intro") return;
 
     if (shylockPressReply) {
@@ -414,6 +482,9 @@ export function useTrialProgression(trialId: string) {
     loadingReply,
     loadingScene,
     loadingTubal,
+    loadingLauncelot,
+    isLauncelotActive,
+    advanceLauncelotStep,
     climaxMode,
     evidenceDetailView,
     portiaReply,
@@ -438,6 +509,8 @@ export function useTrialProgression(trialId: string) {
       setError(null);
       setTubalPhase("idle");
       setTubalMessage(null);
+      setLauncelotPhase("idle");
+      setLauncelotLineIdx(0);
 
       const nextHp = clampShylockHp(shylockHp + option.shylockHpChange);
       const nextDp = clampDp(dp + option.dpChange);
@@ -572,6 +645,7 @@ export function useTrialProgression(trialId: string) {
         loadingScene ||
         loadingTubal ||
         isTubalActive ||
+        isLauncelotActive ||
         choiceLockRef.current
       ) {
         return;
@@ -598,8 +672,49 @@ export function useTrialProgression(trialId: string) {
           break;
       }
     },
-    [phase, loadingReply, loadingScene, loadingTubal, isTubalActive, dp, startTubalSkill],
+    [phase, loadingReply, loadingScene, loadingTubal, isTubalActive, isLauncelotActive, dp, startTubalSkill],
   );
+
+  const handleLauncelotSkill = useCallback(async () => {
+    if (
+      phase !== "game" ||
+      loadingReply ||
+      loadingScene ||
+      loadingTubal ||
+      loadingLauncelot ||
+      isLauncelotActive ||
+      isTubalActive ||
+      choiceLockRef.current ||
+      dp < LAUNCELOT_SKILL_COST
+    ) {
+      return;
+    }
+
+    setLoadingLauncelot(true);
+    setError(null);
+
+    try {
+      const res = await useLauncelotSkill(trialId);
+      setDp(res.dp);
+      pendingPortiaHpRef.current = res.portia_hp;
+      setLauncelotPhase("intrusion");
+      setLauncelotLineIdx(0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Launcelot skill failed");
+    } finally {
+      setLoadingLauncelot(false);
+    }
+  }, [
+    phase,
+    loadingReply,
+    loadingScene,
+    loadingTubal,
+    loadingLauncelot,
+    isLauncelotActive,
+    isTubalActive,
+    dp,
+    trialId,
+  ]);
 
   const handlePressTestimony = useCallback(() => {
     if (!scene.pressPresent) return;
@@ -685,9 +800,12 @@ export function useTrialProgression(trialId: string) {
     tubalPhase,
     isTubalActive,
     isTubalSearching,
+    isLauncelotActive,
+    launcelotPhase,
     tubalCourtRecords,
     tubalEnhancedChoices,
     loadingTubal,
+    loadingLauncelot,
     loadingReply,
     loadingScene,
     showChallenge,
@@ -708,6 +826,7 @@ export function useTrialProgression(trialId: string) {
       loadingReply ||
       loadingScene ||
       loadingTubal ||
+      loadingLauncelot ||
       loadingPresent ||
       !!evidenceDetailView ||
       climaxMode ||
@@ -719,6 +838,7 @@ export function useTrialProgression(trialId: string) {
     goNextScene,
     makeChoice,
     useSkill,
+    handleLauncelotSkill,
     dismissClimax,
     dismissTubalMessage,
     handlePressTestimony,

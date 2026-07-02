@@ -9,7 +9,7 @@ import { ClimaxOverlay } from "./ClimaxOverlay";
 import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
-import { MeterDisplay } from "./MeterDisplay";
+import { MeterDisplay, LEFT_HUD_TOP, LEFT_METERS_STACK_HEIGHT } from "./MeterDisplay";
 import { ObjectionBanner } from "./ObjectionBanner";
 import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
@@ -19,6 +19,7 @@ import type { useTrialProgression } from "@/hooks/use-trial-progression";
 type TrialState = ReturnType<typeof useTrialProgression>;
 
 const TUBAL_SCENE_IMAGE = "/assets/scene-tubal.png";
+const LAUNCELOT_SCENE_IMAGE = "/assets/scene-launcelot.png";
 
 interface BattleScreenProps {
   trial: TrialState;
@@ -53,6 +54,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     tubalCourtRecords,
     isTubalActive,
     isTubalSearching,
+    isLauncelotActive,
+    launcelotPhase,
     tubalEnhancedChoices,
     showChallenge,
     showPressPresent,
@@ -60,6 +63,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     pressedTestimonyIds,
     testimonyIndex,
     loadingPresent,
+    loadingLauncelot,
     objection,
     climaxMode,
     climaxQuote,
@@ -72,6 +76,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     goNextScene,
     makeChoice,
     useSkill,
+    handleLauncelotSkill,
     dismissClimax,
     dismissTubalMessage,
     inspectCuratedEvidence,
@@ -89,9 +94,15 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     !showChallenge &&
     !showPressPresent &&
     !portiaReply &&
-    !isTubalActive;
+    !isTubalActive &&
+    !isLauncelotActive;
 
-  const backgroundImage = isTubalActive ? TUBAL_SCENE_IMAGE : scene.backgroundImage;
+  const backgroundImage =
+    isLauncelotActive || loadingLauncelot
+      ? LAUNCELOT_SCENE_IMAGE
+      : isTubalActive
+        ? TUBAL_SCENE_IMAGE
+        : scene.backgroundImage;
 
   const handlePortiaComplete = () => {
     if (isTubalActive) {
@@ -129,14 +140,21 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
           {showBattleHud && (
-            <MeterDisplay shylockHp={shylockHp} dp={dp} portiaHp={portiaHp} />
+            <MeterDisplay
+              shylockHp={shylockHp}
+              dp={dp}
+              portiaHp={portiaHp}
+              portiaHpTransition={
+                launcelotPhase === "reaction" ? "width 1.2s ease-out" : "width 0.5s ease"
+              }
+            />
           )}
           {showBattleHud && (
           <div
             style={{
               position: "absolute",
               left: 16,
-              bottom: 20,
+              top: LEFT_HUD_TOP + LEFT_METERS_STACK_HEIGHT + 8,
               zIndex: 11,
               display: "flex",
               flexDirection: "column",
@@ -158,29 +176,75 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 loadingReply ||
                 loadingScene ||
                 loadingPresent ||
+                loadingLauncelot ||
+                isLauncelotActive ||
                 isTubalActive ||
                 showPressPresent ||
                 !!portiaReply
               }
               onUseSkill={useSkill}
+              onLauncelotSkill={() => void handleLauncelotSkill()}
             />
           </div>
           )}
         </div>
 
+        {showChallenge && scene.challenge && !portiaReply && !isTubalActive && !isLauncelotActive && (
+          <div
+            style={{
+              position: "absolute",
+              left: 16,
+              right: 16,
+              bottom: 172,
+              zIndex: 12,
+              pointerEvents: "none",
+            }}
+          >
+            <div style={{ ...textBoxDockInnerStyle(), pointerEvents: "auto" }}>
+              <ChoiceList
+                header={scene.challenge.header}
+                prompt={scene.challenge.text}
+                options={scene.challenge.options}
+                tubalEnhancedChoices={tubalEnhancedChoices}
+                tubalCourtRecords={tubalCourtRecords}
+                onSelect={makeChoice}
+                disabled={loadingReply || loadingScene || isLauncelotActive}
+              />
+            </div>
+          </div>
+        )}
+
         <div style={textBoxDockStyle()}>
           <div style={textBoxDockInnerStyle()}>
             <DialogueBox
-              speaker={isTubalActive ? "PORTIA" : speaker}
+              speaker={
+                isLauncelotActive
+                  ? speaker
+                  : isTubalActive
+                    ? "PORTIA"
+                    : speaker
+              }
               speakerLabel={
-                isTubalActive ? "투발" : portiaReply || loadingReply ? "포샤" : speakerLabel
+                isLauncelotActive
+                  ? speakerLabel
+                  : isTubalActive
+                    ? "투발"
+                    : portiaReply || loadingReply
+                      ? "포샤"
+                      : speakerLabel
               }
               showSpeakerTab={showSpeakerTab}
-              text={loadingScene ? "" : dialogueText}
+              text={
+                loadingScene
+                  ? ""
+                  : loadingLauncelot
+                    ? "론슬롯이 법정으로 달려오고 있다…"
+                    : dialogueText
+              }
               replyMode={
                 isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
               }
-              loadingReply={isTubalSearching || loadingReply}
+              loadingReply={isTubalSearching || loadingReply || loadingLauncelot}
               disabled={
                 isTypingBlocked ||
                 showChallenge ||
@@ -193,7 +257,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                   !isTubalActive &&
                   !loadingReply &&
                   !loadingScene &&
-                  (!showPressPresent || !!shylockPressReply))
+                  !loadingLauncelot &&
+                  (isLauncelotActive ||
+                    (!showPressPresent || !!shylockPressReply)))
               }
               onAdvance={advance}
               onPortiaComplete={handlePortiaComplete}
@@ -212,17 +278,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
               />
             )}
 
-            {showChallenge && scene.challenge && !portiaReply && !isTubalActive && (
-              <ChoiceList
-                header={scene.challenge.header}
-                prompt={scene.challenge.text}
-                options={scene.challenge.options}
-                tubalEnhancedChoices={tubalEnhancedChoices}
-                tubalCourtRecords={tubalCourtRecords}
-                onSelect={makeChoice}
-                disabled={loadingReply || loadingScene}
-              />
-            )}
           </div>
         </div>
       </div>

@@ -87,6 +87,13 @@ export interface TubalSkillResponse {
   tubal_enhanced_choices?: Record<string, string>;
 }
 
+export interface LauncelotSkillResponse {
+  trial_id: string;
+  dp: number;
+  portia_hp: number;
+  launcelot_comment: string;
+}
+
 export interface PresentEvidenceResponse {
   trial_id: string;
   shylock_hp: number;

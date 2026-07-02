@@ -4,6 +4,7 @@ from uuid import UUID
 from shylock_trial.app.dtos.trial_progression_dto import (
     AdvanceSceneResultDto,
     GenerateEndingResultDto,
+    LauncelotSkillResultDto,
     StartTrialResultDto,
     SubmitChoiceInputDto,
     SubmitChoiceResultDto,
@@ -26,3 +27,6 @@ class TrialProgressionUseCase(ABC):
 
     @abstractmethod
     async def get_trial(self, trial_id: UUID) -> Trial: ...
+
+    @abstractmethod
+    async def use_launcelot_skill(self, trial_id: UUID) -> LauncelotSkillResultDto: ...
