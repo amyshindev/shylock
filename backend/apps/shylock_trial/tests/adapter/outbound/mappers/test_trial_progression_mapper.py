@@ -8,7 +8,6 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
 )
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
@@ -18,7 +17,6 @@ def test_trial_mapper_roundtrip() -> None:
         scene_index=2,
         shylock_hp=ShylockHpScore(45),
         dp=DpScore(60),
-        portia_hp=PortiaHpScore(100),
         alien_law_executed=True,
         choice_history=["bond", "mercy"],
         phase=TrialPhase.IN_PROGRESS,
@@ -46,7 +44,6 @@ def test_trial_mapper_roundtrip() -> None:
     assert restored.scene_index == trial.scene_index
     assert restored.shylock_hp.value == 45
     assert restored.dp.value == 60
-    assert restored.portia_hp.value == 100
     assert restored.alien_law_executed is True
     assert restored.choice_history == ["bond", "mercy"]
     assert restored.phase == TrialPhase.IN_PROGRESS

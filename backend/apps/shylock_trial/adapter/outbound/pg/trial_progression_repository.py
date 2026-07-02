@@ -35,7 +35,6 @@ class TrialProgressionPgRepository(TrialProgressionPort):
         existing.scene_index = trial.scene_index
         existing.shylock_hp = trial.shylock_hp.value
         existing.dp = trial.dp.value
-        existing.portia_hp = trial.portia_hp.value
         existing.alien_law_executed = trial.alien_law_executed
         existing.phase = trial.phase.value
         existing.narration_text = trial.narration_text

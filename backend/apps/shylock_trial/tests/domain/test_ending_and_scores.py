@@ -6,18 +6,20 @@ from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScor
 
 
 @pytest.mark.parametrize(
-    ("dp", "alien_law_executed", "expected"),
+    ("dp", "shylock_hp", "expected"),
     [
-        (70, True, EndingType.DIGNITY),
-        (85, True, EndingType.DIGNITY),
-        (69, True, EndingType.BAD),
-        (40, True, EndingType.BAD),
-        (70, False, EndingType.HISTORY_CHANGED),
-        (69, False, EndingType.SURVIVAL),
+        (70, 40, EndingType.HISTORY_CHANGED),
+        (85, 50, EndingType.HISTORY_CHANGED),
+        (40, 40, EndingType.SURVIVAL),
+        (69, 45, EndingType.SURVIVAL),
+        (70, 39, EndingType.DIGNITY),
+        (85, 20, EndingType.DIGNITY),
+        (40, 20, EndingType.BAD),
+        (69, 10, EndingType.BAD),
     ],
 )
-def test_resolve_ending_type(dp: int, alien_law_executed: bool, expected: EndingType) -> None:
-    assert resolve_ending_type(dp, alien_law_executed) == expected
+def test_resolve_ending_type(dp: int, shylock_hp: int, expected: EndingType) -> None:
+    assert resolve_ending_type(dp, shylock_hp) == expected
 
 
 def test_dp_score_clamps() -> None:
@@ -34,3 +36,15 @@ def test_shylock_hp_score_clamps() -> None:
 
     updated = ShylockHpScore(50).apply_delta(-10)
     assert updated.value == 40
+
+
+@pytest.mark.parametrize(
+    ("shylock_hp", "expected"),
+    [
+        (39, True),
+        (40, False),
+        (60, False),
+    ],
+)
+def test_alien_law_executed_from_shylock_hp(shylock_hp: int, expected: bool) -> None:
+    assert (shylock_hp < 40) is expected

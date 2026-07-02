@@ -1,6 +1,6 @@
 "use client";
 
-import { SKILLS, LAUNCELOT_SKILL_COST, type SkillId } from "@/lib/constants/game-balance";
+import { SKILLS, type SkillId } from "@/lib/constants/game-balance";
 import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 
 import { LEFT_METER_COLUMN_WIDTH } from "./MeterDisplay";
@@ -14,12 +14,9 @@ interface SkillPanelProps {
   dp: number;
   disabled?: boolean;
   onUseSkill: (skillId: SkillId) => void;
-  onLauncelotSkill?: () => void;
 }
 
-export function SkillPanel({ dp, disabled, onUseSkill, onLauncelotSkill }: SkillPanelProps) {
-  const launcelotCanUse = dp >= LAUNCELOT_SKILL_COST && !disabled;
-
+export function SkillPanel({ dp, disabled, onUseSkill }: SkillPanelProps) {
   return (
     <div style={{ ...hudPanelStyle("8px 11px"), width: SKILL_PANEL_WIDTH }}>
       <div
@@ -34,7 +31,7 @@ export function SkillPanel({ dp, disabled, onUseSkill, onLauncelotSkill }: Skill
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         {SKILLS.map((skill) => {
-          const canUse = dp > skill.cost && !disabled;
+          const canUse = dp >= skill.cost && !disabled;
           return (
             <button
               key={skill.id}
@@ -72,42 +69,6 @@ export function SkillPanel({ dp, disabled, onUseSkill, onLauncelotSkill }: Skill
             </button>
           );
         })}
-        {onLauncelotSkill && (
-          <button
-            key="launcelot"
-            type="button"
-            disabled={!launcelotCanUse}
-            onClick={onLauncelotSkill}
-            style={{
-              padding: "7px 10px",
-              fontSize: gameFontSize.xs,
-              letterSpacing: 0.3,
-              textAlign: "left",
-              cursor: launcelotCanUse ? "pointer" : "not-allowed",
-              background: launcelotCanUse ? "rgba(20, 10, 18, 0.95)" : "rgba(14, 8, 14, 0.9)",
-              color: launcelotCanUse ? SKILL_ENABLED_COLOR : SKILL_DISABLED_COLOR,
-              border: `1px solid ${launcelotCanUse ? "#5a3848" : "#3a2830"}`,
-              borderRadius: 3,
-              fontWeight: 600,
-              textShadow: launcelotCanUse ? "0 1px 2px rgba(0, 0, 0, 0.6)" : "none",
-              boxShadow: launcelotCanUse ? "inset 0 1px 0 rgba(255, 255, 255, 0.04)" : "none",
-              opacity: launcelotCanUse ? 1 : 0.82,
-              transition: "border-color 0.15s, background 0.15s",
-            }}
-            onMouseEnter={(e) => {
-              if (!launcelotCanUse) return;
-              e.currentTarget.style.borderColor = "#7a5060";
-              e.currentTarget.style.background = "rgba(28, 14, 22, 0.98)";
-            }}
-            onMouseLeave={(e) => {
-              if (!launcelotCanUse) return;
-              e.currentTarget.style.borderColor = "#5a3848";
-              e.currentTarget.style.background = "rgba(20, 10, 18, 0.95)";
-            }}
-          >
-            🃏 론슬롯 난입 (-20 DP)
-          </button>
-        )}
       </div>
     </div>
   );

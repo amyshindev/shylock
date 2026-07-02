@@ -18,7 +18,6 @@ If you poison us, do we not die?
 And if you wrong us, shall we not revenge?"`;
 
 export const TIMING = {
-  objectionBannerMs: 900,
   evidenceModalMs: 2200,
   choiceSequenceMs: 2200,
 } as const;

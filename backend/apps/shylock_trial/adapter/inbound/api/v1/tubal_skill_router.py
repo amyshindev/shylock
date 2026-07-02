@@ -35,7 +35,6 @@ async def invoke_tubal_skill(
         trial_id=result.trial_id,
         dp=result.dp,
         shylock_hp=result.shylock_hp,
-        portia_hp=result.portia_hp,
         success=agent.success,
         ftln=agent.ftln,
         passage=agent.passage,

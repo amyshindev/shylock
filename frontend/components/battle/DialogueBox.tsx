@@ -65,6 +65,7 @@ export function DialogueBox({
   const { displayedText, isTyping, skipToEnd } = useTypingEffect(typingSource);
   const content = displayedText;
   const canAdvanceLine = !disabled && !isTyping && !isReply && !loadingReply;
+  const canSkipTyping = !disabled && !isReply && !loadingReply && isTyping;
   const canAdvanceReply =
     isReply && !loadingReply && (isTyping || replyHasNext);
   const canCompleteReply =
@@ -86,8 +87,11 @@ export function DialogueBox({
   };
 
   const showArrow =
-    (showAdvanceArrow && canAdvanceLine) || showReplyArrow || showReplyCompleteArrow;
-  const isClickable = canAdvanceLine || canAdvanceReply || canCompleteReply;
+    (showAdvanceArrow && (canAdvanceLine || canSkipTyping)) ||
+    showReplyArrow ||
+    showReplyCompleteArrow;
+  const isClickable =
+    canAdvanceLine || canAdvanceReply || canCompleteReply || canSkipTyping;
 
   const loadingMessage =
     replyMode === "tubal"

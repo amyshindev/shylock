@@ -5,5 +5,4 @@ from dataclasses import dataclass
 class PortiaPresentAgentResult:
     contradiction_valid: bool
     portia_response: str
-    portia_hp_change: int
     reasoning: str = ""

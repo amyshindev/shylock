@@ -2,13 +2,17 @@ from uuid import UUID, uuid4
 import asyncio
 
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
-from shylock_trial.app.constants.ending_type_map import resolve_ending_type
+from shylock_trial.app.constants.ending_type_map import (
+    SHYLOCK_HP_GOOD_ENDING_THRESHOLD,
+    resolve_ending_type,
+)
 from shylock_trial.app.constants.game_balance import (
-    LAUNCELOT_PORTIA_HP_DAMAGE,
+    LAUNCELOT_SHYLOCK_HP_HEAL,
     LAUNCELOT_SKILL_COST,
-    PORTIA_HP_MAX,
     SHYLOCK_DP_START,
     SHYLOCK_HP_MAX,
+    VENICE_CONTRADICTION_HP_HEAL,
+    VENICE_CONTRADICTION_SKILL_COST,
 )
 from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
 from shylock_trial.app.constants.scene_choices import (
@@ -30,6 +34,7 @@ from shylock_trial.app.dtos.trial_progression_dto import (
     StartTrialResultDto,
     SubmitChoiceInputDto,
     SubmitChoiceResultDto,
+    VeniceContradictionSkillResultDto,
 )
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
@@ -37,7 +42,6 @@ from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgre
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 from shylock_trial.app.utils.trial_metadata_store import append_unique
 
@@ -61,7 +65,6 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=0,
             shylock_hp=ShylockHpScore(SHYLOCK_HP_MAX),
             dp=DpScore(SHYLOCK_DP_START),
-            portia_hp=PortiaHpScore(PORTIA_HP_MAX),
             alien_law_executed=True,
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
@@ -75,7 +78,6 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             shylock_hp=trial.shylock_hp.value,
             dp=trial.dp.value,
-            portia_hp=trial.portia_hp.value,
             alien_law_executed=trial.alien_law_executed,
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
@@ -120,7 +122,6 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             shylock_hp=trial.shylock_hp.value,
             dp=trial.dp.value,
-            portia_hp=trial.portia_hp.value,
             alien_law_executed=trial.alien_law_executed,
             phase=trial.phase,
             portia_response=portia.text,
@@ -144,12 +145,16 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
 
     async def generate_ending(self, trial_id: UUID) -> GenerateEndingResultDto:
         trial = await self._require_trial(trial_id)
-        ending_type = resolve_ending_type(trial.dp.value, trial.alien_law_executed)
+        trial.alien_law_executed = trial.shylock_hp.value < SHYLOCK_HP_GOOD_ENDING_THRESHOLD
+        ending_type = resolve_ending_type(
+            dp=trial.dp.value,
+            shylock_hp=trial.shylock_hp.value,
+        )
 
         ending = await self._portia.generate(
             self._build_portia_prompt(
                 trial,
-                context="final_ending",
+                context=f"final_ending:{ending_type.value}",
                 request_type="ending",
             )
         )
@@ -164,7 +169,6 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             ending_text=ending.text,
             shylock_hp=trial.shylock_hp.value,
             dp=trial.dp.value,
-            portia_hp=trial.portia_hp.value,
             alien_law_executed=trial.alien_law_executed,
         )
 
@@ -182,13 +186,32 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             raise ValueError("DP가 부족합니다")
 
         trial.dp = trial.dp.apply_delta(-LAUNCELOT_SKILL_COST)
-        trial.portia_hp = trial.portia_hp.apply_delta(-LAUNCELOT_PORTIA_HP_DAMAGE)
+        trial.shylock_hp = trial.shylock_hp.apply_delta(LAUNCELOT_SHYLOCK_HP_HEAL)
         trial = await self._port.save(trial)
 
         return LauncelotSkillResultDto(
             trial_id=trial.trial_id,
             dp=trial.dp.value,
-            portia_hp=trial.portia_hp.value,
+            shylock_hp=trial.shylock_hp.value,
+        )
+
+    async def use_venice_contradiction_skill(
+        self,
+        trial_id: UUID,
+    ) -> VeniceContradictionSkillResultDto:
+        trial = await self._require_trial(trial_id)
+
+        if trial.dp.value < VENICE_CONTRADICTION_SKILL_COST:
+            raise ValueError("DP가 부족합니다")
+
+        trial.dp = trial.dp.apply_delta(-VENICE_CONTRADICTION_SKILL_COST)
+        trial.shylock_hp = trial.shylock_hp.apply_delta(VENICE_CONTRADICTION_HP_HEAL)
+        trial = await self._port.save(trial)
+
+        return VeniceContradictionSkillResultDto(
+            trial_id=trial.trial_id,
+            dp=trial.dp.value,
+            shylock_hp=trial.shylock_hp.value,
         )
 
     async def _ensure_scene_dialogue(

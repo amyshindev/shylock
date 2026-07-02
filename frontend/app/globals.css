@@ -16,21 +16,6 @@ button {
   font-family: inherit;
 }
 
-@keyframes objectionPop {
-  from {
-    transform: scale(0.5);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.objection-banner {
-  animation: objectionPop 0.3s ease-out;
-}
-
 .dialogue-advance-arrow {
   animation: advanceBlink 1.2s ease-in-out infinite;
 }
@@ -55,4 +40,28 @@ button {
   50% {
     opacity: 0;
   }
+}
+
+@keyframes hpRecoveryFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.9);
+  }
+  18% {
+    opacity: 1;
+    transform: translateY(0) scale(1.05);
+  }
+  75% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.98);
+  }
+}
+
+.hp-recovery-flash {
+  animation: hpRecoveryFloat 1.5s ease-out forwards;
+  pointer-events: none;
 }

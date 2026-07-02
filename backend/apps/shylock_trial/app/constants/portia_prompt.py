@@ -49,10 +49,17 @@ Output Korean only (한국어). 2–3 sentences for reactions; 3–4 for ending 
 Stay in Elizabethan Venice court — no modern references, no breaking the fourth wall.
 Do not wrap lines in orphan quotation marks. Each sentence must be complete on its own.
 
+For request_type=reaction (포샤 대사):
+- Write ONLY Portia's direct courtroom speech to Shylock, in first person or imperative court register (~하오/~이오/~노라).
+- NEVER use third-person narration about any character: no "그녀는", "포샤는", "바사니오가", "라고 말하였다".
+- Do NOT describe Portia speaking — only output the words she says.
+- Bad: "법정은 증서 위에 서 있노라고 그녀는 선언하였다."
+- Good: "법정은 말이 아니라 증서와 법조문 위에 서 있노라."
+
 request_type:
 - narration: neutral narrator tone (opening lines only if requested).
-- reaction: 포샤's cold, logical courtroom speech responding to Shylock's last choice.
-- ending: literary narrator closing — DP as moral victory, not legal win.
+- reaction: 포샤's direct courtroom speech to Shylock (see rules above).
+- ending: literary narrator closing — reflect shylock_hp (how much Shylock endured in court) and dp (moral dignity). If alien_law_executed is true, the alien-law / forced-conversion judgment applies.
 """
 
 SCENE_DIALOGUE_SYSTEM_PROMPT = """\
@@ -67,8 +74,15 @@ Speaker roles:
 - BASSANIO: Bassanio pleads with Shylock — emotional, desperate, appeals to mercy.
 - CROWD: hostile jeers, short bursts.
 
-Each line must be a complete utterance. Do not end a line with an opening quote or start a line \
-with a closing quote. If using quotes for direct speech, keep the full quoted sentence on one line.
+For kind=speech lines (ALL characters):
+- Output ONLY the character's direct words in courtroom register (~하오/~이오/~노라/~겠소).
+- NEVER mix third-person stage direction with dialogue in one speech line.
+- Forbidden: "바사니오가 앞으로 나서며…" / "라고 그녀는 말하였다" / action then quoted speech.
+- Bad: 바사니오가 앞으로 나서며 목소리를 높인다. "샤일록, 원금의 열 배를 내놓겠소."
+- Good: 샤일록, 원금의 열 배를 내놓겠소. 그 돈을 받으시오.
+- Put stage directions in kind=narration lines, not speech lines.
+
+Each line must be a complete utterance. Do not wrap speech in quotation marks unless the whole line is a short crowd jeer in quotes.
 
 Line kinds (required per line):
 - speech: a character speaks directly (포샤 to Shylock, or crowd jeers). Show name tab in UI.
@@ -121,8 +135,17 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
 
     type_instruction = {
         "narration": "Opening narration for the trial.",
-        "reaction": "포샤's reaction to Shylock's latest choice.",
-        "ending": "Final ending narration based on DP, alien law, and choices.",
+        "reaction": (
+            "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
+            "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
+            "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장."
+        ),
+        "ending": (
+            "Final ending narration based on shylock_hp, dp, alien_law_executed, and choices. "
+            "shylock_hp shows how battered Shylock is after the trial; low HP means he was "
+            "broken in court. dp shows moral dignity retained. alien_law_executed=true means "
+            "the alien-law reversal and forced conversion judgment stands."
+        ),
     }.get(prompt.request_type, "Next trial line.")
 
     tubal_context = (
@@ -141,8 +164,8 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
 
 scene: {scene_brief}
 context: {prompt.context}
-dp: {prompt.dp} | shylock_hp: {prompt.shylock_hp}
-alien_law_executed: {prompt.alien_law_executed}
+dp: {prompt.dp} | shylock_hp: {prompt.shylock_hp} (max 60 — lower means more beaten in court)
+alien_law_executed: {prompt.alien_law_executed} (true if shylock_hp < 40 at judgment)
 choices: {choices if choices else ["(none)"]}
 tubal: {tubal_context}
 evidence: {evidence_context}

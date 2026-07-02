@@ -6,7 +6,6 @@ from uuid import UUID
 
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueContent
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
@@ -39,7 +38,6 @@ class Trial:
     scene_index: int
     shylock_hp: ShylockHpScore
     dp: DpScore
-    portia_hp: PortiaHpScore
     alien_law_executed: bool
     choice_history: list[str]
     phase: TrialPhase

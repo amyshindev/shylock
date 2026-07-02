@@ -17,7 +17,6 @@ class TrialOrm(Base):
     scene_index: Mapped[int] = mapped_column(Integer, default=0)
     shylock_hp: Mapped[int] = mapped_column(Integer, default=60)
     dp: Mapped[int] = mapped_column(Integer, default=50)
-    portia_hp: Mapped[int] = mapped_column(Integer, default=100)
     alien_law_executed: Mapped[bool] = mapped_column(Boolean, default=True)
     phase: Mapped[str] = mapped_column(String(32), default="in_progress")
     narration_text: Mapped[str | None] = mapped_column(Text, nullable=True)

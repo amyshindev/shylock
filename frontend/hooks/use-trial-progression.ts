@@ -12,6 +12,7 @@ import {
   presentEvidence,
   submitChoice,
   useLauncelotSkill,
+  useVeniceContradictionSkill,
 } from "@/lib/api-client/trial-progression";
 import type {
   EndingResponse,
@@ -29,7 +30,6 @@ import {
 } from "@/lib/tubal-evidence";
 import {
   DP_MAX,
-  PORTIA_HP_MAX,
   SHYLOCK_DP_START,
   SHYLOCK_HP_MAX,
   SKILLS,
@@ -37,6 +37,9 @@ import {
   LAUNCELOT_LINES,
   LAUNCELOT_INTRUSION_LINE,
   LAUNCELOT_PORTIA_REACTION_LINE,
+  VENICE_CONTRADICTION_SKILL_COST,
+  VENICE_CONTRADICTION_HP_HEAL,
+  VENICE_CONTRADICTION_LINES,
   TUBAL_INTRO_LINE,
   TUBAL_SEARCHING_LINE,
   TUBAL_SEARCH_FAILURE_LINE,
@@ -51,6 +54,8 @@ export type GamePhase = "game" | "gameover" | "ending";
 export type TubalSkillPhase = "idle" | "intro" | "searching" | "result";
 
 export type LauncelotSkillPhase = "idle" | "intrusion" | "speaking" | "reaction";
+
+export type VeniceSkillPhase = "idle" | "speaking";
 
 export type { EvidenceDetailView, TubalCourtRecord } from "@/lib/tubal-evidence";
 
@@ -93,13 +98,11 @@ export function useTrialProgression(trialId: string) {
   const [lineIdx, setLineIdx] = useState(0);
   const [shylockHp, setShylockHp] = useState(SHYLOCK_HP_MAX);
   const [dp, setDp] = useState(SHYLOCK_DP_START);
-  const [portiaHp, setPortiaHp] = useState(PORTIA_HP_MAX);
   const [alienLawExecuted, setAlienLawExecuted] = useState(true);
   const [portiaReply, setPortiaReply] = useState("");
   const [loadingReply, setLoadingReply] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
-  const [objection, setObjection] = useState(false);
   const [climaxMode, setClimaxMode] = useState(false);
   const [showPressPresent, setShowPressPresent] = useState(false);
   const [testimonyIndex, setTestimonyIndex] = useState(0);
@@ -113,8 +116,12 @@ export function useTrialProgression(trialId: string) {
   const [tubalMessage, setTubalMessage] = useState<string | null>(null);
   const [loadingTubal, setLoadingTubal] = useState(false);
   const [loadingLauncelot, setLoadingLauncelot] = useState(false);
+  const [loadingVeniceSkill, setLoadingVeniceSkill] = useState(false);
   const [launcelotPhase, setLauncelotPhase] = useState<LauncelotSkillPhase>("idle");
   const [launcelotLineIdx, setLauncelotLineIdx] = useState(0);
+  const [veniceSkillPhase, setVeniceSkillPhase] = useState<VeniceSkillPhase>("idle");
+  const [veniceLineIdx, setVeniceLineIdx] = useState(0);
+  const [hpRecoveryFlash, setHpRecoveryFlash] = useState<number | null>(null);
   const [ending, setEnding] = useState<EndingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quotesById, setQuotesById] = useState<Record<string, EvidenceFromApi>>({});
@@ -132,7 +139,6 @@ export function useTrialProgression(trialId: string) {
   const choiceLockRef = useRef(false);
   const sceneAdvanceLockRef = useRef(false);
   const climaxResolveRef = useRef<(() => void) | null>(null);
-  const pendingPortiaHpRef = useRef<number | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -147,6 +153,7 @@ export function useTrialProgression(trialId: string) {
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
   const isLauncelotActive = launcelotPhase !== "idle";
+  const isVeniceSkillActive = veniceSkillPhase !== "idle";
 
   const currentTestimony = scene.pressPresent?.testimony[testimonyIndex];
 
@@ -155,6 +162,9 @@ export function useTrialProgression(trialId: string) {
     if (launcelotPhase === "intrusion") return LAUNCELOT_INTRUSION_LINE;
     if (launcelotPhase === "speaking") return LAUNCELOT_LINES[launcelotLineIdx] ?? "";
     if (launcelotPhase === "reaction") return LAUNCELOT_PORTIA_REACTION_LINE;
+    if (veniceSkillPhase === "speaking") {
+      return VENICE_CONTRADICTION_LINES[veniceLineIdx] ?? "";
+    }
     if (tubalPhase === "intro") return TUBAL_INTRO_LINE;
     if (isTubalSearching) return TUBAL_SEARCHING_LINE;
     if (tubalMessage) return tubalMessage;
@@ -166,6 +176,8 @@ export function useTrialProgression(trialId: string) {
     loadingScene,
     launcelotPhase,
     launcelotLineIdx,
+    veniceSkillPhase,
+    veniceLineIdx,
     tubalPhase,
     isTubalSearching,
     tubalMessage,
@@ -181,7 +193,9 @@ export function useTrialProgression(trialId: string) {
     ? launcelotPhase === "speaking"
       ? "PORTIA"
       : "NARRATOR"
-    : portiaReply || isTubalActive
+    : isVeniceSkillActive
+      ? "SHYLOCK"
+      : portiaReply || isTubalActive
       ? "PORTIA"
       : shylockPressReply
         ? "SHYLOCK"
@@ -192,7 +206,9 @@ export function useTrialProgression(trialId: string) {
     ? launcelotPhase === "speaking"
       ? "론슬롯"
       : undefined
-    : isTubalActive
+    : isVeniceSkillActive
+      ? "샤일록"
+      : isTubalActive
       ? "투발"
       : portiaReply
         ? "포샤"
@@ -205,7 +221,9 @@ export function useTrialProgression(trialId: string) {
     !loadingScene &&
     (isLauncelotActive
       ? launcelotPhase === "speaking"
-      : portiaReply
+      : isVeniceSkillActive
+        ? true
+        : portiaReply
         ? true
         : isTubalActive
           ? true
@@ -242,13 +260,8 @@ export function useTrialProgression(trialId: string) {
   }, []);
 
   const presentEvidenceDetail = useCallback(async (detail: EvidenceDetailView) => {
-    setObjection(true);
     setEvidenceDetailView(detail);
-    await new Promise((r) => setTimeout(r, TIMING.objectionBannerMs));
-    setObjection(false);
-    await new Promise((r) =>
-      setTimeout(r, TIMING.evidenceModalMs - TIMING.objectionBannerMs),
-    );
+    await new Promise((r) => setTimeout(r, TIMING.evidenceModalMs));
     setEvidenceDetailView(null);
   }, []);
 
@@ -311,7 +324,6 @@ export function useTrialProgression(trialId: string) {
         setSceneIdx(idx);
         setShylockHp(trial.shylock_hp);
         setDp(trial.dp);
-        setPortiaHp(trial.portia_hp);
         setAlienLawExecuted(trial.alien_law_executed);
         if (trial.scene_dialogue) {
           setSceneDialogues((prev) => ({ ...prev, [idx]: trial.scene_dialogue! }));
@@ -343,7 +355,6 @@ export function useTrialProgression(trialId: string) {
       setEnding(result);
       setShylockHp(result.shylock_hp);
       setDp(result.dp);
-      setPortiaHp(result.portia_hp);
       setAlienLawExecuted(result.alien_law_executed);
       setPhase("ending");
     } catch (e) {
@@ -364,7 +375,6 @@ export function useTrialProgression(trialId: string) {
     setTubalMessage(null);
     setLauncelotPhase("idle");
     setLauncelotLineIdx(0);
-    pendingPortiaHpRef.current = null;
     setShowPressPresent(false);
     setTestimonyIndex(0);
     setShylockPressReply(null);
@@ -413,23 +423,26 @@ export function useTrialProgression(trialId: string) {
         return;
       }
       setLauncelotPhase("reaction");
-      const nextPortiaHp = pendingPortiaHpRef.current;
-      if (nextPortiaHp != null) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            setPortiaHp(nextPortiaHp);
-          });
-        });
-      }
       return;
     }
 
     if (launcelotPhase === "reaction") {
-      pendingPortiaHpRef.current = null;
       setLauncelotPhase("idle");
       setLauncelotLineIdx(0);
     }
   }, [launcelotPhase, launcelotLineIdx]);
+
+  const advanceVeniceSkillStep = useCallback(() => {
+    if (veniceSkillPhase !== "speaking") return;
+
+    if (veniceLineIdx < VENICE_CONTRADICTION_LINES.length - 1) {
+      setVeniceLineIdx((index) => index + 1);
+      return;
+    }
+
+    setVeniceSkillPhase("idle");
+    setVeniceLineIdx(0);
+  }, [veniceSkillPhase, veniceLineIdx]);
 
   const advance = useCallback(() => {
     if (
@@ -437,6 +450,7 @@ export function useTrialProgression(trialId: string) {
       loadingScene ||
       loadingTubal ||
       loadingLauncelot ||
+      loadingVeniceSkill ||
       choiceLockRef.current ||
       climaxMode ||
       evidenceDetailView
@@ -446,6 +460,11 @@ export function useTrialProgression(trialId: string) {
 
     if (isLauncelotActive) {
       advanceLauncelotStep();
+      return;
+    }
+
+    if (isVeniceSkillActive) {
+      advanceVeniceSkillStep();
       return;
     }
 
@@ -483,8 +502,11 @@ export function useTrialProgression(trialId: string) {
     loadingScene,
     loadingTubal,
     loadingLauncelot,
+    loadingVeniceSkill,
     isLauncelotActive,
     advanceLauncelotStep,
+    isVeniceSkillActive,
+    advanceVeniceSkillStep,
     climaxMode,
     evidenceDetailView,
     portiaReply,
@@ -511,6 +533,8 @@ export function useTrialProgression(trialId: string) {
       setTubalMessage(null);
       setLauncelotPhase("idle");
       setLauncelotLineIdx(0);
+      setVeniceSkillPhase("idle");
+      setVeniceLineIdx(0);
 
       const nextHp = clampShylockHp(shylockHp + option.shylockHpChange);
       const nextDp = clampDp(dp + option.dpChange);
@@ -539,7 +563,6 @@ export function useTrialProgression(trialId: string) {
         const res = await submitChoice(trialId, option.id);
         setShylockHp(res.shylock_hp);
         setDp(res.dp);
-        setPortiaHp(res.portia_hp);
         setAlienLawExecuted(res.alien_law_executed);
         setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
 
@@ -591,7 +614,6 @@ export function useTrialProgression(trialId: string) {
 
       setDp(res.dp);
       setShylockHp(res.shylock_hp);
-      setPortiaHp(res.portia_hp);
       setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
 
       if (triggerGameOverIfNeeded(res.shylock_hp, res.dp)) {
@@ -637,43 +659,51 @@ export function useTrialProgression(trialId: string) {
     setTubalPhase("intro");
   }, []);
 
-  const useSkill = useCallback(
-    (skillId: SkillId) => {
-      if (
-        phase !== "game" ||
-        loadingReply ||
-        loadingScene ||
-        loadingTubal ||
-        isTubalActive ||
-        isLauncelotActive ||
-        choiceLockRef.current
-      ) {
-        return;
-      }
+  const handleVeniceContradictionSkill = useCallback(async () => {
+    if (
+      phase !== "game" ||
+      loadingReply ||
+      loadingScene ||
+      loadingTubal ||
+      loadingLauncelot ||
+      loadingVeniceSkill ||
+      isLauncelotActive ||
+      isTubalActive ||
+      isVeniceSkillActive ||
+      choiceLockRef.current ||
+      dp < VENICE_CONTRADICTION_SKILL_COST
+    ) {
+      return;
+    }
 
-      const skill = SKILLS.find((s) => s.id === skillId);
-      if (!skill || dp <= skill.cost) return;
+    setLoadingVeniceSkill(true);
+    setError(null);
 
-      if (skillId === "tubal") {
-        startTubalSkill();
-        return;
-      }
-
-      setDp((current) => current - skill.cost);
-
-      switch (skillId) {
-        case "objection":
-          // TODO: 다음 HP 감소 무효화 처리
-          break;
-        case "crowd":
-          // TODO: 포샤 shylockHpChange 감소 처리
-          break;
-        default:
-          break;
-      }
-    },
-    [phase, loadingReply, loadingScene, loadingTubal, isTubalActive, isLauncelotActive, dp, startTubalSkill],
-  );
+    try {
+      const res = await useVeniceContradictionSkill(trialId);
+      setDp(res.dp);
+      setShylockHp(res.shylock_hp);
+      setHpRecoveryFlash(VENICE_CONTRADICTION_HP_HEAL);
+      setVeniceSkillPhase("speaking");
+      setVeniceLineIdx(0);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Venice contradiction skill failed");
+    } finally {
+      setLoadingVeniceSkill(false);
+    }
+  }, [
+    phase,
+    loadingReply,
+    loadingScene,
+    loadingTubal,
+    loadingLauncelot,
+    loadingVeniceSkill,
+    isLauncelotActive,
+    isTubalActive,
+    isVeniceSkillActive,
+    dp,
+    trialId,
+  ]);
 
   const handleLauncelotSkill = useCallback(async () => {
     if (
@@ -696,7 +726,7 @@ export function useTrialProgression(trialId: string) {
     try {
       const res = await useLauncelotSkill(trialId);
       setDp(res.dp);
-      pendingPortiaHpRef.current = res.portia_hp;
+      setShylockHp(res.shylock_hp);
       setLauncelotPhase("intrusion");
       setLauncelotLineIdx(0);
     } catch (e) {
@@ -715,6 +745,55 @@ export function useTrialProgression(trialId: string) {
     dp,
     trialId,
   ]);
+
+  const useSkill = useCallback(
+    (skillId: SkillId) => {
+      if (
+        phase !== "game" ||
+        loadingReply ||
+        loadingScene ||
+        loadingTubal ||
+        isTubalActive ||
+        isLauncelotActive ||
+        isVeniceSkillActive ||
+        choiceLockRef.current
+      ) {
+        return;
+      }
+
+      const skill = SKILLS.find((s) => s.id === skillId);
+      if (!skill || dp < skill.cost) return;
+
+      if (skillId === "launcelot") {
+        void handleLauncelotSkill();
+        return;
+      }
+
+      if (skillId === "tubal") {
+        startTubalSkill();
+        return;
+      }
+
+      if (skillId === "venice_contradiction") {
+        void handleVeniceContradictionSkill();
+        return;
+      }
+    },
+    [
+      phase,
+      loadingReply,
+      loadingScene,
+      loadingTubal,
+      loadingVeniceSkill,
+      isTubalActive,
+      isLauncelotActive,
+      isVeniceSkillActive,
+      dp,
+      handleLauncelotSkill,
+      startTubalSkill,
+      handleVeniceContradictionSkill,
+    ],
+  );
 
   const handlePressTestimony = useCallback(() => {
     if (!scene.pressPresent) return;
@@ -745,7 +824,6 @@ export function useTrialProgression(trialId: string) {
 
       setShylockHp(res.shylock_hp);
       setDp(res.dp);
-      setPortiaHp(res.portia_hp);
 
       if (res.contradiction_valid) {
         setClimaxMode(true);
@@ -781,6 +859,12 @@ export function useTrialProgression(trialId: string) {
     setTubalMessage(null);
   }, [tubalPhase, executeTubalSearch]);
 
+  useEffect(() => {
+    if (hpRecoveryFlash == null) return;
+    const timer = window.setTimeout(() => setHpRecoveryFlash(null), 1500);
+    return () => window.clearTimeout(timer);
+  }, [hpRecoveryFlash]);
+
   return {
     phase,
     gameOverReason,
@@ -789,7 +873,6 @@ export function useTrialProgression(trialId: string) {
     lineIdx,
     shylockHp,
     dp,
-    portiaHp,
     alienLawExecuted,
     speaker,
     speakerLabel,
@@ -802,10 +885,14 @@ export function useTrialProgression(trialId: string) {
     isTubalSearching,
     isLauncelotActive,
     launcelotPhase,
+    isVeniceSkillActive,
+    veniceSkillPhase,
     tubalCourtRecords,
     tubalEnhancedChoices,
     loadingTubal,
     loadingLauncelot,
+    loadingVeniceSkill,
+    hpRecoveryFlash,
     loadingReply,
     loadingScene,
     showChallenge,
@@ -814,7 +901,6 @@ export function useTrialProgression(trialId: string) {
     pressedTestimonyIds,
     testimonyIndex,
     loadingPresent,
-    objection,
     climaxMode,
     climaxQuote: HATH_NOT_QUOTE,
     shylockPressReply,
@@ -827,10 +913,10 @@ export function useTrialProgression(trialId: string) {
       loadingScene ||
       loadingTubal ||
       loadingLauncelot ||
+      loadingVeniceSkill ||
       loadingPresent ||
       !!evidenceDetailView ||
       climaxMode ||
-      objection ||
       !!portiaReply ||
       tubalPhase === "intro" ||
       !!tubalMessage,
@@ -838,7 +924,6 @@ export function useTrialProgression(trialId: string) {
     goNextScene,
     makeChoice,
     useSkill,
-    handleLauncelotSkill,
     dismissClimax,
     dismissTubalMessage,
     handlePressTestimony,

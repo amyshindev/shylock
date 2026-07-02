@@ -43,7 +43,6 @@ class StartTrialResponse(BaseModel):
                     "scene_index": 0,
                     "shylock_hp": 60,
                     "dp": 50,
-                    "portia_hp": 100,
                     "alien_law_executed": True,
                     "phase": "in_progress",
                     "scene_dialogue": {
@@ -61,7 +60,6 @@ class StartTrialResponse(BaseModel):
     scene_index: int
     shylock_hp: int = Field(ge=0)
     dp: int = Field(ge=0, le=100)
-    portia_hp: int = Field(ge=0)
     alien_law_executed: bool
     phase: TrialPhase
     scene_dialogue: SceneDialogueResponse
@@ -76,7 +74,6 @@ class TrialResponse(BaseModel):
                     "scene_index": 1,
                     "shylock_hp": 48,
                     "dp": 55,
-                    "portia_hp": 100,
                     "alien_law_executed": True,
                     "phase": "in_progress",
                     "choice_history": ["appeal_mercy"],
@@ -98,7 +95,6 @@ class TrialResponse(BaseModel):
     scene_index: int
     shylock_hp: int = Field(ge=0)
     dp: int = Field(ge=0, le=100)
-    portia_hp: int = Field(ge=0)
     alien_law_executed: bool
     phase: TrialPhase
     choice_history: list[str]
@@ -124,7 +120,6 @@ class SubmitChoiceResponse(BaseModel):
                     "scene_index": 1,
                     "shylock_hp": 52,
                     "dp": 60,
-                    "portia_hp": 100,
                     "alien_law_executed": True,
                     "phase": "in_progress",
                     "portia_response": "The quality of mercy is not strained...",
@@ -139,7 +134,6 @@ class SubmitChoiceResponse(BaseModel):
     scene_index: int
     shylock_hp: int
     dp: int
-    portia_hp: int
     alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
@@ -183,7 +177,6 @@ class EndingResponse(BaseModel):
                     "ending_text": "Justice tempered with mercy prevails.",
                     "shylock_hp": 45,
                     "dp": 72,
-                    "portia_hp": 100,
                     "alien_law_executed": True,
                 }
             ]
@@ -195,12 +188,18 @@ class EndingResponse(BaseModel):
     ending_text: str
     shylock_hp: int
     dp: int
-    portia_hp: int
     alien_law_executed: bool
 
 
 class LauncelotSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
-    portia_hp: int
+    shylock_hp: int = Field(ge=0)
     launcelot_comment: str
+
+
+class VeniceContradictionSkillResponse(BaseModel):
+    trial_id: UUID
+    dp: int
+    shylock_hp: int = Field(ge=0)
+    skill_comment: str

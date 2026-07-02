@@ -53,7 +53,6 @@ class PresentEvidenceInteractor(PresentEvidenceUseCase):
             evidence_text=evidence_text,
         )
 
-        trial.portia_hp = trial.portia_hp.apply_delta(agent_result.portia_hp_change)
         trial.presented_evidence = append_unique(
             trial.presented_evidence,
             input_dto.evidence_id,
@@ -64,10 +63,8 @@ class PresentEvidenceInteractor(PresentEvidenceUseCase):
             trial_id=trial.trial_id,
             shylock_hp=trial.shylock_hp.value,
             dp=trial.dp.value,
-            portia_hp=trial.portia_hp.value,
             contradiction_valid=agent_result.contradiction_valid,
             portia_response=agent_result.portia_response,
-            portia_hp_change=agent_result.portia_hp_change,
         )
 
     async def _require_trial(self, trial_id: UUID) -> Trial:

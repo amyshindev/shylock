@@ -27,7 +27,6 @@ class TubalSkillResponse(BaseModel):
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "dp": 20,
                     "shylock_hp": 55,
-                    "portia_hp": 100,
                     "success": True,
                     "ftln": 1001501,
                     "passage": "The quality of mercy is not strained.",
@@ -42,7 +41,6 @@ class TubalSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
     shylock_hp: int
-    portia_hp: int
     success: bool
     ftln: int | None = None
     passage: str | None = None

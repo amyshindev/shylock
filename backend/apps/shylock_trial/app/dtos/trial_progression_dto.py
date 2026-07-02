@@ -12,7 +12,6 @@ class StartTrialResultDto:
     scene_index: int
     shylock_hp: int
     dp: int
-    portia_hp: int
     alien_law_executed: bool
     phase: TrialPhase
     scene_dialogue: SceneDialogueContent
@@ -30,7 +29,6 @@ class SubmitChoiceResultDto:
     scene_index: int
     shylock_hp: int
     dp: int
-    portia_hp: int
     alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
@@ -54,7 +52,6 @@ class GenerateEndingResultDto:
     ending_text: str
     shylock_hp: int
     dp: int
-    portia_hp: int
     alien_law_executed: bool
 
 
@@ -62,8 +59,20 @@ class GenerateEndingResultDto:
 class LauncelotSkillResultDto:
     trial_id: UUID
     dp: int
-    portia_hp: int
+    shylock_hp: int
     launcelot_comment: str = (
         "론슬롯이 갑자기 법정으로 뛰어들었다! "
-        "포샤가 당황하여 잠시 말을 잃었다."
+        "모두가 당황하여 잠시 말을 잃었다."
+    )
+
+
+@dataclass(frozen=True, slots=True)
+class VeniceContradictionSkillResultDto:
+    trial_id: UUID
+    dp: int
+    shylock_hp: int
+    skill_comment: str = (
+        "당신들은 나를 고리대금업자라 부르오.\n"
+        "하지만 당신들이 내게 허락한 것이 그것뿐이었소.\n"
+        "이것이 베니스의 정의요?"
     )

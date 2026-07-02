@@ -1,5 +1,8 @@
 /** Mirror of backend `ending_type_map.py` — display hints only; server is authoritative. */
-import { DP_GOOD_ENDING_THRESHOLD } from "@/lib/constants/game-balance";
+import {
+  DP_GOOD_ENDING_THRESHOLD,
+  SHYLOCK_HP_GOOD_ENDING_THRESHOLD,
+} from "@/lib/constants/game-balance";
 
 export type EndingType =
   | "dignity_ending"
@@ -13,32 +16,36 @@ export interface EndingMeta {
   emoji: string;
 }
 
-export function getEnding(dp: number, alienLawExecuted: boolean): EndingMeta {
-  const good = dp >= DP_GOOD_ENDING_THRESHOLD;
-  if (alienLawExecuted) {
-    return good
-      ? {
-          title: "존엄 엔딩",
-          subtitle: "법은 그를 꺾었지만, 아무도 그를 굴복시키지 못했다",
-          emoji: "⚖️",
-        }
-      : {
-          title: "배드 엔딩",
-          subtitle: "침묵이 그를 삼켰다",
-          emoji: "🕯️",
-        };
+export function getEnding(dp: number, shylockHp: number): EndingMeta {
+  const hpGood = shylockHp >= SHYLOCK_HP_GOOD_ENDING_THRESHOLD;
+  const dpGood = dp >= DP_GOOD_ENDING_THRESHOLD;
+
+  if (hpGood && dpGood) {
+    return {
+      title: "역사를 바꾼 엔딩",
+      subtitle: "베네치아의 법정에서, 역사가 다른 길을 택했다",
+      emoji: "✨",
+    };
   }
-  return good
-    ? {
-        title: "역사를 바꾼 엔딩",
-        subtitle: "베네치아의 법정에서, 역사가 다른 길을 택했다",
-        emoji: "✨",
-      }
-    : {
-        title: "그냥 살아남는 엔딩",
-        subtitle: "살아남았다. 그것뿐이다",
-        emoji: "💔",
-      };
+  if (hpGood && !dpGood) {
+    return {
+      title: "그냥 살아남는 엔딩",
+      subtitle: "살아남았다. 그것뿐이다",
+      emoji: "💔",
+    };
+  }
+  if (!hpGood && dpGood) {
+    return {
+      title: "존엄 엔딩",
+      subtitle: "법은 그를 꺾었지만, 아무도 그를 굴복시키지 못했다",
+      emoji: "⚖️",
+    };
+  }
+  return {
+    title: "배드 엔딩",
+    subtitle: "침묵이 그를 삼켰다",
+    emoji: "🕯️",
+  };
 }
 
 export function endingLabel(type: EndingType): string {
@@ -47,14 +54,14 @@ export function endingLabel(type: EndingType): string {
 
 export function getEndingMetaByType(type: EndingType): EndingMeta {
   switch (type) {
-    case "dignity_ending":
-      return getEnding(DP_GOOD_ENDING_THRESHOLD, true);
-    case "bad_ending":
-      return getEnding(0, true);
     case "history_changed_ending":
-      return getEnding(DP_GOOD_ENDING_THRESHOLD, false);
+      return getEnding(DP_GOOD_ENDING_THRESHOLD, SHYLOCK_HP_GOOD_ENDING_THRESHOLD);
     case "survival_ending":
-      return getEnding(0, false);
+      return getEnding(0, SHYLOCK_HP_GOOD_ENDING_THRESHOLD);
+    case "dignity_ending":
+      return getEnding(DP_GOOD_ENDING_THRESHOLD, 0);
+    case "bad_ending":
+      return getEnding(0, 0);
     default:
       return { title: "재판 종료", subtitle: "", emoji: "⚖️" };
   }

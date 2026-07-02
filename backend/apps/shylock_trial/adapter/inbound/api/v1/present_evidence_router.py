@@ -38,8 +38,6 @@ async def present_evidence(
         trial_id=result.trial_id,
         shylock_hp=result.shylock_hp,
         dp=result.dp,
-        portia_hp=result.portia_hp,
         contradiction_valid=result.contradiction_valid,
         portia_response=result.portia_response,
-        portia_hp_change=result.portia_hp_change,
     )

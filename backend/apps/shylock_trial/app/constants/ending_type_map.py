@@ -10,8 +10,17 @@ class EndingType(StrEnum):
     SURVIVAL = "survival_ending"
 
 
-def resolve_ending_type(dp: int, alien_law_executed: bool) -> EndingType:
-    good = dp >= DP_GOOD_ENDING_THRESHOLD
-    if alien_law_executed:
-        return EndingType.DIGNITY if good else EndingType.BAD
-    return EndingType.HISTORY_CHANGED if good else EndingType.SURVIVAL
+SHYLOCK_HP_GOOD_ENDING_THRESHOLD = 40
+
+
+def resolve_ending_type(dp: int, shylock_hp: int) -> EndingType:
+    hp_good = shylock_hp >= SHYLOCK_HP_GOOD_ENDING_THRESHOLD
+    dp_good = dp >= DP_GOOD_ENDING_THRESHOLD
+
+    if hp_good and dp_good:
+        return EndingType.HISTORY_CHANGED
+    if hp_good and not dp_good:
+        return EndingType.SURVIVAL
+    if not hp_good and dp_good:
+        return EndingType.DIGNITY
+    return EndingType.BAD

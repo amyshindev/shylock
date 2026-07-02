@@ -19,7 +19,6 @@ export interface TrialState {
   scene_index: number;
   shylock_hp: number;
   dp: number;
-  portia_hp: number;
   alien_law_executed: boolean;
   phase: TrialPhase;
   choice_history?: string[];
@@ -37,7 +36,6 @@ export interface SubmitChoiceResponse {
   scene_index: number;
   shylock_hp: number;
   dp: number;
-  portia_hp: number;
   alien_law_executed: boolean;
   phase: TrialPhase;
   portia_response: string;
@@ -59,7 +57,6 @@ export interface EndingResponse {
   ending_text: string;
   shylock_hp: number;
   dp: number;
-  portia_hp: number;
   alien_law_executed: boolean;
 }
 
@@ -77,7 +74,6 @@ export interface TubalSkillResponse {
   trial_id: string;
   dp: number;
   shylock_hp: number;
-  portia_hp: number;
   success: boolean;
   ftln: number | null;
   passage: string | null;
@@ -90,16 +86,21 @@ export interface TubalSkillResponse {
 export interface LauncelotSkillResponse {
   trial_id: string;
   dp: number;
-  portia_hp: number;
+  shylock_hp: number;
   launcelot_comment: string;
+}
+
+export interface VeniceContradictionSkillResponse {
+  trial_id: string;
+  dp: number;
+  shylock_hp: number;
+  skill_comment: string;
 }
 
 export interface PresentEvidenceResponse {
   trial_id: string;
   shylock_hp: number;
   dp: number;
-  portia_hp: number;
   contradiction_valid: boolean;
   portia_response: string;
-  portia_hp_change: number;
 }

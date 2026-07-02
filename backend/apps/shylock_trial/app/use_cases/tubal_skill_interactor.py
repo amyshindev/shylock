@@ -58,7 +58,6 @@ class TubalSkillInteractor(TubalSkillUseCase):
             trial_id=trial.trial_id,
             dp=trial.dp.value,
             shylock_hp=trial.shylock_hp.value,
-            portia_hp=trial.portia_hp.value,
             agent=agent_result,
             tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
         )

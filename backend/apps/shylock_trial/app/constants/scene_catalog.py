@@ -7,7 +7,11 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
     SceneDialogueContent,
     SceneDialogueLine,
 )
-from shylock_trial.app.utils.dialogue_text import sanitize_dialogue_line, sanitize_game_text
+from shylock_trial.app.utils.dialogue_text import (
+    sanitize_character_direct_speech,
+    sanitize_dialogue_line,
+    sanitize_game_text,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -206,17 +210,17 @@ def get_scene_template(scene_index: int) -> SceneTemplate:
 
 
 def _canonical_dialogue_lines(template: SceneTemplate) -> tuple[SceneDialogueLine, ...]:
-    return tuple(
-        SceneDialogueLine(
-            text=sanitize_dialogue_line(text),
-            kind=kind,
-        )
-        for text, kind in zip(
-            template.canonical_lines,
-            template.canonical_line_kinds,
-            strict=True,
-        )
-    )
+    lines: list[SceneDialogueLine] = []
+    for text, kind in zip(
+        template.canonical_lines,
+        template.canonical_line_kinds,
+        strict=True,
+    ):
+        cleaned = sanitize_dialogue_line(text)
+        if kind == DialogueLineKind.SPEECH:
+            cleaned = sanitize_character_direct_speech(cleaned)
+        lines.append(SceneDialogueLine(text=cleaned, kind=kind))
+    return tuple(lines)
 
 
 def fallback_scene_dialogue(scene_index: int) -> SceneDialogueContent:

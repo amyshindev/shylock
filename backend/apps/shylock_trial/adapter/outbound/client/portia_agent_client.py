@@ -11,13 +11,9 @@ import anthropic
 from pydantic import BaseModel, Field, ValidationError
 
 from infrastructure.config import get_settings
-from shylock_trial.app.constants.press_present_config import (
-    PRESENT_EVIDENCE_PORTIA_HP_FAIL,
-    PRESENT_EVIDENCE_PORTIA_HP_SUCCESS,
-    PRESS_PRESENT_BY_SCENE_ID,
-)
+from shylock_trial.app.constants.press_present_config import PRESS_PRESENT_BY_SCENE_ID
 from shylock_trial.app.dtos.portia_agent_dto import PortiaPresentAgentResult
-from shylock_trial.app.utils.dialogue_text import sanitize_game_text
+from shylock_trial.app.utils.dialogue_text import sanitize_character_direct_speech, sanitize_game_text
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +26,8 @@ A witness statement was made in court. The defendant presents evidence to contra
 Use evaluate_contradiction to judge whether the evidence undermines the statement.
 If it clearly contradicts dehumanizing claims with Shylock's humanity speech, call finalize_ruling.
 Respond to the player in Korean for portia_response fields.
+portia_response must be Portia's direct courtroom speech only — no third-person narration
+(e.g. never "라고 그녀는 말하였다" or "바사니오가 … 말한다"; write what the character says).
 """
 
 PORTIA_AGENT_TOOLS: list[dict[str, Any]] = [
@@ -164,10 +162,9 @@ class PortiaAgentClient:
         if approved_contradiction:
             return PortiaPresentAgentResult(
                 contradiction_valid=True,
-                portia_response=sanitize_game_text(
+                portia_response=sanitize_character_direct_speech(
                     "군중의 말은 증거에 맞서 설 수 없소. 법정은 조용해진다."
                 ),
-                portia_hp_change=PRESENT_EVIDENCE_PORTIA_HP_SUCCESS,
             )
         return self._fallback_fail("그 증거로는 군중의 말을 꺾지 못했소.")
 
@@ -204,12 +201,11 @@ class PortiaAgentClient:
             if ruling.contradiction_valid:
                 return {"status": "recorded"}, PortiaPresentAgentResult(
                     contradiction_valid=True,
-                    portia_response=sanitize_game_text(ruling.portia_response),
-                    portia_hp_change=PRESENT_EVIDENCE_PORTIA_HP_SUCCESS,
+                    portia_response=sanitize_character_direct_speech(ruling.portia_response),
                     reasoning=ruling.reasoning,
                 )
             return {"status": "recorded"}, self._fallback_fail(
-                sanitize_game_text(ruling.portia_response) or "반박이 성립하지 않았소."
+                sanitize_character_direct_speech(ruling.portia_response) or "반박이 성립하지 않았소."
             )
 
         return {"error": f"Unknown tool: {tool_name}"}, None
@@ -258,6 +254,5 @@ class PortiaAgentClient:
     def _fallback_fail(self, message: str) -> PortiaPresentAgentResult:
         return PortiaPresentAgentResult(
             contradiction_valid=False,
-            portia_response=sanitize_game_text(message),
-            portia_hp_change=PRESENT_EVIDENCE_PORTIA_HP_FAIL,
+            portia_response=sanitize_character_direct_speech(message),
         )

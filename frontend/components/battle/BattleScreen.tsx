@@ -10,7 +10,6 @@ import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
 import { MeterDisplay, LEFT_HUD_TOP, LEFT_METERS_STACK_HEIGHT } from "./MeterDisplay";
-import { ObjectionBanner } from "./ObjectionBanner";
 import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
 
@@ -20,6 +19,7 @@ type TrialState = ReturnType<typeof useTrialProgression>;
 
 const TUBAL_SCENE_IMAGE = "/assets/scene-tubal.png";
 const LAUNCELOT_SCENE_IMAGE = "/assets/scene-launcelot.png";
+const VENICE_SCENE_IMAGE = "/assets/scene-venice-contradiction.png";
 
 interface BattleScreenProps {
   trial: TrialState;
@@ -45,7 +45,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     scene,
     shylockHp,
     dp,
-    portiaHp,
+    hpRecoveryFlash,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -55,7 +55,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isTubalActive,
     isTubalSearching,
     isLauncelotActive,
-    launcelotPhase,
     tubalEnhancedChoices,
     showChallenge,
     showPressPresent,
@@ -64,7 +63,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     testimonyIndex,
     loadingPresent,
     loadingLauncelot,
-    objection,
+    loadingVeniceSkill,
+    isVeniceSkillActive,
     climaxMode,
     climaxQuote,
     shylockPressReply,
@@ -76,7 +76,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     goNextScene,
     makeChoice,
     useSkill,
-    handleLauncelotSkill,
     dismissClimax,
     dismissTubalMessage,
     inspectCuratedEvidence,
@@ -95,14 +94,17 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     !showPressPresent &&
     !portiaReply &&
     !isTubalActive &&
-    !isLauncelotActive;
+    !isLauncelotActive &&
+    !isVeniceSkillActive;
 
   const backgroundImage =
     isLauncelotActive || loadingLauncelot
       ? LAUNCELOT_SCENE_IMAGE
-      : isTubalActive
-        ? TUBAL_SCENE_IMAGE
-        : scene.backgroundImage;
+      : isVeniceSkillActive || loadingVeniceSkill
+        ? VENICE_SCENE_IMAGE
+        : isTubalActive
+          ? TUBAL_SCENE_IMAGE
+          : scene.backgroundImage;
 
   const handlePortiaComplete = () => {
     if (isTubalActive) {
@@ -140,14 +142,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
           {showBattleHud && (
-            <MeterDisplay
-              shylockHp={shylockHp}
-              dp={dp}
-              portiaHp={portiaHp}
-              portiaHpTransition={
-                launcelotPhase === "reaction" ? "width 1.2s ease-out" : "width 0.5s ease"
-              }
-            />
+            <MeterDisplay shylockHp={shylockHp} dp={dp} hpRecoveryFlash={hpRecoveryFlash} />
           )}
           {showBattleHud && (
           <div
@@ -177,19 +172,20 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 loadingScene ||
                 loadingPresent ||
                 loadingLauncelot ||
+                loadingVeniceSkill ||
                 isLauncelotActive ||
+                isVeniceSkillActive ||
                 isTubalActive ||
                 showPressPresent ||
                 !!portiaReply
               }
               onUseSkill={useSkill}
-              onLauncelotSkill={() => void handleLauncelotSkill()}
             />
           </div>
           )}
         </div>
 
-        {showChallenge && scene.challenge && !portiaReply && !isTubalActive && !isLauncelotActive && (
+        {showChallenge && scene.challenge && !portiaReply && !isTubalActive && !isLauncelotActive && !isVeniceSkillActive && (
           <div
             style={{
               position: "absolute",
@@ -239,26 +235,30 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                   ? ""
                   : loadingLauncelot
                     ? "론슬롯이 법정으로 달려오고 있다…"
-                    : dialogueText
+                    : loadingVeniceSkill
+                      ? "샤일록이 법정에 일어선다…"
+                      : dialogueText
               }
               replyMode={
                 isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
               }
-              loadingReply={isTubalSearching || loadingReply || loadingLauncelot}
+              loadingReply={isTubalSearching || loadingReply || loadingLauncelot || loadingVeniceSkill}
               disabled={
                 isTypingBlocked ||
-                showChallenge ||
+                (showChallenge && !isLauncelotActive && !isVeniceSkillActive) ||
                 loadingScene ||
                 (showPressPresent && !shylockPressReply)
               }
               showAdvanceArrow={
-                (!showChallenge &&
+                ((!showChallenge || isLauncelotActive || isVeniceSkillActive) &&
                   !portiaReply &&
                   !isTubalActive &&
                   !loadingReply &&
                   !loadingScene &&
                   !loadingLauncelot &&
+                  !loadingVeniceSkill &&
                   (isLauncelotActive ||
+                    isVeniceSkillActive ||
                     (!showPressPresent || !!shylockPressReply)))
               }
               onAdvance={advance}
@@ -300,11 +300,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           다음 장면을 준비하는 중…
         </div>
       )}
-      {objection && <ObjectionBanner />}
       {climaxMode && (
         <ClimaxOverlay quote={climaxQuote} onContinue={dismissClimax} />
       )}
-      {evidenceDetailView && !objection && (
+      {evidenceDetailView && (
         <CourtEvidenceModal
           detail={evidenceDetailView}
           onClose={evidenceDetailView.dismissible ? dismissEvidenceDetail : undefined}

@@ -23,7 +23,10 @@ from shylock_trial.app.constants.tubal_prompt import (
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
 from shylock_trial.app.dtos.tubal_agent_dto import TubalAgentResult
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
-from shylock_trial.app.utils.dialogue_text import sanitize_game_text
+from shylock_trial.app.utils.dialogue_text import (
+    sanitize_character_direct_speech,
+    sanitize_game_text,
+)
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
 logger = logging.getLogger(__name__)
@@ -400,5 +403,7 @@ class TubalAgentClient:
             passage=passage,
             speaker=speaker,
             act_scene=act_scene,
-            tubal_comment=sanitize_game_text(sanitize_tubal_comment(tubal_comment)),
+            tubal_comment=sanitize_character_direct_speech(
+                sanitize_game_text(sanitize_tubal_comment(tubal_comment))
+            ),
         )

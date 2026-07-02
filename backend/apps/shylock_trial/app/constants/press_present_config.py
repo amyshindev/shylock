@@ -24,6 +24,3 @@ class PressPresentSceneConfig:
 
 
 PRESS_PRESENT_BY_SCENE_ID: dict[str, PressPresentSceneConfig] = {}
-
-PRESENT_EVIDENCE_PORTIA_HP_SUCCESS = -15
-PRESENT_EVIDENCE_PORTIA_HP_FAIL = 5

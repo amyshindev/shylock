@@ -24,7 +24,11 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
     SceneDialogueResultDto,
 )
 from shylock_trial.app.ports.output.portia_response_port import PortiaResponsePort
-from shylock_trial.app.utils.dialogue_text import sanitize_dialogue_line, sanitize_game_text
+from shylock_trial.app.utils.dialogue_text import (
+    sanitize_character_direct_speech,
+    sanitize_dialogue_line,
+    sanitize_game_text,
+)
 from shylock_trial.app.utils.portia_text import extract_portia_text
 
 MODEL_ID = "claude-sonnet-4-6"
@@ -33,14 +37,19 @@ MODEL_ID = "claude-sonnet-4-6"
 class PortiaResponseOutput(BaseModel):
     text: str = Field(
         description=(
-            "Player-facing Korean prose, 1–4 sentences, "
-            "faithful to Shakespeare's Venice trial."
+            "Player-facing Korean prose. For reactions: Portia's direct speech to Shylock only "
+            "(no third-person narration like '그녀는 말하였다'). 1–4 sentences."
         ),
     )
 
 
 class SceneDialogueLineOutput(BaseModel):
-    text: str
+    text: str = Field(
+        description=(
+            "For kind=speech: character's direct words only, no third-person narration "
+            "or 'X가 말하였다' wrappers."
+        ),
+    )
     kind: DialogueLineKind = DialogueLineKind.NARRATION
 
 
@@ -75,9 +84,12 @@ def _build_scene_lines(
             else DialogueLineKind.NARRATION
         )
         kind = _resolve_line_kind(line.kind, fallback_kind)
+        text = sanitize_dialogue_line(line.text)
+        if kind == DialogueLineKind.SPEECH:
+            text = sanitize_character_direct_speech(text)
         lines.append(
             SceneDialogueLine(
-                text=sanitize_dialogue_line(line.text),
+                text=text,
                 kind=kind,
             )
         )
@@ -114,17 +126,29 @@ class PortiaResponseClient(PortiaResponsePort):
 
         prose = extract_portia_text(raw)
         if prose and not prose.startswith("{"):
-            return PortiaResponseResultDto(text=sanitize_game_text(prose))
+            return PortiaResponseResultDto(
+                text=self._finalize_portia_text(prose, prompt.request_type)
+            )
 
         try:
             parsed = PortiaResponseOutput.model_validate_json(prose or raw)
             text = parsed.text.strip()
             if text:
-                return PortiaResponseResultDto(text=sanitize_game_text(text))
+                return PortiaResponseResultDto(
+                    text=self._finalize_portia_text(text, prompt.request_type)
+                )
         except (ValidationError, json.JSONDecodeError):
             pass
 
-        return PortiaResponseResultDto(text=sanitize_game_text(extract_portia_text(raw)))
+        return PortiaResponseResultDto(
+            text=self._finalize_portia_text(extract_portia_text(raw), prompt.request_type)
+        )
+
+    def _finalize_portia_text(self, text: str, request_type: str) -> str:
+        cleaned = sanitize_game_text(text)
+        if request_type == "reaction":
+            cleaned = sanitize_character_direct_speech(cleaned)
+        return cleaned
 
     async def generate_scene_dialogue(
         self,

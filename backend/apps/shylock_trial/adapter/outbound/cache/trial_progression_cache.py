@@ -9,7 +9,6 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
 from shylock_trial.app.ports.output.trial_progression_cache_port import TrialProgressionCachePort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
@@ -63,7 +62,6 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             scene_index=data["scene_index"],
             shylock_hp=ShylockHpScore(data["shylock_hp"]),
             dp=DpScore(data["dp"]),
-            portia_hp=PortiaHpScore(data.get("portia_hp", 100)),
             alien_law_executed=data.get("alien_law_executed", True),
             choice_history=data["choice_history"],
             phase=TrialPhase(data["phase"]),
@@ -80,7 +78,6 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "scene_index": trial.scene_index,
                 "shylock_hp": trial.shylock_hp.value,
                 "dp": trial.dp.value,
-                "portia_hp": trial.portia_hp.value,
                 "alien_law_executed": trial.alien_law_executed,
                 "choice_history": trial.choice_history,
                 "phase": trial.phase.value,

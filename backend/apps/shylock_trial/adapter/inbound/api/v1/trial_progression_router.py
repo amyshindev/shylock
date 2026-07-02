@@ -12,6 +12,7 @@ from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     SubmitChoiceRequest,
     SubmitChoiceResponse,
     TrialResponse,
+    VeniceContradictionSkillResponse,
     scene_dialogue_from_trial,
 )
 from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
@@ -47,7 +48,6 @@ async def start_trial(
         scene_index=result.scene_index,
         shylock_hp=result.shylock_hp,
         dp=result.dp,
-        portia_hp=result.portia_hp,
         alien_law_executed=result.alien_law_executed,
         phase=result.phase,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
@@ -68,7 +68,6 @@ async def get_trial(
         scene_index=trial.scene_index,
         shylock_hp=trial.shylock_hp.value,
         dp=trial.dp.value,
-        portia_hp=trial.portia_hp.value,
         alien_law_executed=trial.alien_law_executed,
         phase=trial.phase,
         choice_history=trial.choice_history,
@@ -95,7 +94,6 @@ async def submit_choice(
         scene_index=result.scene_index,
         shylock_hp=result.shylock_hp,
         dp=result.dp,
-        portia_hp=result.portia_hp,
         alien_law_executed=result.alien_law_executed,
         phase=result.phase,
         portia_response=result.portia_response,
@@ -142,7 +140,6 @@ async def generate_ending(
         ending_text=result.ending_text,
         shylock_hp=result.shylock_hp,
         dp=result.dp,
-        portia_hp=result.portia_hp,
         alien_law_executed=result.alien_law_executed,
     )
 
@@ -160,8 +157,28 @@ async def use_launcelot_skill(
         return LauncelotSkillResponse(
             trial_id=result.trial_id,
             dp=result.dp,
-            portia_hp=result.portia_hp,
+            shylock_hp=result.shylock_hp,
             launcelot_comment=result.launcelot_comment,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@trial_progression_router.post(
+    "/{trial_id}/skills/venice-contradiction",
+    response_model=VeniceContradictionSkillResponse,
+)
+async def use_venice_contradiction_skill(
+    trial_id: UUID,
+    use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
+) -> VeniceContradictionSkillResponse:
+    try:
+        result = await use_case.use_venice_contradiction_skill(trial_id)
+        return VeniceContradictionSkillResponse(
+            trial_id=result.trial_id,
+            dp=result.dp,
+            shylock_hp=result.shylock_hp,
+            skill_comment=result.skill_comment,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

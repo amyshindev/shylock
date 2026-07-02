@@ -11,7 +11,6 @@ from shylock_trial.app.utils.trial_metadata_store import (
 )
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
@@ -21,7 +20,6 @@ def to_entity(orm: TrialOrm) -> Trial:
         scene_index=orm.scene_index,
         shylock_hp=ShylockHpScore(orm.shylock_hp),
         dp=DpScore(orm.dp),
-        portia_hp=PortiaHpScore(orm.portia_hp),
         alien_law_executed=orm.alien_law_executed,
         choice_history=[row.choice_id for row in orm.choice_history],
         phase=TrialPhase(orm.phase),
@@ -39,7 +37,6 @@ def to_orm(entity: Trial) -> TrialOrm:
         scene_index=entity.scene_index,
         shylock_hp=entity.shylock_hp.value,
         dp=entity.dp.value,
-        portia_hp=entity.portia_hp.value,
         alien_law_executed=entity.alien_law_executed,
         phase=entity.phase.value,
         narration_text=entity.narration_text,

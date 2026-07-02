@@ -25,7 +25,5 @@ class PresentEvidenceResponse(BaseModel):
     trial_id: UUID
     shylock_hp: int
     dp: int
-    portia_hp: int
     contradiction_valid: bool
     portia_response: str
-    portia_hp_change: int

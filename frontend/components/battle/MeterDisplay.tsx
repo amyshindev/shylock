@@ -2,7 +2,6 @@
 
 import {
   DP_MAX,
-  PORTIA_HP_MAX,
   SHYLOCK_HP_MAX,
 } from "@/lib/constants/game-balance";
 import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
@@ -10,8 +9,7 @@ import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 interface MeterDisplayProps {
   shylockHp: number;
   dp: number;
-  portiaHp: number;
-  portiaHpTransition?: string;
+  hpRecoveryFlash?: number | null;
 }
 
 function MeterBar({
@@ -20,14 +18,12 @@ function MeterBar({
   max,
   color,
   labelColor = "#e8dce4",
-  barTransition = "width 0.5s ease",
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
   labelColor?: string;
-  barTransition?: string;
 }) {
   const clamped = Math.max(0, Math.min(max, value));
   const pct = max > 0 ? (clamped / max) * 100 : 0;
@@ -79,7 +75,7 @@ function MeterBar({
             height: "100%",
             background: `linear-gradient(90deg, ${color}99, ${color})`,
             borderRadius: 2,
-            transition: barTransition,
+            transition: "width 0.5s ease",
             boxShadow: `0 0 6px ${color}88`,
           }}
         />
@@ -102,15 +98,7 @@ function dpColor(value: number): string {
   return "#3388dd";
 }
 
-function portiaHpColor(value: number): string {
-  const ratio = value / PORTIA_HP_MAX;
-  if (ratio > 0.5) return "#ff6666";
-  if (ratio > 0.25) return "#ff4444";
-  return "#dd3333";
-}
-
 const LEFT_METER_COLUMN_WIDTH = 336;
-const PORTIA_METER_COLUMN_WIDTH = 336;
 const LEFT_HUD_INSET = 10;
 const LEFT_HUD_TOP = 8;
 /** Approx. height of HP + DP bars (used to stack skill panel below). */
@@ -118,31 +106,21 @@ const LEFT_METERS_STACK_HEIGHT = 66;
 
 export {
   LEFT_METER_COLUMN_WIDTH,
-  PORTIA_METER_COLUMN_WIDTH,
   LEFT_HUD_INSET,
   LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 };
 
-export function MeterDisplay({
-  shylockHp,
-  dp,
-  portiaHp,
-  portiaHpTransition = "width 0.5s ease",
-}: MeterDisplayProps) {
+export function MeterDisplay({ shylockHp, dp, hpRecoveryFlash }: MeterDisplayProps) {
   return (
     <div
       style={{
         position: "absolute",
         top: LEFT_HUD_TOP,
         left: LEFT_HUD_INSET,
-        right: 10,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 12,
         zIndex: 10,
         pointerEvents: "none",
+        width: LEFT_METER_COLUMN_WIDTH,
       }}
     >
       <div
@@ -150,10 +128,27 @@ export function MeterDisplay({
           display: "flex",
           flexDirection: "column",
           gap: 5,
-          width: LEFT_METER_COLUMN_WIDTH,
-          flexShrink: 0,
+          position: "relative",
         }}
       >
+        {hpRecoveryFlash != null && hpRecoveryFlash > 0 && (
+          <div
+            className="hp-recovery-flash"
+            style={{
+              position: "absolute",
+              top: -4,
+              right: 4,
+              zIndex: 12,
+              color: "#8dffb0",
+              fontSize: gameFontSize.sm,
+              fontWeight: 800,
+              letterSpacing: 0.6,
+              textShadow: "0 0 10px rgba(80, 255, 140, 0.55), 0 2px 4px rgba(0, 0, 0, 0.8)",
+            }}
+          >
+            HP +{hpRecoveryFlash}
+          </div>
+        )}
         <MeterBar
           label="HP"
           value={shylockHp}
@@ -167,17 +162,6 @@ export function MeterDisplay({
           max={DP_MAX}
           color={dpColor(dp)}
           labelColor="#b8dcff"
-        />
-      </div>
-
-      <div style={{ width: PORTIA_METER_COLUMN_WIDTH, flexShrink: 0 }}>
-        <MeterBar
-          label="포샤 HP"
-          value={portiaHp}
-          max={PORTIA_HP_MAX}
-          color={portiaHpColor(portiaHp)}
-          labelColor="#ffb8b8"
-          barTransition={portiaHpTransition}
         />
       </div>
     </div>
