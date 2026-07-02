@@ -45,6 +45,8 @@ class Trial:
     phase: TrialPhase
     narration_text: str | None = None
     scene_dialogues: dict[int, SceneDialogueContent] = field(default_factory=dict)
+    tubal_used_scenes: tuple[str, ...] = ()
+    presented_evidence: tuple[str, ...] = ()
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

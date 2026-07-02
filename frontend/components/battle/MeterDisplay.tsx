@@ -154,7 +154,7 @@ export function MeterDisplay({ shylockHp, dp, portiaHp }: MeterDisplayProps) {
           labelColor="#ffc8c8"
         />
         <MeterBar
-          label="존엄 (DP)"
+          label="DP (존엄)"
           value={dp}
           max={DP_MAX}
           color={dpColor(dp)}

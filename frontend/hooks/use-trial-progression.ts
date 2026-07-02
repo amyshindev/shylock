@@ -34,6 +34,7 @@ import {
   SKILLS,
   TUBAL_INTRO_LINE,
   TUBAL_SEARCHING_LINE,
+  TUBAL_SEARCH_FAILURE_LINE,
   type SkillId,
 } from "@/lib/constants/game-balance";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
@@ -112,6 +113,7 @@ export function useTrialProgression(trialId: string) {
   const [initialized, setInitialized] = useState(false);
 
   const choiceLockRef = useRef(false);
+  const sceneAdvanceLockRef = useRef(false);
   const climaxResolveRef = useRef<(() => void) | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
@@ -317,6 +319,11 @@ export function useTrialProgression(trialId: string) {
   }, [trialId]);
 
   const goNextScene = useCallback(async () => {
+    if (sceneAdvanceLockRef.current || loadingScene) {
+      return;
+    }
+    sceneAdvanceLockRef.current = true;
+
     setPortiaReply("");
     setTubalPhase("idle");
     setTubalMessage(null);
@@ -328,31 +335,32 @@ export function useTrialProgression(trialId: string) {
     setClimaxMode(false);
     setShowChallenge(false);
     setLineIdx(0);
+    setError(null);
 
     if (isLastScene) {
-      await finishToEnding();
+      try {
+        await finishToEnding();
+      } finally {
+        sceneAdvanceLockRef.current = false;
+      }
       return;
     }
 
     setLoadingScene(true);
-    let nextSceneIndex: number | null = null;
     try {
       const result = await advanceScene(trialId);
       setSceneDialogues((prev) => ({
         ...prev,
         [result.scene_index]: result.scene_dialogue,
       }));
-      nextSceneIndex = result.scene_index;
+      setSceneIdx(result.scene_index);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to advance scene");
-      nextSceneIndex = Math.min(sceneIdx + 1, SCENE_TEMPLATES.length - 1);
     } finally {
       setLoadingScene(false);
-      if (nextSceneIndex !== null) {
-        setSceneIdx(nextSceneIndex);
-      }
+      sceneAdvanceLockRef.current = false;
     }
-  }, [isLastScene, trialId, finishToEnding, sceneIdx]);
+  }, [isLastScene, trialId, finishToEnding, loadingScene]);
 
   const advance = useCallback(() => {
     if (
@@ -507,9 +515,7 @@ export function useTrialProgression(trialId: string) {
         );
         setTubalMessage(res.tubal_comment);
       } else {
-        setTubalMessage(
-          res.tubal_comment ?? "이번에는 법정에 낼 만한 걸 못 찾았소.",
-        );
+        setTubalMessage(res.tubal_comment ?? TUBAL_SEARCH_FAILURE_LINE);
       }
       setTubalPhase("result");
     } catch (e) {

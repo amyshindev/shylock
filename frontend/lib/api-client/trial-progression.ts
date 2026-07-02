@@ -29,38 +29,47 @@ async function parseJson<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function requestJson<T>(input: RequestInfo | URL, init?: RequestInit): Promise<T> {
+  try {
+    const res = await fetch(input, init);
+    return await parseJson<T>(res);
+  } catch (e) {
+    if (e instanceof TypeError) {
+      throw new Error(
+        "서버에 연결할 수 없습니다. 백엔드가 실행 중인지 확인한 뒤 다시 시도해 주세요.",
+      );
+    }
+    throw e;
+  }
+}
+
 export async function startTrial(): Promise<StartTrialResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials`, { method: "POST" });
-  return parseJson<StartTrialResponse>(res);
+  return requestJson<StartTrialResponse>(`${API_BASE}${API_PREFIX}/trials`, { method: "POST" });
 }
 
 export async function getTrial(trialId: string): Promise<TrialState> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}`);
-  return parseJson<TrialState>(res);
+  return requestJson<TrialState>(`${API_BASE}${API_PREFIX}/trials/${trialId}`);
 }
 
 export async function submitChoice(
   trialId: string,
   choiceId: string,
 ): Promise<SubmitChoiceResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/choices`, {
+  return requestJson<SubmitChoiceResponse>(`${API_BASE}${API_PREFIX}/trials/${trialId}/choices`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ choice_id: choiceId }),
   });
-  return parseJson<SubmitChoiceResponse>(res);
 }
 
 export async function advanceScene(trialId: string): Promise<AdvanceSceneResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/advance`, {
+  return requestJson<AdvanceSceneResponse>(`${API_BASE}${API_PREFIX}/trials/${trialId}/advance`, {
     method: "POST",
   });
-  return parseJson<AdvanceSceneResponse>(res);
 }
 
 export async function generateEnding(trialId: string): Promise<EndingResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/ending`);
-  return parseJson<EndingResponse>(res);
+  return requestJson<EndingResponse>(`${API_BASE}${API_PREFIX}/trials/${trialId}/ending`);
 }
 
 export interface InvokeTubalSkillBody {
@@ -72,12 +81,11 @@ export async function invokeTubalSkill(
   trialId: string,
   body: InvokeTubalSkillBody = {},
 ): Promise<TubalSkillResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/skills/tubal`, {
+  return requestJson<TubalSkillResponse>(`${API_BASE}${API_PREFIX}/trials/${trialId}/skills/tubal`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  return parseJson<TubalSkillResponse>(res);
 }
 
 export interface PresentEvidenceBody {
@@ -90,10 +98,12 @@ export async function presentEvidence(
   trialId: string,
   body: PresentEvidenceBody,
 ): Promise<PresentEvidenceResponse> {
-  const res = await fetch(`${API_BASE}${API_PREFIX}/trials/${trialId}/present-evidence`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  return parseJson<PresentEvidenceResponse>(res);
+  return requestJson<PresentEvidenceResponse>(
+    `${API_BASE}${API_PREFIX}/trials/${trialId}/present-evidence`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
 }

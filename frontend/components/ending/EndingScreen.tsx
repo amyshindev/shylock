@@ -58,7 +58,7 @@ export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
       <div style={{ display: "flex", gap: 40, marginBottom: 24 }}>
         {[
           ["HP", ending.shylock_hp, "#ff6666"],
-          ["존엄 (DP)", ending.dp, theme.gold],
+          ["DP", ending.dp, theme.gold],
         ].map(([label, val, color]) => (
           <div key={label as string}>
             <div style={{ color: theme.textMuted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>

@@ -2,11 +2,14 @@ from uuid import UUID
 
 from shylock_trial.adapter.outbound.client.tubal_agent_client import TubalAgentClient
 from shylock_trial.app.constants.game_balance import SKILL_TUBAL_COST
-from shylock_trial.app.constants.scene_catalog import get_scene_template
-from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind
+from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue, get_scene_template
+from shylock_trial.app.constants.scene_choices import FINAL_SCENE_INDEX
+from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDialoguePromptDto
 from shylock_trial.app.dtos.tubal_skill_dto import TubalSkillInputDto, TubalSkillResultDto
+from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
 from shylock_trial.app.ports.input.tubal_skill_use_case import TubalSkillUseCase
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
+from shylock_trial.app.utils.trial_metadata_store import append_unique
 from shylock_trial.domain.entities.trial_entity import Trial
 
 
@@ -15,9 +18,11 @@ class TubalSkillInteractor(TubalSkillUseCase):
         self,
         trial_port: TrialProgressionPort,
         tubal_agent: TubalAgentClient,
+        portia: PortiaResponseUseCase,
     ) -> None:
         self._trial_port = trial_port
         self._tubal_agent = tubal_agent
+        self._portia = portia
 
     async def invoke_tubal(self, input_dto: TubalSkillInputDto) -> TubalSkillResultDto:
         trial = await self._require_trial(input_dto.trial_id)
@@ -35,7 +40,13 @@ class TubalSkillInteractor(TubalSkillUseCase):
             scene_id=scene_id,
         )
 
+        if not agent_result.success:
+            trial.dp = trial.dp.apply_delta(SKILL_TUBAL_COST)
+        else:
+            trial.tubal_used_scenes = append_unique(trial.tubal_used_scenes, scene_id)
+
         trial = await self._trial_port.save(trial)
+        trial = await self._prefetch_next_scene_dialogue(trial)
 
         return TubalSkillResultDto(
             trial_id=trial.trial_id,
@@ -79,3 +90,25 @@ class TubalSkillInteractor(TubalSkillUseCase):
         if trial is None:
             raise ValueError(f"Trial not found: {trial_id}")
         return trial
+
+    async def _prefetch_next_scene_dialogue(self, trial: Trial) -> Trial:
+        next_index = trial.scene_index + 1
+        if next_index > FINAL_SCENE_INDEX or next_index in trial.scene_dialogues:
+            return trial
+
+        try:
+            result = await self._portia.generate_scene_dialogue(
+                SceneDialoguePromptDto(
+                    trial_id=trial.trial_id,
+                    scene_index=next_index,
+                    dp=trial.dp.value,
+                    shylock_hp=trial.shylock_hp.value,
+                    choice_history=tuple(trial.choice_history),
+                )
+            )
+            content = result.content
+        except Exception:
+            content = fallback_scene_dialogue(next_index)
+
+        trial.scene_dialogues[next_index] = content
+        return await self._trial_port.save(trial)

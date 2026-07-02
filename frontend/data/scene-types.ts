@@ -1,4 +1,4 @@
-export type Speaker = "NARRATOR" | "PORTIA" | "CROWD";
+export type Speaker = "NARRATOR" | "PORTIA" | "BASSANIO" | "CROWD";
 
 export type DialogueLineKind = "speech" | "narration";
 

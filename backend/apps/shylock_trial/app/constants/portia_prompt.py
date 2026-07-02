@@ -7,17 +7,21 @@ from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialoguePromptDto
 SCENE_BRIEFS: dict[int, str] = {
     0: "Opening — Venice court 1596. Shylock stands alone against the court.",
     1: "Portia (as Balthazar) asks Shylock to show mercy and take triple the bond.",
-    2: "The crowd jeers at Shylock.",
-    3: "Portia invokes Jessica's elopement and conversion.",
-    4: "Portia's final question — does Shylock know mercy? Climax: Hath not a Jew eyes?",
-    5: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
-    6: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
+    2: "Bassanio offers ten times the bond and begs Shylock for mercy.",
+    3: "The crowd jeers at Shylock.",
+    4: "Portia invokes Jessica's elopement and conversion.",
+    5: "Portia's final question — does Shylock know mercy? Climax: Hath not a Jew eyes?",
+    6: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
+    7: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
 }
 
 CHOICE_BRIEFS: dict[str, str] = {
     "appeal_contract": "The contract is legally valid.",
     "appeal_humanity": "I am human — like you.",
     "appeal_mercy": "Shylock stays silent.",
+    "invoke_bond": "The contract stands — money cannot replace it.",
+    "accuse_bassanio": "Accuses Bassanio of putting Antonio in this position.",
+    "cold_silence": "Closes eyes in silence.",
     "show_gaberdine": "Shows the spit stain on his gaberdine.",
     "ignore_court": "Ignores the crowd, looks to the judge.",
     "rage_at_crowd": "Rages back at the crowd.",
@@ -60,6 +64,7 @@ The judge is always **포샤** in Korean. Never use 발타자르, 발타사르, 
 Speaker roles:
 - NARRATOR: second-person to Shylock, atmospheric, no character name tags in lines.
 - PORTIA: 포샤 speaks directly to Shylock — scene setup lines only, NOT post-choice reaction.
+- BASSANIO: Bassanio pleads with Shylock — emotional, desperate, appeals to mercy.
 - CROWD: hostile jeers, short bursts.
 
 Each line must be a complete utterance. Do not end a line with an opening quote or start a line \
@@ -120,6 +125,18 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
         "ending": "Final ending narration based on DP, alien law, and choices.",
     }.get(prompt.request_type, "Next trial line.")
 
+    tubal_context = (
+        f"Tubal intervened in: {list(prompt.tubal_used_scenes)}"
+        if prompt.tubal_used_scenes
+        else "Tubal has not intervened."
+    )
+
+    evidence_context = (
+        f"Evidence presented by Shylock: {list(prompt.presented_evidence)}"
+        if prompt.presented_evidence
+        else "No evidence presented yet."
+    )
+
     return f"""{type_instruction}
 
 scene: {scene_brief}
@@ -127,5 +144,7 @@ context: {prompt.context}
 dp: {prompt.dp} | shylock_hp: {prompt.shylock_hp}
 alien_law_executed: {prompt.alien_law_executed}
 choices: {choices if choices else ["(none)"]}
+tubal: {tubal_context}
+evidence: {evidence_context}
 
 Return JSON with a single "text" field containing Korean prose only."""

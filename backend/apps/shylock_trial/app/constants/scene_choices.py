@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 
 # Must stay in sync with frontend scene-templates (choice stat deltas).
-# Scene indices 0–6 (7 scenes).
-FINAL_SCENE_INDEX = 6
+# Scene indices 0–7 (8 scenes).
+FINAL_SCENE_INDEX = 7
 
 
 @dataclass(frozen=True, slots=True)
@@ -15,6 +15,12 @@ CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
     "appeal_contract": ChoiceEffect(0, 15),
     "appeal_humanity": ChoiceEffect(20, 5),
     "appeal_mercy": ChoiceEffect(-15, -5),
+    "invoke_bond": ChoiceEffect(15, 10),
+    "accuse_bassanio": ChoiceEffect(20, -5),
+    "cold_silence": ChoiceEffect(-15, 5),
+    "show_gaberdine": ChoiceEffect(15, 10),
+    "ignore_court": ChoiceEffect(5, 5),
+    "rage_at_crowd": ChoiceEffect(-10, -10),
     "defend_jessica": ChoiceEffect(15, 15),
     "reject_private_matter": ChoiceEffect(10, 10),
     "speechless": ChoiceEffect(-20, -15),
@@ -35,3 +41,23 @@ def get_choice_effect(choice_id: str) -> ChoiceEffect:
     if effect is None:
         raise ValueError(f"Unknown choice_id: {choice_id}")
     return effect
+
+
+# Must stay in sync with frontend scene-templates (choice.evidence).
+CHOICE_EVIDENCE: dict[str, str] = {
+    "appeal_contract": "bond",
+    "appeal_humanity": "hath_not",
+    "show_gaberdine": "gaberdine",
+    "defend_jessica": "jessica",
+    "reject_private_matter": "bond",
+    "hath_not_speech": "hath_not",
+    "bond_only": "bond",
+    "blood_impossible": "blood",
+    "take_principal_only": "bond",
+    "reject_conversion": "alien_law",
+    "mock_mercy": "alien_law",
+}
+
+
+def get_choice_evidence_id(choice_id: str) -> str | None:
+    return CHOICE_EVIDENCE.get(choice_id)

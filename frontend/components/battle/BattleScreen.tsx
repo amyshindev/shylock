@@ -80,7 +80,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     dismissEvidenceDetail,
   } = trial;
 
+  const showBattleHud = scene.id !== "opening";
+
   const showEvidenceBar =
+    showBattleHud &&
     (scene.availableEvidence.length > 0 || tubalCourtRecords.length > 0) &&
     !showChallenge &&
     !showPressPresent &&
@@ -124,7 +127,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         }}
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-          <MeterDisplay shylockHp={shylockHp} dp={dp} portiaHp={portiaHp} />
+          {showBattleHud && (
+            <MeterDisplay shylockHp={shylockHp} dp={dp} portiaHp={portiaHp} />
+          )}
+          {showBattleHud && (
           <div
             style={{
               position: "absolute",
@@ -158,6 +164,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
               onUseSkill={useSkill}
             />
           </div>
+          )}
         </div>
 
         <div style={textBoxDockStyle()}>

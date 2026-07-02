@@ -6,6 +6,7 @@ from shylock_trial.app.constants.scene_catalog import get_scene_template
 from shylock_trial.app.dtos.present_evidence_dto import PresentEvidenceInputDto, PresentEvidenceResultDto
 from shylock_trial.app.ports.input.present_evidence_use_case import PresentEvidenceUseCase
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
+from shylock_trial.app.utils.trial_metadata_store import append_unique
 from shylock_trial.domain.entities.trial_entity import Trial
 
 
@@ -53,6 +54,10 @@ class PresentEvidenceInteractor(PresentEvidenceUseCase):
         )
 
         trial.portia_hp = trial.portia_hp.apply_delta(agent_result.portia_hp_change)
+        trial.presented_evidence = append_unique(
+            trial.presented_evidence,
+            input_dto.evidence_id,
+        )
         trial = await self._trial_port.save(trial)
 
         return PresentEvidenceResultDto(

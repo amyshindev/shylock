@@ -11,7 +11,8 @@ export const SKILL_CROWD_COST = 40;
 export type SkillId = "objection" | "tubal" | "crowd";
 
 export const TUBAL_INTRO_LINE = "잠깐, 내가 증거를 가져왔소.";
-export const TUBAL_SEARCHING_LINE = "투발이 Folger 사본을 뒤지는 중…";
+export const TUBAL_SEARCHING_LINE = "잠시만 기다리시오. 사본을 뒤져보겠소.";
+export const TUBAL_SEARCH_FAILURE_LINE = "이번에는 증거가 될 만한 걸 못 찾았소.";
 
 export interface SkillDefinition {
   id: SkillId;

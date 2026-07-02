@@ -91,7 +91,7 @@ export function DialogueBox({
 
   const loadingMessage =
     replyMode === "tubal"
-      ? sanitizeDialogueLine(text) || "투발이 증거를 찾고 있다..."
+      ? sanitizeDialogueLine(text) || "증거를 찾고 있소…"
       : "포샤가 반응하고 있다...";
 
   return (

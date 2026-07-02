@@ -69,6 +69,8 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             phase=TrialPhase(data["phase"]),
             narration_text=data.get("narration_text"),
             scene_dialogues=self._deserialize_scene_dialogues(data.get("scene_dialogues")),
+            tubal_used_scenes=tuple(data.get("tubal_used_scenes", [])),
+            presented_evidence=tuple(data.get("presented_evidence", [])),
         )
 
     async def set(self, trial: Trial, ttl_seconds: int = 3600) -> None:
@@ -84,6 +86,8 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "phase": trial.phase.value,
                 "narration_text": trial.narration_text,
                 "scene_dialogues": self._serialize_scene_dialogues(trial),
+                "tubal_used_scenes": list(trial.tubal_used_scenes),
+                "presented_evidence": list(trial.presented_evidence),
             }
         )
         await self._redis.set(self._key(trial.trial_id), payload, ex=ttl_seconds)

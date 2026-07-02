@@ -111,6 +111,11 @@ async def advance_scene(
         result = await use_case.advance_scene(trial_id)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="다음 장면을 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+        ) from exc
     return AdvanceSceneResponse(
         trial_id=result.trial_id,
         scene_index=result.scene_index,

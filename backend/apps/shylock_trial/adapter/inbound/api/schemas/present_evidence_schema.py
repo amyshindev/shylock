@@ -8,7 +8,7 @@ class PresentEvidenceRequest(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "scene_id": "crowd_jeers",
+                    "scene_id": "example_press_present_scene",
                     "evidence_id": "hath_not",
                     "evidence_text": "Hath not a Jew eyes? If you prick us, do we not bleed?",
                 }

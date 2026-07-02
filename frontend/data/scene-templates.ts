@@ -59,36 +59,82 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     availableEvidence: ["bond", "hath_not"],
   },
   {
+    id: "bassanio_plea",
+    speaker: "BASSANIO",
+    speakerLabel: "바사니오",
+    backgroundImage: "/assets/scene-bassanio-plea.png",
+    fallbackLines: [
+      { text: '"샤일록, 원금의 열 배를 드리겠소."', kind: S },
+      { text: '"이번 한 번만 자비를 베푸시오."', kind: S },
+      { text: '"당신이 원하는 건 복수요, 정의가 아니오."', kind: S },
+    ],
+    challengeTemplate: {
+      header: "▶ 샤일록의 선택",
+      fallbackText: "바사니오가 당신을 설득하려 한다. 당신은—",
+      options: [
+        {
+          id: "invoke_bond",
+          fallbackText: "계약서가 있소. 열 배라도 계약을 대신할 수 없소",
+          evidence: null,
+          dpChange: 15,
+          shylockHpChange: 10,
+        },
+        {
+          id: "accuse_bassanio",
+          fallbackText: "당신이 안토니오를 이 자리에 몰아넣은 거요",
+          evidence: null,
+          dpChange: 20,
+          shylockHpChange: -5,
+        },
+        {
+          id: "cold_silence",
+          fallbackText: "(눈을 감는다)",
+          evidence: null,
+          dpChange: -15,
+          shylockHpChange: 5,
+        },
+      ],
+    },
+    availableEvidence: ["bond", "gaberdine"],
+  },
+  {
     id: "crowd_jeers",
     speaker: "CROWD",
     speakerLabel: "군중",
     backgroundImage: "/assets/scene-crowd-jeers.png",
-    interactionType: "pressPresent",
     fallbackLines: [
       { text: '"저 유대인을 보라!"', kind: S },
       { text: '"자비도 모르는 자가!"', kind: S },
       { text: "웅성거림이 법정을 가득 채운다.", kind: N },
     ],
-    challengeTemplate: null,
-    pressPresent: {
-      testimony: [
+    challengeTemplate: {
+      header: "▶ 샤일록의 선택",
+      fallbackText: "군중의 조롱에 당신은—",
+      options: [
         {
-          id: "t1",
-          text: "저 유대인을 보라! 자비도 모르는 자가!",
-          pressReaction: "그렇소! 법만 따를 뿐이오!",
+          id: "show_gaberdine",
+          fallbackText: "외투의 침 자국을 보여준다",
+          evidence: "gaberdine",
+          dpChange: 15,
+          shylockHpChange: 10,
         },
         {
-          id: "t2",
-          text: "이 자는 인간이 아니라 짐승이오.",
-          pressReaction: "짐승이라니... 계속하시오.",
+          id: "ignore_court",
+          fallbackText: "무시하고 판사를 바라본다",
+          evidence: null,
+          dpChange: 5,
+          shylockHpChange: 5,
+        },
+        {
+          id: "rage_at_crowd",
+          fallbackText: "분노로 맞선다",
+          evidence: null,
+          dpChange: -10,
+          shylockHpChange: -10,
         },
       ],
-      contradiction: {
-        statementId: "t2",
-        evidenceId: "hath_not",
-      },
     },
-    availableEvidence: ["hath_not", "gaberdine", "bond"],
+    availableEvidence: ["gaberdine", "bond", "hath_not"],
   },
   {
     id: "jessica_attack",

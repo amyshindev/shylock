@@ -15,6 +15,8 @@ class PortiaResponsePromptDto:
     choice_history: tuple[str, ...]
     context: str
     request_type: str  # "narration" | "reaction" | "ending"
+    tubal_used_scenes: tuple[str, ...] = ()
+    presented_evidence: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

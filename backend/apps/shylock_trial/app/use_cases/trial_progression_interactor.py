@@ -1,4 +1,5 @@
 from uuid import UUID, uuid4
+import asyncio
 
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
@@ -6,7 +7,12 @@ from shylock_trial.app.constants.game_balance import (
     SHYLOCK_DP_START,
     SHYLOCK_HP_MAX,
 )
-from shylock_trial.app.constants.scene_choices import get_choice_effect
+from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
+from shylock_trial.app.constants.scene_choices import (
+    FINAL_SCENE_INDEX,
+    get_choice_effect,
+    get_choice_evidence_id,
+)
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import (
@@ -28,6 +34,7 @@ from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
 from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
+from shylock_trial.app.utils.trial_metadata_store import append_unique
 
 
 class TrialProgressionInteractor(TrialProgressionUseCase):
@@ -75,23 +82,23 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         trial.dp = trial.dp.apply_delta(effect.dp_delta)
         trial.shylock_hp = trial.shylock_hp.apply_delta(effect.shylock_hp_delta)
 
-        await self._evidence.search(
-            EvidenceSearchInputDto(query=input_dto.choice_id, limit=3)
-        )
+        evidence_id = get_choice_evidence_id(input_dto.choice_id)
+        if evidence_id:
+            trial.presented_evidence = append_unique(trial.presented_evidence, evidence_id)
 
-        portia = await self._portia.generate(
-            PortiaResponsePromptDto(
-                trial_id=trial.trial_id,
-                scene_index=trial.scene_index,
-                dp=trial.dp.value,
-                shylock_hp=trial.shylock_hp.value,
-                alien_law_executed=trial.alien_law_executed,
-                phase=trial.phase,
-                choice_history=tuple(trial.choice_history),
-                context=f"choice:{input_dto.choice_id}",
-                request_type="reaction",
-            )
+        portia_prompt = self._build_portia_prompt(
+            trial,
+            context=f"choice:{input_dto.choice_id}",
+            request_type="reaction",
         )
+        next_scene_index = trial.scene_index + 1
+        if next_scene_index <= FINAL_SCENE_INDEX:
+            portia, _ = await asyncio.gather(
+                self._portia.generate(portia_prompt),
+                self._ensure_scene_dialogue(trial, next_scene_index),
+            )
+        else:
+            portia = await self._portia.generate(portia_prompt)
 
         is_ending = False
 
@@ -128,14 +135,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         ending_type = resolve_ending_type(trial.dp.value, trial.alien_law_executed)
 
         ending = await self._portia.generate(
-            PortiaResponsePromptDto(
-                trial_id=trial.trial_id,
-                scene_index=trial.scene_index,
-                dp=trial.dp.value,
-                shylock_hp=trial.shylock_hp.value,
-                alien_law_executed=trial.alien_law_executed,
-                phase=trial.phase,
-                choice_history=tuple(trial.choice_history),
+            self._build_portia_prompt(
+                trial,
                 context="final_ending",
                 request_type="ending",
             )
@@ -171,20 +172,46 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         if cached is not None:
             return cached
 
-        result = await self._portia.generate_scene_dialogue(
-            SceneDialoguePromptDto(
-                trial_id=trial.trial_id,
-                scene_index=scene_index,
-                dp=trial.dp.value,
-                shylock_hp=trial.shylock_hp.value,
-                choice_history=tuple(trial.choice_history),
+        try:
+            result = await self._portia.generate_scene_dialogue(
+                SceneDialoguePromptDto(
+                    trial_id=trial.trial_id,
+                    scene_index=scene_index,
+                    dp=trial.dp.value,
+                    shylock_hp=trial.shylock_hp.value,
+                    choice_history=tuple(trial.choice_history),
+                )
             )
-        )
-        trial.scene_dialogues[scene_index] = result.content
-        return result.content
+            content = result.content
+        except Exception:
+            content = fallback_scene_dialogue(scene_index)
+
+        trial.scene_dialogues[scene_index] = content
+        return content
 
     async def _require_trial(self, trial_id: UUID) -> Trial:
         trial = await self._port.find_by_id(trial_id)
         if trial is None:
             raise ValueError(f"Trial not found: {trial_id}")
         return trial
+
+    def _build_portia_prompt(
+        self,
+        trial: Trial,
+        *,
+        context: str,
+        request_type: str,
+    ) -> PortiaResponsePromptDto:
+        return PortiaResponsePromptDto(
+            trial_id=trial.trial_id,
+            scene_index=trial.scene_index,
+            dp=trial.dp.value,
+            shylock_hp=trial.shylock_hp.value,
+            alien_law_executed=trial.alien_law_executed,
+            phase=trial.phase,
+            choice_history=tuple(trial.choice_history),
+            context=context,
+            request_type=request_type,
+            tubal_used_scenes=trial.tubal_used_scenes,
+            presented_evidence=trial.presented_evidence,
+        )

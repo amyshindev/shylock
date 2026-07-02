@@ -47,6 +47,7 @@ export const textBox = {
 const SPEAKER_TAB: Record<Speaker, { bg: string; color: string }> = {
   NARRATOR: { bg: "#1a1428", color: "#6a5a8a" },
   PORTIA: { bg: "#2a0820", color: "#c0a060" },
+  BASSANIO: { bg: "#142028", color: "#6a8aaa" },
   CROWD: { bg: "#200a08", color: "#aa6040" },
 };
 

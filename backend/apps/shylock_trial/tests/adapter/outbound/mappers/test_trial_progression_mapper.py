@@ -35,6 +35,8 @@ def test_trial_mapper_roundtrip() -> None:
                 choice_texts={"a": "A"},
             ),
         },
+        tubal_used_scenes=("crowd_jeers",),
+        presented_evidence=("hath_not", "bond"),
     )
     orm = to_orm(trial)
     restored = to_entity(orm)
@@ -51,3 +53,5 @@ def test_trial_mapper_roundtrip() -> None:
     assert 0 in restored.scene_dialogues
     assert restored.scene_dialogues[0].lines[0].text == "line one"
     assert restored.scene_dialogues[0].lines[0].kind == DialogueLineKind.SPEECH
+    assert restored.tubal_used_scenes == ("crowd_jeers",)
+    assert restored.presented_evidence == ("hath_not", "bond")
