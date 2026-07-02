@@ -1,6 +1,7 @@
 from uuid import UUID, uuid4
 import asyncio
 
+from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
     PORTIA_HP_MAX,
@@ -13,6 +14,7 @@ from shylock_trial.app.constants.scene_choices import (
     get_choice_effect,
     get_choice_evidence_id,
 )
+from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_DP_BONUS
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import (
@@ -43,10 +45,12 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         port: TrialProgressionPort,
         portia: PortiaResponseUseCase,
         evidence: EvidenceSearchUseCase,
+        tubal_enhancement: TubalEnhancementClient,
     ) -> None:
         self._port = port
         self._portia = portia
         self._evidence = evidence
+        self._tubal_enhancement = tubal_enhancement
 
     async def start(self) -> StartTrialResultDto:
         trial = Trial(
@@ -78,8 +82,12 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         trial = await self._require_trial(input_dto.trial_id)
 
         effect = get_choice_effect(input_dto.choice_id)
+        was_enhanced = input_dto.choice_id in trial.tubal_enhanced_choices
+        dp_bonus = TUBAL_ENHANCEMENT_DP_BONUS if was_enhanced else 0
+        if was_enhanced:
+            del trial.tubal_enhanced_choices[input_dto.choice_id]
         trial.choice_history.append(input_dto.choice_id)
-        trial.dp = trial.dp.apply_delta(effect.dp_delta)
+        trial.dp = trial.dp.apply_delta(effect.dp_delta + dp_bonus)
         trial.shylock_hp = trial.shylock_hp.apply_delta(effect.shylock_hp_delta)
 
         evidence_id = get_choice_evidence_id(input_dto.choice_id)
@@ -115,6 +123,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia_response=portia.text,
             ending_type=None,
             is_ending=is_ending,
+            tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
         )
 
     async def advance_scene(self, trial_id: UUID) -> AdvanceSceneResultDto:

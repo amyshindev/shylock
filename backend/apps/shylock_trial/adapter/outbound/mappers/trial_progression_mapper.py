@@ -4,7 +4,9 @@ from shylock_trial.app.utils.scene_dialogue_store import (
     serialize_scene_dialogues,
 )
 from shylock_trial.app.utils.trial_metadata_store import (
+    deserialize_string_dict,
     deserialize_string_tuple,
+    serialize_string_dict,
     serialize_string_tuple,
 )
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
@@ -27,6 +29,7 @@ def to_entity(orm: TrialOrm) -> Trial:
         scene_dialogues=deserialize_scene_dialogues(orm.scene_dialogues_json),
         tubal_used_scenes=deserialize_string_tuple(orm.tubal_used_scenes_json),
         presented_evidence=deserialize_string_tuple(orm.presented_evidence_json),
+        tubal_enhanced_choices=deserialize_string_dict(orm.tubal_enhanced_choices),
     )
 
 
@@ -45,6 +48,7 @@ def to_orm(entity: Trial) -> TrialOrm:
         else None,
         tubal_used_scenes_json=serialize_string_tuple(entity.tubal_used_scenes),
         presented_evidence_json=serialize_string_tuple(entity.presented_evidence),
+        tubal_enhanced_choices=serialize_string_dict(entity.tubal_enhanced_choices),
     )
     orm.choice_history = [
         TrialChoiceHistoryOrm(trial_id=entity.trial_id, choice_id=choice_id)

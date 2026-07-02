@@ -36,6 +36,7 @@ class SubmitChoiceResultDto:
     portia_response: str
     ending_type: EndingType | None
     is_ending: bool
+    tubal_enhanced_choices: dict[str, str]
 
 
 @dataclass(frozen=True, slots=True)

@@ -25,6 +25,7 @@ export interface TrialState {
   choice_history?: string[];
   narration_text?: string | null;
   scene_dialogue?: SceneDialogueFromApi | null;
+  tubal_enhanced_choices?: Record<string, string>;
 }
 
 export interface StartTrialResponse extends TrialState {
@@ -42,6 +43,7 @@ export interface SubmitChoiceResponse {
   portia_response: string;
   ending_type: string | null;
   is_ending: boolean;
+  tubal_enhanced_choices?: Record<string, string>;
 }
 
 export interface AdvanceSceneResponse {
@@ -82,6 +84,7 @@ export interface TubalSkillResponse {
   speaker: string | null;
   act_scene: string | null;
   tubal_comment: string | null;
+  tubal_enhanced_choices?: Record<string, string>;
 }
 
 export interface PresentEvidenceResponse {

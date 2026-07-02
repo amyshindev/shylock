@@ -73,6 +73,7 @@ async def get_trial(
         choice_history=trial.choice_history,
         narration_text=trial.narration_text,
         scene_dialogue=scene_dialogue_from_trial(trial),
+        tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
     )
 
 
@@ -99,6 +100,7 @@ async def submit_choice(
         portia_response=result.portia_response,
         ending_type=result.ending_type.value if result.ending_type else None,
         is_ending=result.is_ending,
+        tubal_enhanced_choices=result.tubal_enhanced_choices,
     )
 
 

@@ -189,7 +189,7 @@ export function EvidenceList({
           flexShrink: 0,
         }}
       >
-        {presentMode ? "증거 제시" : "증거"}
+        {presentMode ? "아이템 제시" : "아이템"}
       </div>
     </div>
   );

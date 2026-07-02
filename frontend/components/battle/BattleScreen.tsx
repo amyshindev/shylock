@@ -53,6 +53,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     tubalCourtRecords,
     isTubalActive,
     isTubalSearching,
+    tubalEnhancedChoices,
     showChallenge,
     showPressPresent,
     pressPresentComplete,
@@ -216,6 +217,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 header={scene.challenge.header}
                 prompt={scene.challenge.text}
                 options={scene.challenge.options}
+                tubalEnhancedChoices={tubalEnhancedChoices}
+                tubalCourtRecords={tubalCourtRecords}
                 onSelect={makeChoice}
                 disabled={loadingReply || loadingScene}
               />

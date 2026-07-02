@@ -18,3 +18,4 @@ class TubalSkillResultDto:
     shylock_hp: int
     portia_hp: int
     agent: TubalAgentResult
+    tubal_enhanced_choices: dict[str, str]

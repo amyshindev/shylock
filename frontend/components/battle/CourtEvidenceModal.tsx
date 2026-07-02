@@ -35,7 +35,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
       <div onClick={(e) => e.stopPropagation()}>
         <TextBox
           speaker="NARRATOR"
-          speakerLabel={isTubal ? "법정 기록" : "증거"}
+          speakerLabel={isTubal ? "법정 기록" : "아이템"}
           style={{
             maxWidth: isTubal ? 440 : 400,
             width: "90vw",

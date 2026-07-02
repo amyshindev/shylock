@@ -32,6 +32,17 @@ class FakeEvidenceUseCase:
         return None
 
 
+class FakeTubalEnhancementClient:
+    async def generate_enhanced_choice(
+        self,
+        passage: str,
+        original_choice: str,
+        scene_id: str,
+        speaker: str,
+    ) -> str:
+        return original_choice
+
+
 class InMemoryTrialPort:
     def __init__(self) -> None:
         self._store = {}
@@ -56,6 +67,7 @@ async def test_start_trial_returns_scene_dialogue() -> None:
         port=InMemoryTrialPort(),
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
     )
     result = await interactor.start()
 

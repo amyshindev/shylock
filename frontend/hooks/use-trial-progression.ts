@@ -37,6 +37,7 @@ import {
   TUBAL_SEARCH_FAILURE_LINE,
   type SkillId,
 } from "@/lib/constants/game-balance";
+import { TUBAL_ENHANCEMENT_BY_SCENE } from "@/lib/constants/tubal-enhancement-map";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
 import { extractPortiaText } from "@/lib/portia-text";
 
@@ -109,6 +110,12 @@ export function useTrialProgression(trialId: string) {
   const [quotesById, setQuotesById] = useState<Record<string, EvidenceFromApi>>({});
   const [sceneDialogues, setSceneDialogues] = useState<
     Record<number, SceneDialogueFromApi>
+  >({});
+  const [tubalEnhancedChoices, setTubalEnhancedChoices] = useState<
+    Record<string, string>
+  >({});
+  const [tubalRecordFtlnByChoiceId, setTubalRecordFtlnByChoiceId] = useState<
+    Record<string, number>
   >({});
   const [initialized, setInitialized] = useState(false);
 
@@ -282,6 +289,7 @@ export function useTrialProgression(trialId: string) {
         if (trial.scene_dialogue) {
           setSceneDialogues((prev) => ({ ...prev, [idx]: trial.scene_dialogue! }));
         }
+        setTubalEnhancedChoices(trial.tubal_enhanced_choices ?? {});
         setInitialized(true);
       } catch (e) {
         if (!cancelled) {
@@ -451,12 +459,29 @@ export function useTrialProgression(trialId: string) {
       }
 
       setLoadingReply(true);
+      const wasEnhanced = option.id in tubalEnhancedChoices;
+      const consumedFtln = wasEnhanced ? tubalRecordFtlnByChoiceId[option.id] : undefined;
+
       try {
         const res = await submitChoice(trialId, option.id);
         setShylockHp(res.shylock_hp);
         setDp(res.dp);
         setPortiaHp(res.portia_hp);
         setAlienLawExecuted(res.alien_law_executed);
+        setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
+
+        if (wasEnhanced) {
+          setTubalCourtRecords((current) =>
+            consumedFtln != null
+              ? current.filter((record) => record.ftln !== consumedFtln)
+              : [],
+          );
+          setTubalRecordFtlnByChoiceId((current) => {
+            const next = { ...current };
+            delete next[option.id];
+            return next;
+          });
+        }
 
         if (triggerGameOverIfNeeded(res.shylock_hp, res.dp)) {
           return;
@@ -470,7 +495,7 @@ export function useTrialProgression(trialId: string) {
         choiceLockRef.current = false;
       }
     },
-    [trialId, shylockHp, dp, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail],
+    [trialId, shylockHp, dp, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail],
   );
 
   const makeChoice = useCallback(
@@ -494,6 +519,7 @@ export function useTrialProgression(trialId: string) {
       setDp(res.dp);
       setShylockHp(res.shylock_hp);
       setPortiaHp(res.portia_hp);
+      setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
 
       if (triggerGameOverIfNeeded(res.shylock_hp, res.dp)) {
         setTubalPhase("idle");
@@ -501,6 +527,7 @@ export function useTrialProgression(trialId: string) {
       }
 
       if (res.success && res.passage && res.tubal_comment && res.ftln) {
+        const targetChoiceId = TUBAL_ENHANCEMENT_BY_SCENE[scene.id];
         setTubalCourtRecords((current) =>
           mergeTubalCourtRecords(
             current,
@@ -513,6 +540,12 @@ export function useTrialProgression(trialId: string) {
             }),
           ),
         );
+        if (targetChoiceId) {
+          setTubalRecordFtlnByChoiceId((current) => ({
+            ...current,
+            [targetChoiceId]: res.ftln!,
+          }));
+        }
         setTubalMessage(res.tubal_comment);
       } else {
         setTubalMessage(res.tubal_comment ?? TUBAL_SEARCH_FAILURE_LINE);
@@ -653,6 +686,7 @@ export function useTrialProgression(trialId: string) {
     isTubalActive,
     isTubalSearching,
     tubalCourtRecords,
+    tubalEnhancedChoices,
     loadingTubal,
     loadingReply,
     loadingScene,

@@ -31,7 +31,7 @@ export function EvidenceModal({ evidenceId, name, quote }: EvidenceModalProps) {
     >
       <TextBox
         speaker="NARRATOR"
-        speakerLabel="증거"
+        speakerLabel="아이템"
         style={{
           maxWidth: 400,
           width: "90%",

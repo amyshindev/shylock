@@ -42,4 +42,5 @@ async def invoke_tubal_skill(
         speaker=agent.speaker,
         act_scene=agent.act_scene,
         tubal_comment=agent.tubal_comment,
+        tubal_enhanced_choices=result.tubal_enhanced_choices,
     )

@@ -8,7 +8,7 @@ from shylock_trial.adapter.outbound.mappers.trial_progression_mapper import to_e
 from shylock_trial.adapter.outbound.orm.trial_orm import TrialChoiceHistoryOrm, TrialOrm
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.app.utils.scene_dialogue_store import serialize_scene_dialogues
-from shylock_trial.app.utils.trial_metadata_store import serialize_string_tuple
+from shylock_trial.app.utils.trial_metadata_store import serialize_string_dict, serialize_string_tuple
 from shylock_trial.domain.entities.trial_entity import Trial
 
 
@@ -42,6 +42,7 @@ class TrialProgressionPgRepository(TrialProgressionPort):
         existing.scene_dialogues_json = serialize_scene_dialogues(trial.scene_dialogues)
         existing.tubal_used_scenes_json = serialize_string_tuple(trial.tubal_used_scenes)
         existing.presented_evidence_json = serialize_string_tuple(trial.presented_evidence)
+        existing.tubal_enhanced_choices = serialize_string_dict(trial.tubal_enhanced_choices)
         existing.choice_history.clear()
         for choice_id in trial.choice_history:
             existing.choice_history.append(

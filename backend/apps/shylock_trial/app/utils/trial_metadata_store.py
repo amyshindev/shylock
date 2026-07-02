@@ -20,3 +20,18 @@ def append_unique(values: tuple[str, ...], value: str) -> tuple[str, ...]:
     if value in values:
         return values
     return (*values, value)
+
+
+def serialize_string_dict(values: dict[str, str]) -> str | None:
+    if not values:
+        return None
+    return json.dumps(values, ensure_ascii=False)
+
+
+def deserialize_string_dict(raw: str | None) -> dict[str, str]:
+    if not raw:
+        return {}
+    parsed = json.loads(raw)
+    if not isinstance(parsed, dict):
+        return {}
+    return {str(key): str(value) for key, value in parsed.items()}

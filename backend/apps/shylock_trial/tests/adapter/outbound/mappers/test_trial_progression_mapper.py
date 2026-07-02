@@ -37,6 +37,7 @@ def test_trial_mapper_roundtrip() -> None:
         },
         tubal_used_scenes=("crowd_jeers",),
         presented_evidence=("hath_not", "bond"),
+        tubal_enhanced_choices={"invoke_bond": "계약서가 있소. 열 배라도 계약을 대신할 수 없소"},
     )
     orm = to_orm(trial)
     restored = to_entity(orm)
@@ -55,3 +56,6 @@ def test_trial_mapper_roundtrip() -> None:
     assert restored.scene_dialogues[0].lines[0].kind == DialogueLineKind.SPEECH
     assert restored.tubal_used_scenes == ("crowd_jeers",)
     assert restored.presented_evidence == ("hath_not", "bond")
+    assert restored.tubal_enhanced_choices == {
+        "invoke_bond": "계약서가 있소. 열 배라도 계약을 대신할 수 없소",
+    }

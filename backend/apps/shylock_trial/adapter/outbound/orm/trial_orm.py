@@ -24,6 +24,7 @@ class TrialOrm(Base):
     scene_dialogues_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     tubal_used_scenes_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     presented_evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    tubal_enhanced_choices: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

@@ -47,6 +47,7 @@ class Trial:
     scene_dialogues: dict[int, SceneDialogueContent] = field(default_factory=dict)
     tubal_used_scenes: tuple[str, ...] = ()
     presented_evidence: tuple[str, ...] = ()
+    tubal_enhanced_choices: dict[str, str] = field(default_factory=dict)
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

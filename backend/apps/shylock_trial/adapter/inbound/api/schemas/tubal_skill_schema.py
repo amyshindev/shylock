@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TubalSkillRequest(BaseModel):
@@ -49,3 +49,4 @@ class TubalSkillResponse(BaseModel):
     speaker: str | None = None
     act_scene: str | None = None
     tubal_comment: str | None = None
+    tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)

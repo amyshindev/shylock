@@ -4,13 +4,19 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { ChoiceOption } from "@/data/scenes";
+import type { TubalCourtRecord } from "@/lib/tubal-evidence";
 import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
+
+const TUBAL_BORDER = "#6aaa5a";
+const TUBAL_ENHANCED_TOOLTIP = "투발의 아이템으로 강화된 선택지 (+5 DP)";
 
 interface ChoiceListProps {
   header?: string;
   prompt: string;
   options: ChoiceOption[];
+  tubalEnhancedChoices?: Record<string, string>;
+  tubalCourtRecords?: TubalCourtRecord[];
   onSelect: (option: ChoiceOption) => void;
   disabled?: boolean;
 }
@@ -59,13 +65,51 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
   );
 }
 
+function TubalEvidenceBadge({ name }: { name: string }) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        flexShrink: 0,
+        fontSize: gameFontSize.sm,
+        color: "#8b6040",
+      }}
+    >
+      <span
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "rgba(20, 32, 16, 0.98)",
+          border: `2px solid ${TUBAL_BORDER}`,
+          boxShadow: `0 0 6px ${TUBAL_BORDER}44`,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 11,
+          flexShrink: 0,
+        }}
+      >
+        📜
+      </span>
+      {name}
+    </span>
+  );
+}
+
 export function ChoiceList({
   header,
   prompt,
   options,
+  tubalEnhancedChoices,
+  tubalCourtRecords = [],
   onSelect,
   disabled,
 }: ChoiceListProps) {
+  const latestTubalRecord = tubalCourtRecords[tubalCourtRecords.length - 1];
+
   return (
     <div
       style={{
@@ -100,35 +144,48 @@ export function ChoiceList({
         {prompt}
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {options.map((opt, index) => (
-          <button
-            key={opt.id}
-            type="button"
-            disabled={disabled}
-            onClick={() => onSelect(opt)}
-            style={{
-              ...choiceButtonStyle(),
-              opacity: disabled ? 0.6 : 1,
-              cursor: disabled ? "not-allowed" : "pointer",
-            }}
-            onMouseEnter={(e) => {
-              if (!disabled) {
-                e.currentTarget.style.background = "#1a0820";
-                e.currentTarget.style.borderColor = "rgba(255, 215, 0, 0.31)";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = "#100510";
-              e.currentTarget.style.borderColor = "#3a1828";
-            }}
-          >
-            <span>
-              <span style={{ color: "#5a3a4a" }}>{index + 1}. </span>
-              {opt.text}
-            </span>
-            {opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />}
-          </button>
-        ))}
+        {options.map((opt, index) => {
+          const enhancedText = tubalEnhancedChoices?.[opt.id];
+          const isEnhanced = Boolean(enhancedText);
+          const choiceText = enhancedText ?? opt.text;
+
+          return (
+            <button
+              key={opt.id}
+              type="button"
+              disabled={disabled}
+              title={isEnhanced ? TUBAL_ENHANCED_TOOLTIP : undefined}
+              onClick={() => onSelect(opt)}
+              style={{
+                ...choiceButtonStyle(),
+                opacity: disabled ? 0.6 : 1,
+                cursor: disabled ? "not-allowed" : "pointer",
+              }}
+              onMouseEnter={(e) => {
+                if (!disabled) {
+                  e.currentTarget.style.background = "#1a0820";
+                  e.currentTarget.style.borderColor = "rgba(255, 215, 0, 0.31)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#100510";
+                e.currentTarget.style.borderColor = "#3a1828";
+              }}
+            >
+              <span>
+                <span style={{ color: "#5a3a4a" }}>{index + 1}. </span>
+                {choiceText}
+              </span>
+              {isEnhanced ? (
+                <TubalEvidenceBadge
+                  name={latestTubalRecord?.name ?? "투발 아이템"}
+                />
+              ) : (
+                opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

@@ -104,6 +104,7 @@ class TrialResponse(BaseModel):
     choice_history: list[str]
     narration_text: str | None = None
     scene_dialogue: SceneDialogueResponse | None = None
+    tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
 
 
 class SubmitChoiceRequest(BaseModel):
@@ -144,6 +145,7 @@ class SubmitChoiceResponse(BaseModel):
     portia_response: str
     ending_type: str | None = None
     is_ending: bool
+    tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
 
 
 class AdvanceSceneResponse(BaseModel):
