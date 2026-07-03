@@ -36,7 +36,6 @@ async def present_evidence(
 
     return PresentEvidenceResponse(
         trial_id=result.trial_id,
-        shylock_hp=result.shylock_hp,
         dp=result.dp,
         contradiction_valid=result.contradiction_valid,
         portia_response=result.portia_response,

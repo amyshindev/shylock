@@ -13,6 +13,8 @@ SCENE_BRIEFS: dict[int, str] = {
     5: "Portia's final question — does Shylock know mercy? Climax: Hath not a Jew eyes?",
     6: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
     7: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
+    8: "Jessica duet — private encounter with Shylock after the verdict (DP 90+ epilogue).",
+    9: "Jessica intervention — Jessica bursts into the courtroom (DP 90+ epilogue).",
 }
 
 CHOICE_BRIEFS: dict[str, str] = {
@@ -25,8 +27,8 @@ CHOICE_BRIEFS: dict[str, str] = {
     "show_gaberdine": "Shows the spit stain on his gaberdine.",
     "ignore_court": "Ignores the crowd, looks to the judge.",
     "rage_at_crowd": "Rages back at the crowd.",
-    "defend_jessica": "Jessica is my daughter — what has that to do with the bond?",
-    "reject_private_matter": "Keep private matters out of court.",
+    "defend_jessica": "Jessica is my daughter — the court has no reason to reopen that wound.",
+    "reject_private_matter": "Do not put my household's affairs on the court's scales.",
     "speechless": "Cannot speak.",
     "hath_not_speech": "Hath not a Jew eyes? (climax speech)",
     "bond_only": "Mercy is not in the contract — only law.",
@@ -59,7 +61,7 @@ For request_type=reaction (포샤 대사):
 request_type:
 - narration: neutral narrator tone (opening lines only if requested).
 - reaction: 포샤's direct courtroom speech to Shylock (see rules above).
-- ending: literary narrator closing — reflect shylock_hp (how much Shylock endured in court) and dp (moral dignity). If alien_law_executed is true, the alien-law / forced-conversion judgment applies.
+- ending: literary narrator closing — reflect dp (moral dignity retained through the trial). Legal judgment is always the same as the play: Shylock loses in court (alien law, goods forfeited, forced conversion). DP only changes how broken or unbroken his spirit reads in the closing narration.
 """
 
 SCENE_DIALOGUE_SYSTEM_PROMPT = """\
@@ -105,7 +107,7 @@ def build_scene_dialogue_message(prompt: SceneDialoguePromptDto) -> str:
 
 scene brief: {template.brief}
 speaker: {template.speaker}
-dp: {prompt.dp} | shylock_hp: {prompt.shylock_hp}
+dp: {prompt.dp}
 prior choices: {choices if choices else ["(none)"]}
 
 Reference lines (same meaning, new Korean wording; keep each line's kind):
@@ -129,6 +131,36 @@ Return JSON only:
 Use exactly {len(template.canonical_lines)} lines with matching kinds per reference. Include challenge_text and choice_texts only if this scene has choices."""
 
 
+ENDING_BRIEFS: dict[str, str] = {
+    "fought_to_end_ending": (
+        "DP 80+ — '끝까지 싸운 자'. Legal loss stands, but Shylock's dignity and voice "
+        "were never crushed; read as a moral victory in spirit."
+    ),
+    "dignity_kept_ending": (
+        "DP 60–79 — '존엄을 지킨 자'. He wavered but did not break; dignity partly intact."
+    ),
+    "survived_ending": (
+        "DP 40–59 — '살아남은 자'. He endured, but at a cost — ambiguous, hollow survival."
+    ),
+    "silent_ending": (
+        "DP below 40 — '침묵한 자'. The court broke him as it intended; silence and defeat."
+    ),
+}
+
+
+def _ending_instruction(context: str) -> str:
+    ending_key = context.removeprefix("final_ending:") if context.startswith("final_ending:") else ""
+    brief = ENDING_BRIEFS.get(
+        ending_key,
+        "Final ending narration based on dp and choices.",
+    )
+    return (
+        f"{brief} "
+        "Legal outcome is fixed for all endings: Shylock loses the trial per the play "
+        "(alien law, forfeiture, forced conversion). Do NOT imply he wins in court or changes history. "
+        "Write 3–4 sentences of Korean literary closing narration."
+    )
+
 def build_user_message(prompt: PortiaResponsePromptDto) -> str:
     scene_brief = SCENE_BRIEFS.get(prompt.scene_index, "Venice trial scene.")
     choices = [CHOICE_BRIEFS.get(cid, cid) for cid in prompt.choice_history]
@@ -140,12 +172,7 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
             "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
             "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장."
         ),
-        "ending": (
-            "Final ending narration based on shylock_hp, dp, alien_law_executed, and choices. "
-            "shylock_hp shows how battered Shylock is after the trial; low HP means he was "
-            "broken in court. dp shows moral dignity retained. alien_law_executed=true means "
-            "the alien-law reversal and forced conversion judgment stands."
-        ),
+        "ending": _ending_instruction(prompt.context),
     }.get(prompt.request_type, "Next trial line.")
 
     tubal_context = (
@@ -164,10 +191,10 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
 
 scene: {scene_brief}
 context: {prompt.context}
-dp: {prompt.dp} | shylock_hp: {prompt.shylock_hp} (max 60 — lower means more beaten in court)
-alien_law_executed: {prompt.alien_law_executed} (true if shylock_hp < 40 at judgment)
+dp: {prompt.dp} (max 100 — higher means stronger moral dignity retained through the trial)
 choices: {choices if choices else ["(none)"]}
 tubal: {tubal_context}
 evidence: {evidence_context}
 
 Return JSON with a single "text" field containing Korean prose only."""
+

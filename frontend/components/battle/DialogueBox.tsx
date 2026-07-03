@@ -12,6 +12,8 @@ const SPEAKER_LABEL: Record<string, string> = {
   NARRATOR: "NARRATOR",
   PORTIA: "포샤",
   CROWD: "군중",
+  JESSICA: "제시카",
+  LORENZO: "로렌조",
 };
 
 const portiaReplyStyle = {

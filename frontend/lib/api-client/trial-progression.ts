@@ -49,6 +49,20 @@ export async function startTrial(): Promise<StartTrialResponse> {
   return requestJson<StartTrialResponse>(`${API_BASE}${API_PREFIX}/trials`, { method: "POST" });
 }
 
+export async function startDevJessicaDuet(): Promise<StartTrialResponse> {
+  return requestJson<StartTrialResponse>(
+    `${API_BASE}${API_PREFIX}/dev/trials/jessica-duet`,
+    { method: "POST" },
+  );
+}
+
+export async function startDevJessicaIntervention(): Promise<StartTrialResponse> {
+  return requestJson<StartTrialResponse>(
+    `${API_BASE}${API_PREFIX}/dev/trials/jessica-intervention`,
+    { method: "POST" },
+  );
+}
+
 export async function getTrial(trialId: string): Promise<TrialState> {
   return requestJson<TrialState>(`${API_BASE}${API_PREFIX}/trials/${trialId}`);
 }

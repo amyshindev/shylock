@@ -91,9 +91,23 @@ def _build_scene_lines(
             SceneDialogueLine(
                 text=text,
                 kind=kind,
+                speaker=_line_speaker_from_template(template, index, kind),
             )
         )
     return tuple(lines)
+
+
+def _line_speaker_from_template(
+    template,
+    index: int,
+    kind: DialogueLineKind,
+) -> str:
+    speakers = getattr(template, "canonical_line_speakers", ())
+    if index < len(speakers) and speakers[index]:
+        return speakers[index]
+    if kind == DialogueLineKind.NARRATION:
+        return "NARRATOR"
+    return template.speaker
 
 
 def _strip_json_fence(raw: str) -> str:

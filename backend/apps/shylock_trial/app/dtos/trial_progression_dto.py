@@ -10,9 +10,7 @@ from shylock_trial.domain.entities.trial_entity import TrialPhase
 class StartTrialResultDto:
     trial_id: UUID
     scene_index: int
-    shylock_hp: int
     dp: int
-    alien_law_executed: bool
     phase: TrialPhase
     scene_dialogue: SceneDialogueContent
 
@@ -27,14 +25,13 @@ class SubmitChoiceInputDto:
 class SubmitChoiceResultDto:
     trial_id: UUID
     scene_index: int
-    shylock_hp: int
     dp: int
-    alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
     ending_type: EndingType | None
     is_ending: bool
     tubal_enhanced_choices: dict[str, str]
+    venice_dp_shield: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,19 +47,17 @@ class GenerateEndingResultDto:
     trial_id: UUID
     ending_type: EndingType
     ending_text: str
-    shylock_hp: int
     dp: int
-    alien_law_executed: bool
 
 
 @dataclass(frozen=True, slots=True)
 class LauncelotSkillResultDto:
     trial_id: UUID
     dp: int
-    shylock_hp: int
     launcelot_comment: str = (
         "론슬롯이 갑자기 법정으로 뛰어들었다! "
-        "모두가 당황하여 잠시 말을 잃었다."
+        "모두가 당황하여 잠시 말을 잃었다. "
+        "이 틈을 타 숨을 고르자..."
     )
 
 
@@ -70,7 +65,7 @@ class LauncelotSkillResultDto:
 class VeniceContradictionSkillResultDto:
     trial_id: UUID
     dp: int
-    shylock_hp: int
+    venice_dp_shield: bool
     skill_comment: str = (
         "당신들은 나를 고리대금업자라 부르오.\n"
         "하지만 당신들이 내게 허락한 것이 그것뿐이었소.\n"

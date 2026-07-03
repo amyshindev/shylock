@@ -23,7 +23,6 @@ class PresentEvidenceRequest(BaseModel):
 
 class PresentEvidenceResponse(BaseModel):
     trial_id: UUID
-    shylock_hp: int
     dp: int
     contradiction_valid: bool
     portia_response: str

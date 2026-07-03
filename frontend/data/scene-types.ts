@@ -1,10 +1,12 @@
-export type Speaker = "NARRATOR" | "PORTIA" | "BASSANIO" | "CROWD";
+export type Speaker = "NARRATOR" | "PORTIA" | "BASSANIO" | "CROWD" | "JESSICA" | "LORENZO";
 
 export type DialogueLineKind = "speech" | "narration";
 
 export interface SceneLine {
   text: string;
   kind: DialogueLineKind;
+  speaker?: Speaker;
+  speakerLabel?: string;
 }
 
 export interface ChoiceOption {
@@ -12,7 +14,6 @@ export interface ChoiceOption {
   text: string;
   evidence: string | null;
   dpChange: number;
-  shylockHpChange: number;
   special?: "climax";
 }
 
@@ -49,6 +50,8 @@ export interface PressPresentConfig {
 export interface FallbackLine {
   text: string;
   kind: DialogueLineKind;
+  speaker?: Speaker;
+  speakerLabel?: string;
 }
 
 export interface ChoiceTemplate {
@@ -56,7 +59,6 @@ export interface ChoiceTemplate {
   fallbackText: string;
   evidence: string | null;
   dpChange: number;
-  shylockHpChange: number;
   special?: "climax";
 }
 

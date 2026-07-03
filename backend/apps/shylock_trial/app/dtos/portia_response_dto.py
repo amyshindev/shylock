@@ -9,8 +9,6 @@ class PortiaResponsePromptDto:
     trial_id: UUID
     scene_index: int
     dp: int
-    shylock_hp: int
-    alien_law_executed: bool
     phase: TrialPhase
     choice_history: tuple[str, ...]
     context: str

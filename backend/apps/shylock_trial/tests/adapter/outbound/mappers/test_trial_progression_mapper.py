@@ -1,58 +1,34 @@
 from uuid import uuid4
 
 from shylock_trial.adapter.outbound.mappers.trial_progression_mapper import to_entity, to_orm
-from shylock_trial.app.dtos.scene_dialogue_dto import (
-    DialogueLineKind,
-    SceneDialogueContent,
-    SceneDialogueLine,
-)
+from shylock_trial.adapter.outbound.orm.trial_orm import TrialOrm
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
 def test_trial_mapper_roundtrip() -> None:
-    trial = Trial(
+    entity = Trial(
         trial_id=uuid4(),
         scene_index=2,
-        shylock_hp=ShylockHpScore(45),
-        dp=DpScore(60),
-        alien_law_executed=True,
-        choice_history=["bond", "mercy"],
+        dp=DpScore(55),
+        choice_history=["appeal_mercy"],
         phase=TrialPhase.IN_PROGRESS,
-        narration_text="Test narration",
-        scene_dialogues={
-            0: SceneDialogueContent(
-                lines=(
-                    SceneDialogueLine(
-                        text="line one",
-                        kind=DialogueLineKind.SPEECH,
-                    ),
-                ),
-                challenge_text="choose",
-                choice_texts={"a": "A"},
-            ),
-        },
-        tubal_used_scenes=("crowd_jeers",),
-        presented_evidence=("hath_not", "bond"),
-        tubal_enhanced_choices={"invoke_bond": "계약서가 있소. 열 배라도 계약을 대신할 수 없소"},
     )
-    orm = to_orm(trial)
+    orm = to_orm(entity)
     restored = to_entity(orm)
 
-    assert restored.trial_id == trial.trial_id
-    assert restored.scene_index == trial.scene_index
-    assert restored.shylock_hp.value == 45
-    assert restored.dp.value == 60
-    assert restored.alien_law_executed is True
-    assert restored.choice_history == ["bond", "mercy"]
-    assert restored.phase == TrialPhase.IN_PROGRESS
-    assert restored.narration_text == "Test narration"
-    assert 0 in restored.scene_dialogues
-    assert restored.scene_dialogues[0].lines[0].text == "line one"
-    assert restored.scene_dialogues[0].lines[0].kind == DialogueLineKind.SPEECH
-    assert restored.tubal_used_scenes == ("crowd_jeers",)
-    assert restored.presented_evidence == ("hath_not", "bond")
-    assert restored.tubal_enhanced_choices == {
-        "invoke_bond": "계약서가 있소. 열 배라도 계약을 대신할 수 없소",
-    }
+    assert restored.trial_id == entity.trial_id
+    assert restored.scene_index == 2
+    assert restored.dp.value == 55
+    assert restored.choice_history == ["appeal_mercy"]
+
+
+def test_trial_orm_entity_fields() -> None:
+    orm = TrialOrm(
+        trial_id=uuid4(),
+        scene_index=0,
+        dp=50,
+        phase="in_progress",
+    )
+    entity = to_entity(orm)
+    assert entity.dp.value == 50

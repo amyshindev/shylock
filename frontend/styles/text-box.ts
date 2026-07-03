@@ -36,7 +36,7 @@ export function hudLabelStyle(color: string): CSSProperties {
 }
 
 export const textBox = {
-  background: "rgba(18, 12, 24, 0.85)",
+  background: "rgba(18, 12, 24, 0.72)",
   border: "1px solid #3a1028",
   borderTopAccent: "3px solid #3a1028",
   borderRadius: 10,
@@ -49,6 +49,8 @@ const SPEAKER_TAB: Record<Speaker, { bg: string; color: string }> = {
   PORTIA: { bg: "#2a0820", color: "#c0a060" },
   BASSANIO: { bg: "#142028", color: "#6a8aaa" },
   CROWD: { bg: "#200a08", color: "#aa6040" },
+  LORENZO: { bg: "#1a1828", color: "#8a9acc" },
+  JESSICA: { bg: "#2a1018", color: "#c87888" },
 };
 
 export function speakerTabStyle(speaker: string): CSSProperties {

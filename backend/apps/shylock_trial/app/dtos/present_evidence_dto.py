@@ -13,7 +13,6 @@ class PresentEvidenceInputDto:
 @dataclass(frozen=True, slots=True)
 class PresentEvidenceResultDto:
     trial_id: UUID
-    shylock_hp: int
     dp: int
     contradiction_valid: bool
     portia_response: str

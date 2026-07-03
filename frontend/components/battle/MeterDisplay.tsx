@@ -1,15 +1,11 @@
 "use client";
 
-import {
-  DP_MAX,
-  SHYLOCK_HP_MAX,
-} from "@/lib/constants/game-balance";
+import { DP_MAX } from "@/lib/constants/game-balance";
 import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 
 interface MeterDisplayProps {
-  shylockHp: number;
   dp: number;
-  hpRecoveryFlash?: number | null;
+  dpGainFlash?: number | null;
 }
 
 function MeterBar({
@@ -84,13 +80,6 @@ function MeterBar({
   );
 }
 
-function shylockHpColor(value: number): string {
-  const ratio = value / SHYLOCK_HP_MAX;
-  if (ratio > 0.5) return "#ff7777";
-  if (ratio > 0.25) return "#ff5555";
-  return "#ee3333";
-}
-
 function dpColor(value: number): string {
   const ratio = value / DP_MAX;
   if (ratio > 0.6) return "#66bbff";
@@ -101,8 +90,8 @@ function dpColor(value: number): string {
 const LEFT_METER_COLUMN_WIDTH = 336;
 const LEFT_HUD_INSET = 10;
 const LEFT_HUD_TOP = 8;
-/** Approx. height of HP + DP bars (used to stack skill panel below). */
-const LEFT_METERS_STACK_HEIGHT = 66;
+/** Approx. height of DP bar (used to stack skill panel below). */
+const LEFT_METERS_STACK_HEIGHT = 36;
 
 export {
   LEFT_METER_COLUMN_WIDTH,
@@ -111,7 +100,7 @@ export {
   LEFT_METERS_STACK_HEIGHT,
 };
 
-export function MeterDisplay({ shylockHp, dp, hpRecoveryFlash }: MeterDisplayProps) {
+export function MeterDisplay({ dp, dpGainFlash }: MeterDisplayProps) {
   return (
     <div
       style={{
@@ -123,47 +112,30 @@ export function MeterDisplay({ shylockHp, dp, hpRecoveryFlash }: MeterDisplayPro
         width: LEFT_METER_COLUMN_WIDTH,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          gap: 5,
-          position: "relative",
-        }}
-      >
-        {hpRecoveryFlash != null && hpRecoveryFlash > 0 && (
-          <div
-            className="hp-recovery-flash"
-            style={{
-              position: "absolute",
-              top: -4,
-              right: 4,
-              zIndex: 12,
-              color: "#8dffb0",
-              fontSize: gameFontSize.sm,
-              fontWeight: 800,
-              letterSpacing: 0.6,
-              textShadow: "0 0 10px rgba(80, 255, 140, 0.55), 0 2px 4px rgba(0, 0, 0, 0.8)",
-            }}
-          >
-            HP +{hpRecoveryFlash}
-          </div>
-        )}
-        <MeterBar
-          label="HP"
-          value={shylockHp}
-          max={SHYLOCK_HP_MAX}
-          color={shylockHpColor(shylockHp)}
-          labelColor="#ffc8c8"
-        />
-        <MeterBar
-          label="DP (존엄)"
-          value={dp}
-          max={DP_MAX}
-          color={dpColor(dp)}
-          labelColor="#b8dcff"
-        />
-      </div>
+      {dpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: -4,
+            right: 0,
+            color: "#88ccff",
+            fontSize: gameFontSize.sm,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textShadow: "0 0 8px rgba(102, 187, 255, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{dpGainFlash} DP
+        </div>
+      )}
+      <MeterBar
+        label="DP (존엄)"
+        value={dp}
+        max={DP_MAX}
+        color={dpColor(dp)}
+        labelColor="#b8dcff"
+      />
     </div>
   );
 }

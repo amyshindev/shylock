@@ -15,9 +15,8 @@ class TrialOrm(Base):
 
     trial_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
     scene_index: Mapped[int] = mapped_column(Integer, default=0)
-    shylock_hp: Mapped[int] = mapped_column(Integer, default=60)
     dp: Mapped[int] = mapped_column(Integer, default=50)
-    alien_law_executed: Mapped[bool] = mapped_column(Boolean, default=True)
+    venice_dp_shield: Mapped[bool] = mapped_column(Boolean, default=False)
     phase: Mapped[str] = mapped_column(String(32), default="in_progress")
     narration_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     scene_dialogues_json: Mapped[str | None] = mapped_column(Text, nullable=True)

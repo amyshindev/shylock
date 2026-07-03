@@ -43,9 +43,8 @@ function SceneBackground({ backgroundImage }: { backgroundImage: string }) {
 export function BattleScreen({ trial }: BattleScreenProps) {
   const {
     scene,
-    shylockHp,
     dp,
-    hpRecoveryFlash,
+    dpGainFlash,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -142,7 +141,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
           {showBattleHud && (
-            <MeterDisplay shylockHp={shylockHp} dp={dp} hpRecoveryFlash={hpRecoveryFlash} />
+            <MeterDisplay dp={dp} dpGainFlash={dpGainFlash} />
           )}
           {showBattleHud && (
           <div

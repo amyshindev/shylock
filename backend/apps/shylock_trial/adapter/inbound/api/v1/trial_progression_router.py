@@ -25,7 +25,7 @@ trial_progression_router = APIRouter(prefix="/trials", tags=["trial-progression"
 def _scene_dialogue_response(content) -> SceneDialogueResponse:
     return SceneDialogueResponse(
         lines=[
-            SceneDialogueLineResponse(text=line.text, kind=line.kind.value)
+            SceneDialogueLineResponse(text=line.text, kind=line.kind.value, speaker=line.speaker)
             for line in content.lines
         ],
         challenge_header=content.challenge_header,
@@ -46,9 +46,7 @@ async def start_trial(
     return StartTrialResponse(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
-        shylock_hp=result.shylock_hp,
         dp=result.dp,
-        alien_law_executed=result.alien_law_executed,
         phase=result.phase,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
     )
@@ -66,14 +64,13 @@ async def get_trial(
     return TrialResponse(
         trial_id=trial.trial_id,
         scene_index=trial.scene_index,
-        shylock_hp=trial.shylock_hp.value,
         dp=trial.dp.value,
-        alien_law_executed=trial.alien_law_executed,
         phase=trial.phase,
         choice_history=trial.choice_history,
         narration_text=trial.narration_text,
         scene_dialogue=scene_dialogue_from_trial(trial),
         tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
+        venice_dp_shield=trial.venice_dp_shield,
     )
 
 
@@ -92,14 +89,13 @@ async def submit_choice(
     return SubmitChoiceResponse(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
-        shylock_hp=result.shylock_hp,
         dp=result.dp,
-        alien_law_executed=result.alien_law_executed,
         phase=result.phase,
         portia_response=result.portia_response,
         ending_type=result.ending_type.value if result.ending_type else None,
         is_ending=result.is_ending,
         tubal_enhanced_choices=result.tubal_enhanced_choices,
+        venice_dp_shield=result.venice_dp_shield,
     )
 
 
@@ -138,9 +134,7 @@ async def generate_ending(
         trial_id=result.trial_id,
         ending_type=result.ending_type.value,
         ending_text=result.ending_text,
-        shylock_hp=result.shylock_hp,
         dp=result.dp,
-        alien_law_executed=result.alien_law_executed,
     )
 
 
@@ -157,7 +151,6 @@ async def use_launcelot_skill(
         return LauncelotSkillResponse(
             trial_id=result.trial_id,
             dp=result.dp,
-            shylock_hp=result.shylock_hp,
             launcelot_comment=result.launcelot_comment,
         )
     except ValueError as exc:
@@ -177,7 +170,7 @@ async def use_venice_contradiction_skill(
         return VeniceContradictionSkillResponse(
             trial_id=result.trial_id,
             dp=result.dp,
-            shylock_hp=result.shylock_hp,
+            venice_dp_shield=result.venice_dp_shield,
             skill_comment=result.skill_comment,
         )
     except ValueError as exc:

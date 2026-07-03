@@ -1,16 +1,16 @@
-export const SHYLOCK_HP_MAX = 60;
 export const SHYLOCK_DP_START = 50;
 export const DP_MAX = 100;
-export const DP_GOOD_ENDING_THRESHOLD = 70;
-export const SHYLOCK_HP_GOOD_ENDING_THRESHOLD = 40;
 
-export const LAUNCELOT_SKILL_COST = 20;
-export const LAUNCELOT_SHYLOCK_HP_HEAL = 15;
+export const DP_FOUGHT_TO_END_THRESHOLD = 80;
+export const DP_DIGNITY_ENDING_THRESHOLD = 60;
+export const DP_SURVIVAL_ENDING_THRESHOLD = 40;
+export const DP_JESSICA_EPILOGUE_THRESHOLD = 90;
+
+export const LAUNCELOT_SKILL_DP_GAIN = 10;
 
 export const SKILL_TUBAL_COST = 30;
 
 export const VENICE_CONTRADICTION_SKILL_COST = 40;
-export const VENICE_CONTRADICTION_HP_HEAL = 20;
 export const VENICE_CONTRADICTION_LINES = [
   "당신들은 나를 고리대금업자라 부르오.",
   "하지만 당신들이 내게 허락한 것이 그것뿐이었소.",
@@ -24,7 +24,13 @@ export const LAUNCELOT_LINES = [
   "그게 이 재판과 무슨 상관이냐고?~",
   "모르겠네, 모르겠네, 나도 몰라~",
 ] as const;
-export const LAUNCELOT_PORTIA_REACTION_LINE = "모두가 당황하여 잠시 말을 잃었다.";
+export const LAUNCELOT_REACTION_LINES = [
+  "모두가 당황하여 잠시 말을 잃었다.",
+  "이 틈을 타 숨을 고르자...",
+] as const;
+
+/** DP gain is applied when this reaction line is shown. */
+export const LAUNCELOT_DP_GAIN_AT_REACTION_INDEX = 1;
 
 export type SkillId = "launcelot" | "tubal" | "venice_contradiction";
 
@@ -35,15 +41,16 @@ export const TUBAL_SEARCH_FAILURE_LINE = "이번에는 증거가 될 만한 걸 
 export interface SkillDefinition {
   id: SkillId;
   label: string;
+  /** DP required to activate; 0 means no cost. */
   cost: number;
 }
 
 export const SKILLS: SkillDefinition[] = [
-  { id: "launcelot", label: "🃏 론슬롯 난입 (-20 DP)", cost: LAUNCELOT_SKILL_COST },
+  { id: "launcelot", label: "🃏 론슬롯 난입 (+10 DP)", cost: 0 },
   { id: "tubal", label: "🤝 투발의 도움 (-30 DP)", cost: SKILL_TUBAL_COST },
   {
     id: "venice_contradiction",
-    label: "⚔️ 베니스의 모순 (-40 DP)",
+    label: "⚔️ 베니스의 모순 (-40 DP · 다음 선택 보호)",
     cost: VENICE_CONTRADICTION_SKILL_COST,
   },
 ];

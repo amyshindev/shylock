@@ -1,9 +1,23 @@
-import type { DialogueLineKind, Scene, SceneLine, SceneTemplate } from "@/data/scene-types";
+import type { DialogueLineKind, Scene, SceneLine, SceneTemplate, Speaker } from "@/data/scene-types";
 import type { SceneDialogueFromApi } from "@/lib/api-client/types";
 import { sanitizeDialogueLine, sanitizeGameText } from "@/lib/game-text";
 
 function coerceKind(raw: string | undefined, fallback: DialogueLineKind): DialogueLineKind {
   return raw === "speech" ? "speech" : raw === "narration" ? "narration" : fallback;
+}
+
+function coerceSpeaker(raw: string | null | undefined): Speaker | undefined {
+  if (
+    raw === "NARRATOR" ||
+    raw === "PORTIA" ||
+    raw === "BASSANIO" ||
+    raw === "CROWD" ||
+    raw === "JESSICA" ||
+    raw === "LORENZO"
+  ) {
+    return raw;
+  }
+  return undefined;
 }
 
 function mergeLines(
@@ -12,10 +26,13 @@ function mergeLines(
 ): SceneLine[] {
   if (dialogue?.lines?.length) {
     return dialogue.lines.map((line, index) => {
-      const fallback = template.fallbackLines[index]?.kind ?? "narration";
+      const fallback = template.fallbackLines[index];
+      const fallbackKind = fallback?.kind ?? "narration";
       return {
         text: sanitizeDialogueLine(line.text),
-        kind: coerceKind(line.kind, fallback),
+        kind: coerceKind(line.kind, fallbackKind),
+        speaker: coerceSpeaker(line.speaker) ?? fallback?.speaker,
+        speakerLabel: fallback?.speakerLabel,
       };
     });
   }
@@ -23,6 +40,8 @@ function mergeLines(
   return template.fallbackLines.map((line) => ({
     text: sanitizeDialogueLine(line.text),
     kind: line.kind,
+    speaker: line.speaker,
+    speakerLabel: line.speakerLabel,
   }));
 }
 
@@ -77,7 +96,6 @@ export function buildScene(
         text: sanitizeGameText(choiceTexts[opt.id] ?? opt.fallbackText),
         evidence: opt.evidence,
         dpChange: opt.dpChange,
-        shylockHpChange: opt.shylockHpChange,
         special: opt.special,
       })),
     },

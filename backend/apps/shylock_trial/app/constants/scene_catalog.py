@@ -26,6 +26,7 @@ class SceneTemplate:
     canonical_challenge_text: str | None
     choice_ids: tuple[str, ...]
     canonical_choice_texts: dict[str, str]
+    canonical_line_speakers: tuple[str | None, ...] = ()
 
 
 SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
@@ -54,10 +55,16 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         brief="Portia asks Shylock to show mercy and take triple the bond.",
         canonical_lines=(
             "샤일록, 당신은 안토니오의 살 1파운드를 요구하오.",
-            "자비를 베푸시오. 세 배의 돈을 받으시오.",
-            "이 법정은 당신의 자비를 기다리고 있소.",
+            "법정은 그 증서의 효력을 인정하오. 그러나 그 전에, 내 말을 들으시오.",
+            "자비란 강요로 얻어지는 것이 아니오. 그것은 하늘에서 부드럽게 내리는 비와 같이, 스스로 내려와 땅을 적시는 것이오.",
+            "자비는 이중으로 축복받은 것이오 — 베푸는 자와 받는 자를 동시에 축복하니.",
+            "왕의 왕관보다 자비로운 마음이 더 위대하다 하였소. 권력의 자리에 앉은 자일수록, 그 힘을 어떻게 쓰는가로 진정한 위대함이 드러나는 법이오.",
+            "샤일록, 당신에게는 그 증서를 강제할 권리가 있소.",
+            "하지만 나는 당신에게 묻고 싶소 — 그 권리를 반드시 끝까지 쥐고 있어야만 하는지.",
+            "세 배의 돈을 받으시오. 그것으로 충분하지 않소?",
+            "이 법정은, 그리고 나는, 당신의 자비를 기다리고 있소.",
         ),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 3,
+        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 9,
         challenge_header="▶ 샤일록의 선택",
         canonical_challenge_text="자비를 베풀라고? 당신들이 내게 베푼 자비는 어디 있소?",
         choice_ids=("appeal_contract", "appeal_humanity", "appeal_mercy"),
@@ -73,11 +80,12 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         speaker_label="바사니오",
         brief="Bassanio offers ten times the bond and begs Shylock for mercy.",
         canonical_lines=(
-            '"샤일록, 원금의 열 배를 드리겠소."',
-            '"이번 한 번만 자비를 베푸시오."',
-            '"당신이 원하는 건 복수요, 정의가 아니오."',
+            "샤일록, 내가 빌린 돈은 3천 두캇이었소. 그 열 배를 드리겠소.",
+            "당신이 원하는 게 정말 돈이라면, 이보다 더 큰 액수는 없을 것이오.",
+            "제발... 이번 한 번만 자비를 베푸시오. 당신도 사람이라면, 마음이 있을 것이오.",
+            "당신이 지금 손에 쥔 칼로 얻으려는 건 정의가 아니오. 그저 오래 묵은 증오요.",
         ),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 3,
+        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 4,
         challenge_header="▶ 샤일록의 선택",
         canonical_challenge_text="바사니오가 당신을 설득하려 한다. 당신은—",
         choice_ids=("invoke_bond", "accuse_bassanio", "cold_silence"),
@@ -117,17 +125,20 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         speaker_label="포샤",
         brief="Portia invokes Jessica's elopement and conversion.",
         canonical_lines=(
-            "샤일록, 당신의 딸조차 당신을 떠났소.",
-            "로렌조와 함께. 기독교로 개종하여.",
-            "당신 스스로도 사랑받지 못하는 자가 어찌 법의 보호를 요구하오?",
+            "샤일록, 법정은 한 가지를 기억하고 있소. 당신의 딸조차 당신의 집을 떠났다는 것을.",
+            "로렌조와 함께, 그리고 기독교로 개종하여. 그녀는 스스로 아버지의 이름을 벗어던졌소.",
+            "혈육조차 등을 돌리게 만드는 자에게, 낯선 이의 살 한 파운드가 그리 소중하다니 기이한 일이오.",
+            "성경에도 이르길, 사람이 제 집을 다스리지 못하면 어찌 하나님의 교회를 돌보겠느냐 하였소.",
+            "당신은 딸의 마음 하나 붙들지 못한 자요. 그런 자가 어찌 이 법정에서 정의를 논하려 하시오?",
+            "정을 나눌 줄 모르는 자이니, 계약 또한 정 없이 읽으려 하는구려.",
         ),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 3,
+        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 6,
         challenge_header="▶ 샤일록의 선택",
         canonical_challenge_text="딸의 이름이 법정에 소환됐다.",
         choice_ids=("defend_jessica", "reject_private_matter", "speechless"),
         canonical_choice_texts={
-            "defend_jessica": "제시카는 내 딸이오. 이 계약과 무슨 상관이오?",
-            "reject_private_matter": "사적인 일을 법정에 끌어들이지 마시오",
+            "defend_jessica": "제시카는 내 딸이오. 이 법정이 그 상처를 다시 후벼 파는 것을 두고 볼 이유는 없소.",
+            "reject_private_matter": "내 집안의 일을 이 법정의 저울에 함께 올리지 마시오.",
             "speechless": "(말을 잇지 못한다)",
         },
     ),
@@ -200,6 +211,91 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
             "mock_mercy": "이것이 베네치아가 말하는 자비요?",
         },
     ),
+    SceneTemplate(
+        scene_id="jessica_duet",
+        speaker="JESSICA",
+        speaker_label="제시카",
+        brief="Jessica and Lorenzo in Belmont garden at night — she resolves to intervene.",
+        canonical_lines=(
+            "벨몬트의 정원. 달빛이 낮게 깔린다.",
+            "이런 밤이었지 — 트로일러스가 트로이의 성벽 위에서 크레시다를 향한 그리움에 한숨짓던 것도.",
+            "이런 밤이었죠 — 디도가 버들가지를 들고 해변에 서서, 떠나버린 연인을 향해 손짓하던 것도.",
+            "이런 밤이었지 — 메데이아가 마법의 약초를 모아, 늙은 아이손을 다시 젊게 했던 것도.",
+            "...그리고 이런 밤이었죠. 제가 아버지의 집에서 도망쳐 나온 것도.",
+            "제시카...?",
+            "당신은 계속 옛날 연인들 얘기를 하지만, 로렌조 — 그들은 전부 버림받았거나, 버리고 떠났어요. 우리 이야기도 그렇게 끝날까요?",
+            "그런 뜻이 아니었어—",
+            "알아요. 하지만 저는... 오늘 밤 계속 아버지 생각이 나요. 지금쯤 법정은 어떻게 됐을까요.",
+            "악사들을 불러 음악을 청하지. 그럼 마음이 좀 놓일 거야.",
+            "멀리서 악사들이 현을 고르는 소리가 들린다. 곧 부드러운 선율이 정원에 퍼진다.",
+            "...저는 아름다운 음악을 들으면 마음이 편치 않아요.",
+            "의아하군. 왜지?",
+            "모르겠어요. 그냥... 이렇게 평온한 순간일수록, 제 안의 무언가가 더 시끄러워져요.",
+            "멀리서 종소리가 울린다.",
+            "저는 가야겠어요.",
+            "제시카, 지금 가면—",
+            "알아요. 하지만 오늘 밤이 그 사람들처럼 끝나게 두지 않을 거예요.",
+            "제시카는 뒤돌아보지 않고 정원을 가로질러 뛰어간다.",
+        ),
+        canonical_line_kinds=(
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+        ),
+        canonical_line_speakers=(
+            "NARRATOR",
+            "LORENZO",
+            "JESSICA",
+            "LORENZO",
+            "JESSICA",
+            "LORENZO",
+            "JESSICA",
+            "LORENZO",
+            "JESSICA",
+            "LORENZO",
+            "NARRATOR",
+            "JESSICA",
+            "LORENZO",
+            "JESSICA",
+            "NARRATOR",
+            "JESSICA",
+            "LORENZO",
+            "JESSICA",
+            "NARRATOR",
+        ),
+        challenge_header=None,
+        canonical_challenge_text=None,
+        choice_ids=(),
+        canonical_choice_texts={},
+    ),
+    SceneTemplate(
+        scene_id="jessica_intervention",
+        speaker="JESSICA",
+        speaker_label="제시카",
+        brief="Jessica bursts into the courtroom to intervene after the alien-law judgment.",
+        canonical_lines=("안녕하세요",),
+        canonical_line_kinds=(DialogueLineKind.SPEECH,),
+        challenge_header=None,
+        canonical_challenge_text=None,
+        choice_ids=(),
+        canonical_choice_texts={},
+    ),
 )
 
 
@@ -209,17 +305,38 @@ def get_scene_template(scene_index: int) -> SceneTemplate:
     return SCENE_TEMPLATES[scene_index]
 
 
+def _line_speaker(
+    template: SceneTemplate,
+    index: int,
+    kind: DialogueLineKind,
+) -> str:
+    speakers = template.canonical_line_speakers
+    if index < len(speakers) and speakers[index]:
+        return speakers[index]
+    if kind == DialogueLineKind.NARRATION:
+        return "NARRATOR"
+    return template.speaker
+
+
 def _canonical_dialogue_lines(template: SceneTemplate) -> tuple[SceneDialogueLine, ...]:
     lines: list[SceneDialogueLine] = []
-    for text, kind in zip(
-        template.canonical_lines,
-        template.canonical_line_kinds,
-        strict=True,
+    for index, (text, kind) in enumerate(
+        zip(
+            template.canonical_lines,
+            template.canonical_line_kinds,
+            strict=True,
+        )
     ):
         cleaned = sanitize_dialogue_line(text)
         if kind == DialogueLineKind.SPEECH:
             cleaned = sanitize_character_direct_speech(cleaned)
-        lines.append(SceneDialogueLine(text=cleaned, kind=kind))
+        lines.append(
+            SceneDialogueLine(
+                text=cleaned,
+                kind=kind,
+                speaker=_line_speaker(template, index, kind),
+            )
+        )
     return tuple(lines)
 
 

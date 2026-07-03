@@ -31,7 +31,7 @@ export function SkillPanel({ dp, disabled, onUseSkill }: SkillPanelProps) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
         {SKILLS.map((skill) => {
-          const canUse = dp >= skill.cost && !disabled;
+          const canUse = (skill.cost === 0 || dp >= skill.cost) && !disabled;
           return (
             <button
               key={skill.id}

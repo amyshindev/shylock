@@ -31,6 +31,7 @@ def _parse_lines(raw_lines: list[Any]) -> tuple[SceneDialogueLine, ...]:
                 SceneDialogueLine(
                     text=text,
                     kind=_coerce_line_kind(item.get("kind")),
+                    speaker=item.get("speaker"),
                 )
             )
     return tuple(parsed)
@@ -39,7 +40,11 @@ def _parse_lines(raw_lines: list[Any]) -> tuple[SceneDialogueLine, ...]:
 def scene_dialogue_to_dict(content: SceneDialogueContent) -> dict[str, Any]:
     return {
         "lines": [
-            {"text": line.text, "kind": line.kind.value}
+            {
+                "text": line.text,
+                "kind": line.kind.value,
+                **({"speaker": line.speaker} if line.speaker else {}),
+            }
             for line in content.lines
         ],
         "challenge_header": content.challenge_header,

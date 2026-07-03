@@ -4,7 +4,7 @@ from shylock_trial.adapter.outbound.client.tubal_agent_client import TubalAgentC
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.game_balance import SKILL_TUBAL_COST
 from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue, get_scene_template
-from shylock_trial.app.constants.scene_choices import FINAL_SCENE_INDEX
+from shylock_trial.app.constants.scene_progression import resolve_next_scene_index
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_MAP
 from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDialoguePromptDto
 from shylock_trial.app.dtos.tubal_agent_dto import TubalAgentResult
@@ -57,7 +57,6 @@ class TubalSkillInteractor(TubalSkillUseCase):
         return TubalSkillResultDto(
             trial_id=trial.trial_id,
             dp=trial.dp.value,
-            shylock_hp=trial.shylock_hp.value,
             agent=agent_result,
             tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
         )
@@ -124,8 +123,8 @@ class TubalSkillInteractor(TubalSkillUseCase):
         return trial
 
     async def _prefetch_next_scene_dialogue(self, trial: Trial) -> Trial:
-        next_index = trial.scene_index + 1
-        if next_index > FINAL_SCENE_INDEX or next_index in trial.scene_dialogues:
+        next_index = resolve_next_scene_index(trial.scene_index, trial.dp.value)
+        if next_index is None or next_index in trial.scene_dialogues:
             return trial
 
         try:
@@ -134,7 +133,6 @@ class TubalSkillInteractor(TubalSkillUseCase):
                     trial_id=trial.trial_id,
                     scene_index=next_index,
                     dp=trial.dp.value,
-                    shylock_hp=trial.shylock_hp.value,
                     choice_history=tuple(trial.choice_history),
                 )
             )

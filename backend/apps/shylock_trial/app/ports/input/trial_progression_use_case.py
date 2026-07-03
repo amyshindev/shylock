@@ -37,3 +37,6 @@ class TrialProgressionUseCase(ABC):
         self,
         trial_id: UUID,
     ) -> VeniceContradictionSkillResultDto: ...
+
+    @abstractmethod
+    async def start_dev_scene(self, scene_index: int, dp: int) -> StartTrialResultDto: ...

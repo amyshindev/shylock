@@ -1,38 +1,39 @@
 from dataclasses import dataclass
 
-# Must stay in sync with frontend scene-templates (choice stat deltas).
-# Scene indices 0–7 (8 scenes).
-FINAL_SCENE_INDEX = 7
+# Scene progression: see scene_progression.py (indices 0–9).
+from shylock_trial.app.constants.scene_progression import (  # noqa: F401
+    FINAL_SCENE_INDEX,
+    resolve_next_scene_index,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class ChoiceEffect:
     dp_delta: int
-    shylock_hp_delta: int
 
 
 CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
-    "appeal_contract": ChoiceEffect(0, 15),
-    "appeal_humanity": ChoiceEffect(20, 5),
-    "appeal_mercy": ChoiceEffect(-15, -5),
-    "invoke_bond": ChoiceEffect(15, 10),
-    "accuse_bassanio": ChoiceEffect(20, -5),
-    "cold_silence": ChoiceEffect(-15, 5),
-    "show_gaberdine": ChoiceEffect(15, 10),
-    "ignore_court": ChoiceEffect(5, 5),
-    "rage_at_crowd": ChoiceEffect(-10, -10),
-    "defend_jessica": ChoiceEffect(15, 15),
-    "reject_private_matter": ChoiceEffect(10, 10),
-    "speechless": ChoiceEffect(-20, -15),
-    "hath_not_speech": ChoiceEffect(30, 5),
-    "bond_only": ChoiceEffect(5, 20),
-    "beg_mercy": ChoiceEffect(-20, 0),
-    "blood_impossible": ChoiceEffect(15, -10),
-    "drop_knife": ChoiceEffect(-10, -20),
-    "take_principal_only": ChoiceEffect(5, 10),
-    "reject_conversion": ChoiceEffect(25, -20),
-    "bow_accept": ChoiceEffect(-25, 15),
-    "mock_mercy": ChoiceEffect(15, -5),
+    "appeal_contract": ChoiceEffect(0),
+    "appeal_humanity": ChoiceEffect(20),
+    "appeal_mercy": ChoiceEffect(-15),
+    "invoke_bond": ChoiceEffect(15),
+    "accuse_bassanio": ChoiceEffect(20),
+    "cold_silence": ChoiceEffect(-15),
+    "show_gaberdine": ChoiceEffect(15),
+    "ignore_court": ChoiceEffect(5),
+    "rage_at_crowd": ChoiceEffect(-10),
+    "defend_jessica": ChoiceEffect(15),
+    "reject_private_matter": ChoiceEffect(10),
+    "speechless": ChoiceEffect(-20),
+    "hath_not_speech": ChoiceEffect(30),
+    "bond_only": ChoiceEffect(5),
+    "beg_mercy": ChoiceEffect(-20),
+    "blood_impossible": ChoiceEffect(15),
+    "drop_knife": ChoiceEffect(-10),
+    "take_principal_only": ChoiceEffect(5),
+    "reject_conversion": ChoiceEffect(25),
+    "bow_accept": ChoiceEffect(-25),
+    "mock_mercy": ChoiceEffect(15),
 }
 
 

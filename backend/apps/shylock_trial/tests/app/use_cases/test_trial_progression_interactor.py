@@ -74,3 +74,49 @@ async def test_start_trial_returns_scene_dialogue() -> None:
     assert result.scene_dialogue.lines
     assert result.phase.value == "in_progress"
 
+
+@pytest.mark.asyncio
+async def test_launcelot_skill_grants_dp() -> None:
+    from shylock_trial.app.constants.game_balance import LAUNCELOT_SKILL_DP_GAIN, SHYLOCK_DP_START
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start()
+    result = await interactor.use_launcelot_skill(started.trial_id)
+
+    assert result.dp == SHYLOCK_DP_START + LAUNCELOT_SKILL_DP_GAIN
+
+
+@pytest.mark.asyncio
+async def test_venice_skill_shields_next_negative_choice() -> None:
+    from shylock_trial.app.constants.game_balance import (
+        SHYLOCK_DP_START,
+        VENICE_CONTRADICTION_SKILL_COST,
+    )
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start()
+    skill = await interactor.use_venice_contradiction_skill(started.trial_id)
+
+    assert skill.venice_dp_shield is True
+    assert skill.dp == SHYLOCK_DP_START - VENICE_CONTRADICTION_SKILL_COST
+
+    choice = await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="appeal_mercy"),
+    )
+
+    assert choice.dp == skill.dp
+    assert choice.venice_dp_shield is False
+

@@ -11,7 +11,7 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
   const { title, subtitle } = gameOverMeta(reason);
-  const emoji = reason === "shylock_hp" ? "⚖️" : "🕯️";
+  const emoji = "🕯️";
 
   return (
     <div

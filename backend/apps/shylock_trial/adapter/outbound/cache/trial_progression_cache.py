@@ -9,7 +9,6 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
 from shylock_trial.app.ports.output.trial_progression_cache_port import TrialProgressionCachePort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
-from shylock_trial.domain.value_objects.shylock_hp_score_vo import ShylockHpScore
 
 
 class TrialProgressionRedisCache(TrialProgressionCachePort):
@@ -23,7 +22,11 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
         return {
             str(idx): {
                 "lines": [
-                    {"text": line.text, "kind": line.kind.value}
+                    {
+                        "text": line.text,
+                        "kind": line.kind.value,
+                        **({"speaker": line.speaker} if line.speaker else {}),
+                    }
                     for line in content.lines
                 ],
                 "challenge_header": content.challenge_header,
@@ -43,6 +46,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                     SceneDialogueLine(
                         text=line["text"],
                         kind=DialogueLineKind(line["kind"]),
+                        speaker=line.get("speaker"),
                     )
                     for line in raw.get("lines", [])
                 ],
@@ -60,15 +64,15 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
         return Trial(
             trial_id=UUID(data["trial_id"]),
             scene_index=data["scene_index"],
-            shylock_hp=ShylockHpScore(data["shylock_hp"]),
             dp=DpScore(data["dp"]),
-            alien_law_executed=data.get("alien_law_executed", True),
             choice_history=data["choice_history"],
             phase=TrialPhase(data["phase"]),
             narration_text=data.get("narration_text"),
             scene_dialogues=self._deserialize_scene_dialogues(data.get("scene_dialogues")),
             tubal_used_scenes=tuple(data.get("tubal_used_scenes", [])),
             presented_evidence=tuple(data.get("presented_evidence", [])),
+            tubal_enhanced_choices=data.get("tubal_enhanced_choices", {}),
+            venice_dp_shield=data.get("venice_dp_shield", False),
         )
 
     async def set(self, trial: Trial, ttl_seconds: int = 3600) -> None:
@@ -76,15 +80,15 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             {
                 "trial_id": str(trial.trial_id),
                 "scene_index": trial.scene_index,
-                "shylock_hp": trial.shylock_hp.value,
                 "dp": trial.dp.value,
-                "alien_law_executed": trial.alien_law_executed,
                 "choice_history": trial.choice_history,
                 "phase": trial.phase.value,
                 "narration_text": trial.narration_text,
                 "scene_dialogues": self._serialize_scene_dialogues(trial),
                 "tubal_used_scenes": list(trial.tubal_used_scenes),
                 "presented_evidence": list(trial.presented_evidence),
+                "tubal_enhanced_choices": trial.tubal_enhanced_choices,
+                "venice_dp_shield": trial.venice_dp_shield,
             }
         )
         await self._redis.set(self._key(trial.trial_id), payload, ex=ttl_seconds)

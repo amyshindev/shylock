@@ -61,7 +61,6 @@ class PresentEvidenceInteractor(PresentEvidenceUseCase):
 
         return PresentEvidenceResultDto(
             trial_id=trial.trial_id,
-            shylock_hp=trial.shylock_hp.value,
             dp=trial.dp.value,
             contradiction_valid=agent_result.contradiction_valid,
             portia_response=agent_result.portia_response,

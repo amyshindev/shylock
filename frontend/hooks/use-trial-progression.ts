@@ -31,14 +31,13 @@ import {
 import {
   DP_MAX,
   SHYLOCK_DP_START,
-  SHYLOCK_HP_MAX,
+  LAUNCELOT_SKILL_DP_GAIN,
   SKILLS,
-  LAUNCELOT_SKILL_COST,
   LAUNCELOT_LINES,
   LAUNCELOT_INTRUSION_LINE,
-  LAUNCELOT_PORTIA_REACTION_LINE,
+  LAUNCELOT_REACTION_LINES,
+  LAUNCELOT_DP_GAIN_AT_REACTION_INDEX,
   VENICE_CONTRADICTION_SKILL_COST,
-  VENICE_CONTRADICTION_HP_HEAL,
   VENICE_CONTRADICTION_LINES,
   TUBAL_INTRO_LINE,
   TUBAL_SEARCHING_LINE,
@@ -47,7 +46,9 @@ import {
 } from "@/lib/constants/game-balance";
 import { TUBAL_ENHANCEMENT_BY_SCENE } from "@/lib/constants/tubal-enhancement-map";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
+import { isLastNarrativeScene } from "@/lib/constants/scene-progression";
 import { extractPortiaText } from "@/lib/portia-text";
+import { resolveSpeakerLabel } from "@/lib/speaker-labels";
 
 export type GamePhase = "game" | "gameover" | "ending";
 
@@ -81,12 +82,21 @@ function clampDp(value: number): number {
   return Math.max(0, Math.min(DP_MAX, value));
 }
 
-function clampShylockHp(value: number): number {
-  return Math.max(0, Math.min(SHYLOCK_HP_MAX, value));
+function previewChoiceDpChange(
+  currentDp: number,
+  dpChange: number,
+  veniceDpShield: boolean,
+): { nextDp: number; nextShield: boolean } {
+  let delta = dpChange;
+  let nextShield = veniceDpShield;
+  if (veniceDpShield) {
+    if (delta < 0) delta = 0;
+    nextShield = false;
+  }
+  return { nextDp: clampDp(currentDp + delta), nextShield };
 }
 
-function resolveGameOver(shylockHp: number, dp: number): GameOverReason | null {
-  if (shylockHp <= 0) return "shylock_hp";
+function resolveGameOver(dp: number): GameOverReason | null {
   if (dp <= 0) return "dp";
   return null;
 }
@@ -96,9 +106,8 @@ export function useTrialProgression(trialId: string) {
   const [gameOverReason, setGameOverReason] = useState<GameOverReason | null>(null);
   const [sceneIdx, setSceneIdx] = useState(0);
   const [lineIdx, setLineIdx] = useState(0);
-  const [shylockHp, setShylockHp] = useState(SHYLOCK_HP_MAX);
   const [dp, setDp] = useState(SHYLOCK_DP_START);
-  const [alienLawExecuted, setAlienLawExecuted] = useState(true);
+  const [veniceDpShield, setVeniceDpShield] = useState(false);
   const [portiaReply, setPortiaReply] = useState("");
   const [loadingReply, setLoadingReply] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
@@ -121,7 +130,6 @@ export function useTrialProgression(trialId: string) {
   const [launcelotLineIdx, setLauncelotLineIdx] = useState(0);
   const [veniceSkillPhase, setVeniceSkillPhase] = useState<VeniceSkillPhase>("idle");
   const [veniceLineIdx, setVeniceLineIdx] = useState(0);
-  const [hpRecoveryFlash, setHpRecoveryFlash] = useState<number | null>(null);
   const [ending, setEnding] = useState<EndingResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [quotesById, setQuotesById] = useState<Record<string, EvidenceFromApi>>({});
@@ -139,6 +147,10 @@ export function useTrialProgression(trialId: string) {
   const choiceLockRef = useRef(false);
   const sceneAdvanceLockRef = useRef(false);
   const climaxResolveRef = useRef<(() => void) | null>(null);
+  const launcelotPendingDpRef = useRef<number | null>(null);
+  const launcelotDpGainAppliedRef = useRef(false);
+
+  const [dpGainFlash, setDpGainFlash] = useState<number | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -148,7 +160,7 @@ export function useTrialProgression(trialId: string) {
   const currentLineEntry = scene.lines[lineIdx];
   const currentLine = currentLineEntry?.text ?? "";
   const isLastLine = lineIdx >= scene.lines.length - 1;
-  const isLastScene = sceneIdx >= SCENE_TEMPLATES.length - 1;
+  const isLastScene = isLastNarrativeScene(sceneIdx, dp);
 
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
@@ -161,7 +173,7 @@ export function useTrialProgression(trialId: string) {
     if (loadingScene) return "";
     if (launcelotPhase === "intrusion") return LAUNCELOT_INTRUSION_LINE;
     if (launcelotPhase === "speaking") return LAUNCELOT_LINES[launcelotLineIdx] ?? "";
-    if (launcelotPhase === "reaction") return LAUNCELOT_PORTIA_REACTION_LINE;
+    if (launcelotPhase === "reaction") return LAUNCELOT_REACTION_LINES[launcelotLineIdx] ?? "";
     if (veniceSkillPhase === "speaking") {
       return VENICE_CONTRADICTION_LINES[veniceLineIdx] ?? "";
     }
@@ -201,7 +213,7 @@ export function useTrialProgression(trialId: string) {
         ? "SHYLOCK"
         : showPressPresent
           ? "CROWD"
-          : scene.speaker;
+          : currentLineEntry?.speaker ?? scene.speaker;
   const speakerLabel = isLauncelotActive
     ? launcelotPhase === "speaking"
       ? "론슬롯"
@@ -216,7 +228,8 @@ export function useTrialProgression(trialId: string) {
           ? "샤일록"
           : showPressPresent
             ? scene.speakerLabel ?? "군중"
-            : scene.speakerLabel;
+            : resolveSpeakerLabel(currentLineEntry?.speaker, currentLineEntry?.speakerLabel)
+              ?? scene.speakerLabel;
   const showSpeakerTab =
     !loadingScene &&
     (isLauncelotActive
@@ -297,8 +310,8 @@ export function useTrialProgression(trialId: string) {
     setEvidenceDetailView(null);
   }, []);
 
-  const triggerGameOverIfNeeded = useCallback((hp: number, currentDp: number) => {
-    const reason = resolveGameOver(hp, currentDp);
+  const triggerGameOverIfNeeded = useCallback((currentDp: number) => {
+    const reason = resolveGameOver(currentDp);
     if (reason) {
       setGameOverReason(reason);
       setPhase("gameover");
@@ -322,9 +335,8 @@ export function useTrialProgression(trialId: string) {
         );
         const idx = Math.min(trial.scene_index, SCENE_TEMPLATES.length - 1);
         setSceneIdx(idx);
-        setShylockHp(trial.shylock_hp);
         setDp(trial.dp);
-        setAlienLawExecuted(trial.alien_law_executed);
+        setVeniceDpShield(trial.venice_dp_shield ?? false);
         if (trial.scene_dialogue) {
           setSceneDialogues((prev) => ({ ...prev, [idx]: trial.scene_dialogue! }));
         }
@@ -353,9 +365,7 @@ export function useTrialProgression(trialId: string) {
     try {
       const result = await generateEnding(trialId);
       setEnding(result);
-      setShylockHp(result.shylock_hp);
       setDp(result.dp);
-      setAlienLawExecuted(result.alien_law_executed);
       setPhase("ending");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate ending");
@@ -410,6 +420,16 @@ export function useTrialProgression(trialId: string) {
     }
   }, [isLastScene, trialId, finishToEnding, loadingScene]);
 
+  const applyLauncelotDpGain = useCallback(() => {
+    if (launcelotDpGainAppliedRef.current || launcelotPendingDpRef.current === null) {
+      return;
+    }
+    launcelotDpGainAppliedRef.current = true;
+    setDp(launcelotPendingDpRef.current);
+    setDpGainFlash(LAUNCELOT_SKILL_DP_GAIN);
+    launcelotPendingDpRef.current = null;
+  }, []);
+
   const advanceLauncelotStep = useCallback(() => {
     if (launcelotPhase === "intrusion") {
       setLauncelotPhase("speaking");
@@ -423,14 +443,24 @@ export function useTrialProgression(trialId: string) {
         return;
       }
       setLauncelotPhase("reaction");
+      setLauncelotLineIdx(0);
       return;
     }
 
     if (launcelotPhase === "reaction") {
+      if (launcelotLineIdx < LAUNCELOT_REACTION_LINES.length - 1) {
+        const nextIdx = launcelotLineIdx + 1;
+        if (nextIdx === LAUNCELOT_DP_GAIN_AT_REACTION_INDEX) {
+          applyLauncelotDpGain();
+        }
+        setLauncelotLineIdx(nextIdx);
+        return;
+      }
+      applyLauncelotDpGain();
       setLauncelotPhase("idle");
       setLauncelotLineIdx(0);
     }
-  }, [launcelotPhase, launcelotLineIdx]);
+  }, [launcelotPhase, launcelotLineIdx, applyLauncelotDpGain]);
 
   const advanceVeniceSkillStep = useCallback(() => {
     if (veniceSkillPhase !== "speaking") return;
@@ -494,7 +524,7 @@ export function useTrialProgression(trialId: string) {
 
     if (scene.challenge && !showChallenge) {
       setShowChallenge(true);
-    } else if (!scene.challenge && !isLastScene) {
+    } else if (!scene.challenge) {
       void goNextScene();
     }
   }, [
@@ -536,10 +566,13 @@ export function useTrialProgression(trialId: string) {
       setVeniceSkillPhase("idle");
       setVeniceLineIdx(0);
 
-      const nextHp = clampShylockHp(shylockHp + option.shylockHpChange);
-      const nextDp = clampDp(dp + option.dpChange);
-      setShylockHp(nextHp);
+      const { nextDp, nextShield } = previewChoiceDpChange(
+        dp,
+        option.dpChange,
+        veniceDpShield,
+      );
       setDp(nextDp);
+      setVeniceDpShield(nextShield);
 
       const showEvidenceFlow = async () => {
         if (!option.evidence) return;
@@ -550,7 +583,7 @@ export function useTrialProgression(trialId: string) {
         await showEvidenceFlow();
       }
 
-      if (triggerGameOverIfNeeded(nextHp, nextDp)) {
+      if (triggerGameOverIfNeeded(nextDp)) {
         choiceLockRef.current = false;
         return;
       }
@@ -561,10 +594,9 @@ export function useTrialProgression(trialId: string) {
 
       try {
         const res = await submitChoice(trialId, option.id);
-        setShylockHp(res.shylock_hp);
         setDp(res.dp);
-        setAlienLawExecuted(res.alien_law_executed);
         setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
+        setVeniceDpShield(res.venice_dp_shield);
 
         if (wasEnhanced) {
           setTubalCourtRecords((current) =>
@@ -579,7 +611,7 @@ export function useTrialProgression(trialId: string) {
           });
         }
 
-        if (triggerGameOverIfNeeded(res.shylock_hp, res.dp)) {
+        if (triggerGameOverIfNeeded(res.dp)) {
           return;
         }
 
@@ -591,7 +623,7 @@ export function useTrialProgression(trialId: string) {
         choiceLockRef.current = false;
       }
     },
-    [trialId, shylockHp, dp, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail],
+    [trialId, dp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail],
   );
 
   const makeChoice = useCallback(
@@ -613,10 +645,9 @@ export function useTrialProgression(trialId: string) {
       });
 
       setDp(res.dp);
-      setShylockHp(res.shylock_hp);
       setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
 
-      if (triggerGameOverIfNeeded(res.shylock_hp, res.dp)) {
+      if (triggerGameOverIfNeeded(res.dp)) {
         setTubalPhase("idle");
         return;
       }
@@ -682,8 +713,7 @@ export function useTrialProgression(trialId: string) {
     try {
       const res = await useVeniceContradictionSkill(trialId);
       setDp(res.dp);
-      setShylockHp(res.shylock_hp);
-      setHpRecoveryFlash(VENICE_CONTRADICTION_HP_HEAL);
+      setVeniceDpShield(res.venice_dp_shield);
       setVeniceSkillPhase("speaking");
       setVeniceLineIdx(0);
     } catch (e) {
@@ -714,8 +744,7 @@ export function useTrialProgression(trialId: string) {
       loadingLauncelot ||
       isLauncelotActive ||
       isTubalActive ||
-      choiceLockRef.current ||
-      dp < LAUNCELOT_SKILL_COST
+      choiceLockRef.current
     ) {
       return;
     }
@@ -725,8 +754,8 @@ export function useTrialProgression(trialId: string) {
 
     try {
       const res = await useLauncelotSkill(trialId);
-      setDp(res.dp);
-      setShylockHp(res.shylock_hp);
+      launcelotPendingDpRef.current = res.dp;
+      launcelotDpGainAppliedRef.current = false;
       setLauncelotPhase("intrusion");
       setLauncelotLineIdx(0);
     } catch (e) {
@@ -742,7 +771,6 @@ export function useTrialProgression(trialId: string) {
     loadingLauncelot,
     isLauncelotActive,
     isTubalActive,
-    dp,
     trialId,
   ]);
 
@@ -822,7 +850,6 @@ export function useTrialProgression(trialId: string) {
         evidence_text: evidenceText,
       });
 
-      setShylockHp(res.shylock_hp);
       setDp(res.dp);
 
       if (res.contradiction_valid) {
@@ -860,10 +887,10 @@ export function useTrialProgression(trialId: string) {
   }, [tubalPhase, executeTubalSearch]);
 
   useEffect(() => {
-    if (hpRecoveryFlash == null) return;
-    const timer = window.setTimeout(() => setHpRecoveryFlash(null), 1500);
+    if (dpGainFlash === null) return;
+    const timer = window.setTimeout(() => setDpGainFlash(null), 1400);
     return () => window.clearTimeout(timer);
-  }, [hpRecoveryFlash]);
+  }, [dpGainFlash]);
 
   return {
     phase,
@@ -871,9 +898,9 @@ export function useTrialProgression(trialId: string) {
     scene,
     sceneIdx,
     lineIdx,
-    shylockHp,
     dp,
-    alienLawExecuted,
+    dpGainFlash,
+    veniceDpShield,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -892,7 +919,6 @@ export function useTrialProgression(trialId: string) {
     loadingTubal,
     loadingLauncelot,
     loadingVeniceSkill,
-    hpRecoveryFlash,
     loadingReply,
     loadingScene,
     showChallenge,

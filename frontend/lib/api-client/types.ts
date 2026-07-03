@@ -5,6 +5,7 @@ export type DialogueLineKind = "speech" | "narration";
 export interface SceneDialogueLineFromApi {
   text: string;
   kind: DialogueLineKind;
+  speaker?: string | null;
 }
 
 export interface SceneDialogueFromApi {
@@ -17,14 +18,13 @@ export interface SceneDialogueFromApi {
 export interface TrialState {
   trial_id: string;
   scene_index: number;
-  shylock_hp: number;
   dp: number;
-  alien_law_executed: boolean;
   phase: TrialPhase;
   choice_history?: string[];
   narration_text?: string | null;
   scene_dialogue?: SceneDialogueFromApi | null;
   tubal_enhanced_choices?: Record<string, string>;
+  venice_dp_shield?: boolean;
 }
 
 export interface StartTrialResponse extends TrialState {
@@ -34,14 +34,13 @@ export interface StartTrialResponse extends TrialState {
 export interface SubmitChoiceResponse {
   trial_id: string;
   scene_index: number;
-  shylock_hp: number;
   dp: number;
-  alien_law_executed: boolean;
   phase: TrialPhase;
   portia_response: string;
   ending_type: string | null;
   is_ending: boolean;
   tubal_enhanced_choices?: Record<string, string>;
+  venice_dp_shield: boolean;
 }
 
 export interface AdvanceSceneResponse {
@@ -55,9 +54,7 @@ export interface EndingResponse {
   trial_id: string;
   ending_type: string;
   ending_text: string;
-  shylock_hp: number;
   dp: number;
-  alien_law_executed: boolean;
 }
 
 export interface EvidenceFromApi {
@@ -73,7 +70,6 @@ export interface EvidenceFromApi {
 export interface TubalSkillResponse {
   trial_id: string;
   dp: number;
-  shylock_hp: number;
   success: boolean;
   ftln: number | null;
   passage: string | null;
@@ -86,20 +82,18 @@ export interface TubalSkillResponse {
 export interface LauncelotSkillResponse {
   trial_id: string;
   dp: number;
-  shylock_hp: number;
   launcelot_comment: string;
 }
 
 export interface VeniceContradictionSkillResponse {
   trial_id: string;
   dp: number;
-  shylock_hp: number;
+  venice_dp_shield: boolean;
   skill_comment: string;
 }
 
 export interface PresentEvidenceResponse {
   trial_id: string;
-  shylock_hp: number;
   dp: number;
   contradiction_valid: boolean;
   portia_response: string;

@@ -12,6 +12,7 @@ class DialogueLineKind(StrEnum):
 class SceneDialogueLine:
     text: str
     kind: DialogueLineKind = DialogueLineKind.NARRATION
+    speaker: str | None = None
 
 
 @dataclass(slots=True)
@@ -30,7 +31,6 @@ class SceneDialoguePromptDto:
     trial_id: UUID
     scene_index: int
     dp: int
-    shylock_hp: int
     choice_history: tuple[str, ...]
 
 

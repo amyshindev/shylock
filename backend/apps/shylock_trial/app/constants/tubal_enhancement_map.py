@@ -6,6 +6,8 @@ TUBAL_ENHANCEMENT_MAP: dict[str, str | None] = {
     "hath_not_moment": "hath_not_speech",
     "blood_reveal": None,
     "alien_law_reveal": None,
+    "jessica_duet": None,
+    "jessica_intervention": None,
 }
 
 TUBAL_ENHANCEMENT_DP_BONUS = 5

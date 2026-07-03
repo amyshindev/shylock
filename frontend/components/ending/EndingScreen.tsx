@@ -55,20 +55,13 @@ export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
         {meta.subtitle}
       </p>
 
-      <div style={{ display: "flex", gap: 40, marginBottom: 24 }}>
-        {[
-          ["HP", ending.shylock_hp, "#ff6666"],
-          ["DP", ending.dp, theme.gold],
-        ].map(([label, val, color]) => (
-          <div key={label as string}>
-            <div style={{ color: theme.textMuted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>
-              {label}
-            </div>
-            <div style={{ color: color as string, fontSize: 28, fontWeight: "bold" }}>
-              {val}
-            </div>
-          </div>
-        ))}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ color: theme.textMuted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>
+          DP
+        </div>
+        <div style={{ color: theme.gold, fontSize: 28, fontWeight: "bold" }}>
+          {ending.dp}
+        </div>
       </div>
 
       <TextBox

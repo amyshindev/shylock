@@ -10,6 +10,7 @@ from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 class SceneDialogueLineResponse(BaseModel):
     text: str
     kind: Literal["speech", "narration"]
+    speaker: str | None = None
 
 
 class SceneDialogueResponse(BaseModel):
@@ -25,7 +26,7 @@ def scene_dialogue_from_trial(trial: Trial) -> SceneDialogueResponse | None:
         return None
     return SceneDialogueResponse(
         lines=[
-            SceneDialogueLineResponse(text=line.text, kind=line.kind.value)
+            SceneDialogueLineResponse(text=line.text, kind=line.kind.value, speaker=line.speaker)
             for line in content.lines
         ],
         challenge_header=content.challenge_header,
@@ -41,9 +42,7 @@ class StartTrialResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 0,
-                    "shylock_hp": 60,
                     "dp": 50,
-                    "alien_law_executed": True,
                     "phase": "in_progress",
                     "scene_dialogue": {
                         "lines": [{"text": "베네치아 법정. 1596년.", "kind": "narration"}],
@@ -58,9 +57,7 @@ class StartTrialResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    shylock_hp: int = Field(ge=0)
     dp: int = Field(ge=0, le=100)
-    alien_law_executed: bool
     phase: TrialPhase
     scene_dialogue: SceneDialogueResponse
 
@@ -72,9 +69,7 @@ class TrialResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 1,
-                    "shylock_hp": 48,
                     "dp": 55,
-                    "alien_law_executed": True,
                     "phase": "in_progress",
                     "choice_history": ["appeal_mercy"],
                     "narration_text": None,
@@ -93,14 +88,13 @@ class TrialResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    shylock_hp: int = Field(ge=0)
     dp: int = Field(ge=0, le=100)
-    alien_law_executed: bool
     phase: TrialPhase
     choice_history: list[str]
     narration_text: str | None = None
     scene_dialogue: SceneDialogueResponse | None = None
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
+    venice_dp_shield: bool = False
 
 
 class SubmitChoiceRequest(BaseModel):
@@ -118,9 +112,7 @@ class SubmitChoiceResponse(BaseModel):
                 {
                     "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
                     "scene_index": 1,
-                    "shylock_hp": 52,
                     "dp": 60,
-                    "alien_law_executed": True,
                     "phase": "in_progress",
                     "portia_response": "The quality of mercy is not strained...",
                     "ending_type": None,
@@ -132,14 +124,13 @@ class SubmitChoiceResponse(BaseModel):
 
     trial_id: UUID
     scene_index: int
-    shylock_hp: int
     dp: int
-    alien_law_executed: bool
     phase: TrialPhase
     portia_response: str
     ending_type: str | None = None
     is_ending: bool
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
+    venice_dp_shield: bool = False
 
 
 class AdvanceSceneResponse(BaseModel):
@@ -173,11 +164,9 @@ class EndingResponse(BaseModel):
             "examples": [
                 {
                     "trial_id": "3fa85f64-5717-5717-4562-b3fc-2c963f66afa6",
-                    "ending_type": "dignity_ending",
+                    "ending_type": "dignity_kept_ending",
                     "ending_text": "Justice tempered with mercy prevails.",
-                    "shylock_hp": 45,
                     "dp": 72,
-                    "alien_law_executed": True,
                 }
             ]
         }
@@ -186,20 +175,17 @@ class EndingResponse(BaseModel):
     trial_id: UUID
     ending_type: str
     ending_text: str
-    shylock_hp: int
     dp: int
-    alien_law_executed: bool
 
 
 class LauncelotSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
-    shylock_hp: int = Field(ge=0)
     launcelot_comment: str
 
 
 class VeniceContradictionSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
-    shylock_hp: int = Field(ge=0)
+    venice_dp_shield: bool
     skill_comment: str
