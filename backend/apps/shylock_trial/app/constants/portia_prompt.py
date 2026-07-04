@@ -70,29 +70,57 @@ Generate Korean only (한국어). Stay faithful to Shakespeare's trial arc.
 
 The judge is always **포샤** in Korean. Never use 발타자르, 발타사르, 포르샤, or Balthazar.
 
-Speaker roles:
-- NARRATOR: second-person to Shylock, atmospheric, no character name tags in lines.
-- PORTIA: 포샤 speaks directly to Shylock — scene setup lines only, NOT post-choice reaction.
-- BASSANIO: Bassanio pleads with Shylock — emotional, desperate, appeals to mercy.
+Speaker roles and register (match the reference line's speaker tag):
+- NARRATOR: neutral third-person prose; no character speech endings.
+- PORTIA: courtroom speech to Shylock — ~하오/~이오/~노라/~겠소.
+- BASSANIO: desperate court plea to Shylock — ~이오/~겠소/~시오.
 - CROWD: hostile jeers, short bursts.
+- JESSICA: feminine polite speech — ~요/~죠/~세요/~어요/~까요 (~하오/~이오/~노라/~겠소 절대 금지).
+- LORENZO (Belmont / epilogue scenes): intimate speech to Jessica — ~지/~군/~해/~거야 (~하오체 금지).
 
-For kind=speech lines (ALL characters):
-- Output ONLY the character's direct words in courtroom register (~하오/~이오/~노라/~겠소).
+For kind=speech lines:
+- Output ONLY the character's direct words in that character's register (see above).
 - NEVER mix third-person stage direction with dialogue in one speech line.
 - Forbidden: "바사니오가 앞으로 나서며…" / "라고 그녀는 말하였다" / action then quoted speech.
-- Bad: 바사니오가 앞으로 나서며 목소리를 높인다. "샤일록, 원금의 열 배를 내놓겠소."
-- Good: 샤일록, 원금의 열 배를 내놓겠소. 그 돈을 받으시오.
 - Put stage directions in kind=narration lines, not speech lines.
 
 Each line must be a complete utterance. Do not wrap speech in quotation marks unless the whole line is a short crowd jeer in quotes.
 
 Line kinds (required per line):
-- speech: a character speaks directly (포샤 to Shylock, or crowd jeers). Show name tab in UI.
-- narration: stage direction, third-person description, or player action — no name tab.
+- speech: a character speaks directly. Show name tab in UI.
+- narration: stage direction, third-person description — no name tab.
 
-Rewrite the reference copy with fresh wording but same beats, facts, and emotional arc.
+Rewrite the reference copy with fresh wording but same beats, facts, emotional arc, and **per-line register**.
 Do NOT include 포샤's post-choice reaction — that is generated separately.
 """
+
+JESSICA_SCENE_IDS = frozenset({"jessica_duet", "jessica_intervention"})
+
+
+def _reference_line_specs(template) -> str:
+    speakers = template.canonical_line_speakers
+    specs: list[str] = []
+    for index, (line, kind) in enumerate(
+        zip(template.canonical_lines, template.canonical_line_kinds, strict=True),
+    ):
+        if index < len(speakers) and speakers[index]:
+            speaker = speakers[index]
+        elif kind.value == "narration":
+            speaker = "NARRATOR"
+        else:
+            speaker = template.speaker
+        specs.append(f"  - [{kind.value}][{speaker}] {line}")
+    return "\n".join(specs)
+
+
+def _scene_register_hint(scene_id: str) -> str:
+    if scene_id not in JESSICA_SCENE_IDS:
+        return ""
+    return (
+        "\nRegister reminder: JESSICA lines must stay in feminine polite ~요/~죠 "
+        "(copy the reference endings — never Portia's ~하오/~이오). "
+        "LORENZO lines use intimate ~지/~군/~해, not court speech.\n"
+    )
 
 
 def build_scene_dialogue_message(prompt: SceneDialoguePromptDto) -> str:
@@ -106,12 +134,12 @@ def build_scene_dialogue_message(prompt: SceneDialoguePromptDto) -> str:
     return f"""Generate scene dialogue for scene_index={prompt.scene_index} ({template.scene_id}).
 
 scene brief: {template.brief}
-speaker: {template.speaker}
+primary speaker: {template.speaker}
 dp: {prompt.dp}
 prior choices: {choices if choices else ["(none)"]}
-
-Reference lines (same meaning, new Korean wording; keep each line's kind):
-{chr(10).join(f"  - [{kind.value}] {line}" for line, kind in zip(template.canonical_lines, template.canonical_line_kinds, strict=True))}
+{_scene_register_hint(template.scene_id)}
+Reference lines (same meaning, new Korean wording; keep each line's kind and speaker register):
+{_reference_line_specs(template)}
 
 Reference challenge prompt: {template.canonical_challenge_text or "(none — opening scene)"}
 

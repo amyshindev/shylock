@@ -31,7 +31,7 @@ from shylock_trial.domain.entities.play_line_entity import PlayLine
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "claude-sonnet-4-6"
+MODEL_ID = "claude-sonnet-5"
 MAX_AGENT_ITERATIONS = 5
 
 TUBAL_TOOLS: list[dict[str, Any]] = [

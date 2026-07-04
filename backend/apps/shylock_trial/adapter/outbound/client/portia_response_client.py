@@ -31,7 +31,7 @@ from shylock_trial.app.utils.dialogue_text import (
 )
 from shylock_trial.app.utils.portia_text import extract_portia_text
 
-MODEL_ID = "claude-sonnet-4-6"
+MODEL_ID = "claude-sonnet-5"
 
 
 class PortiaResponseOutput(BaseModel):

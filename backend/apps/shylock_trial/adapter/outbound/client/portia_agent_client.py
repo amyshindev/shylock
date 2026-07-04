@@ -17,7 +17,7 @@ from shylock_trial.app.utils.dialogue_text import sanitize_character_direct_spee
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "claude-sonnet-4-6"
+MODEL_ID = "claude-sonnet-5"
 MAX_AGENT_ITERATIONS = 3
 
 PORTIA_AGENT_SYSTEM = """\

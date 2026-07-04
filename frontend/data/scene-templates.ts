@@ -333,7 +333,7 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     backgroundImage: "/assets/scene-jessica-duet.png",
     fallbackLines: [
       {
-        text: "벨몬트의 정원. 달빛이 낮게 깔린다.",
+        text: "벨몬트의 정원. 달빛이 낮게 깔린다. 제시카와 로렌조가 나란히 앉아 있다.",
         kind: N,
         speaker: "NARRATOR",
       },
@@ -398,20 +398,6 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
         kind: S,
         speaker: "JESSICA",
         speakerLabel: "제시카",
-      },
-      { text: "멀리서 종소리가 울린다.", kind: N, speaker: "NARRATOR" },
-      { text: "저는 가야겠어요.", kind: S, speaker: "JESSICA", speakerLabel: "제시카" },
-      { text: "제시카, 지금 가면—", kind: S, speaker: "LORENZO", speakerLabel: "로렌조" },
-      {
-        text: "알아요. 하지만 오늘 밤이 그 사람들처럼 끝나게 두지 않을 거예요.",
-        kind: S,
-        speaker: "JESSICA",
-        speakerLabel: "제시카",
-      },
-      {
-        text: "제시카는 뒤돌아보지 않고 정원을 가로질러 뛰어간다.",
-        kind: N,
-        speaker: "NARRATOR",
       },
     ],
     challengeTemplate: null,

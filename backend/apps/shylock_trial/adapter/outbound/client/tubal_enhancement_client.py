@@ -7,7 +7,7 @@ import anthropic
 from infrastructure.config import get_settings
 from shylock_trial.app.utils.dialogue_text import sanitize_game_text
 
-MODEL_ID = "claude-sonnet-4-6"
+MODEL_ID = "claude-sonnet-5"
 
 SYSTEM_PROMPT = """\
 You are helping Shylock speak in court.
