@@ -10,11 +10,11 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     speaker: "NARRATOR",
     backgroundImage: "/assets/scene-crowd-jeers.png",
     fallbackLines: [
-      { text: "베네치아 법정. 1596년.", kind: N },
+      { text: "베네치아 법정. 해가 지고 있다. 돌벽에는 그림자가 기운다.", kind: N },
       { text: "샤일록, 당신은 지금 이 법정에 서 있다.", kind: N },
       { text: "당신의 적들이 당신을 둘러싸고 있다.", kind: N },
       { text: "당신에게는 법이 있다. 계약이 있다.", kind: N },
-      { text: "그것으로 충분한가?", kind: N },
+      { text: "... 그러나 그것으로 충분할 것인가?", kind: N },
     ],
     challengeTemplate: null,
     availableEvidence: [],

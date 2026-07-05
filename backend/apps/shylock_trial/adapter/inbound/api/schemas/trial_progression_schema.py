@@ -45,7 +45,7 @@ class StartTrialResponse(BaseModel):
                     "dp": 50,
                     "phase": "in_progress",
                     "scene_dialogue": {
-                        "lines": [{"text": "베네치아 법정. 1596년.", "kind": "narration"}],
+                        "lines": [{"text": "베네치아 법정.", "kind": "narration"}],
                         "challenge_header": None,
                         "challenge_text": None,
                         "choice_texts": {},

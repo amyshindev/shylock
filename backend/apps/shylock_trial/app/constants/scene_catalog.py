@@ -36,11 +36,11 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         speaker_label=None,
         brief="Opening — Venice court 1596. Shylock stands alone against the court.",
         canonical_lines=(
-            "베네치아 법정. 1596년. 해가 지고 있다. 돌벽에는 그림자가 기운다.",
+            "베네치아 법정. 해가 지고 있다. 돌벽에는 그림자가 기운다.",
             "샤일록, 당신은 지금 이 법정에 서 있다.",
             "당신의 적들이 당신을 둘러싸고 있다.",
             "당신에게는 법이 있다. 계약이 있다.",
-            "... 하지만 그것으로 충분할 것인가?",
+            "... 그러나 그것으로 충분할 것인가?",
         ),
         canonical_line_kinds=(DialogueLineKind.NARRATION,) * 5,
         challenge_header=None,
