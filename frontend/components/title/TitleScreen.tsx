@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { PrologueScreen } from "@/components/title/PrologueScreen";
 import { TextBox } from "@/components/ui/TextBox";
 import { startTrial } from "@/lib/api-client/trial-progression";
 import { gameFontSize } from "@/styles/text-box";
@@ -12,18 +13,27 @@ export function TitleScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [prologueTrialId, setPrologueTrialId] = useState<string | null>(null);
 
   const handleStart = async () => {
     setLoading(true);
     setError(null);
     try {
       const trial = await startTrial();
-      router.push(`/trial/${trial.trial_id}`);
+      setPrologueTrialId(trial.trial_id);
     } catch (e) {
       setError(e instanceof Error ? e.message : "재판을 시작할 수 없습니다");
       setLoading(false);
     }
   };
+
+  if (prologueTrialId) {
+    return (
+      <PrologueScreen
+        onComplete={() => router.push(`/trial/${prologueTrialId}`)}
+      />
+    );
+  }
 
   return (
     <div
