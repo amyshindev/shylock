@@ -96,9 +96,11 @@ export function buildScene(
         text: sanitizeGameText(choiceTexts[opt.id] ?? opt.fallbackText),
         evidence: opt.evidence,
         dpChange: opt.dpChange,
+        hpCost: opt.hpCost,
         special: opt.special,
       })),
     },
+    challengeAfterLineIndex: template.challengeAfterLineIndex,
     availableEvidence: template.availableEvidence,
   };
 }

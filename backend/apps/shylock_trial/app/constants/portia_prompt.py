@@ -12,9 +12,9 @@ SCENE_BRIEFS: dict[int, str] = {
     4: "Portia invokes Jessica's elopement and conversion.",
     5: "Portia's final question — does Shylock know mercy? Climax: Hath not a Jew eyes?",
     6: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
-    7: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
-    8: "Jessica duet — private encounter with Shylock after the verdict (DP 90+ epilogue).",
-    9: "Jessica intervention — Jessica bursts into the courtroom (DP 90+ epilogue).",
+    7: "Jessica duet — Belmont garden cutaway before the final courtroom judgment.",
+    8: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
+    9: "Jessica intervention — Jessica bursts into the courtroom after the alien-law judgment.",
 }
 
 CHOICE_BRIEFS: dict[str, str] = {
@@ -36,6 +36,7 @@ CHOICE_BRIEFS: dict[str, str] = {
     "blood_impossible": "Cutting flesh without blood is impossible!",
     "drop_knife": "Lowers the knife.",
     "take_principal_only": "Will take only the principal sum.",
+    "plead_for_principal": "Please — let me have at least the principal sum.",
     "reject_conversion": "Death before forced conversion to Christianity.",
     "bow_accept": "Bows head and accepts conversion.",
     "mock_mercy": "Is this what Venice calls mercy?",
@@ -160,8 +161,12 @@ Use exactly {len(template.canonical_lines)} lines with matching kinds per refere
 
 
 ENDING_BRIEFS: dict[str, str] = {
+    "rescued_ending": (
+        "DP 90+ — '구원받은 자'. Legal loss stands, but Shylock's spirit and dignity "
+        "survived the trial intact — read as the rarest moral triumph."
+    ),
     "fought_to_end_ending": (
-        "DP 80+ — '끝까지 싸운 자'. Legal loss stands, but Shylock's dignity and voice "
+        "DP 80–89 — '끝까지 싸운 자'. Legal loss stands, but Shylock's dignity and voice "
         "were never crushed; read as a moral victory in spirit."
     ),
     "dignity_kept_ending": (

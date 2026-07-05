@@ -15,6 +15,12 @@ frontend/out/
 .env.*
 !**/.env.example
 
+# Keys / certificates (SSH, TLS 등)
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Git & IDE
 .git/
 .gitignore

@@ -39,6 +39,7 @@ class TubalSkillResponse(BaseModel):
 
     trial_id: UUID
     dp: int
+    hp: int
     success: bool
     ftln: int | None = None
     passage: str | None = None

@@ -176,13 +176,26 @@ export function ChoiceList({
                 <span style={{ color: "#5a3a4a" }}>{index + 1}. </span>
                 {choiceText}
               </span>
-              {isEnhanced ? (
-                <TubalEvidenceBadge
-                  name={latestTubalRecord?.name ?? "투발 아이템"}
-                />
-              ) : (
-                opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />
-              )}
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                {opt.hpCost > 0 && (
+                  <span
+                    style={{
+                      fontSize: gameFontSize.sm,
+                      color: "#cc5544",
+                      fontWeight: 600,
+                    }}
+                  >
+                    -{opt.hpCost} HP
+                  </span>
+                )}
+                {isEnhanced ? (
+                  <TubalEvidenceBadge
+                    name={latestTubalRecord?.name ?? "투발 아이템"}
+                  />
+                ) : (
+                  opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />
+                )}
+              </span>
             </button>
           );
         })}

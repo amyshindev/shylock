@@ -1,20 +1,32 @@
+import { CROWD_JEERS_SCENE_INDEX } from "@/lib/constants/scene-progression";
+
 export const SHYLOCK_DP_START = 50;
 export const DP_MAX = 100;
 
+export const SHYLOCK_HP_START = 100;
+export const HP_MAX = 100;
+export const LOW_HP_THRESHOLD = 30;
+
+export const DP_RESCUED_ENDING_THRESHOLD = 90;
 export const DP_FOUGHT_TO_END_THRESHOLD = 80;
 export const DP_DIGNITY_ENDING_THRESHOLD = 60;
 export const DP_SURVIVAL_ENDING_THRESHOLD = 40;
-export const DP_JESSICA_EPILOGUE_THRESHOLD = 90;
 
-export const LAUNCELOT_SKILL_DP_GAIN = 10;
+export const TUBAL_SKILL_EFFECT = { dpChange: 14, hpCost: 2 } as const;
 
-export const SKILL_TUBAL_COST = 30;
+export const LAUNCELOT_SKILL_EFFECT = { dpChange: -6, hpCost: -10 } as const;
+export const LAUNCELOT_SKILL_HP_GAIN = -LAUNCELOT_SKILL_EFFECT.hpCost;
 
-export const VENICE_CONTRADICTION_SKILL_COST = 40;
-export const VENICE_CONTRADICTION_LINES = [
+export const VENICE_PARADOX_SKILL_EFFECT = { dpChange: 16, hpCost: 6 } as const;
+export const VENICE_PARADOX_LINES = [
   "당신들은 나를 고리대금업자라 부르오.",
-  "하지만 당신들이 내게 허락한 것이 그것뿐이었소.",
+  "허나 묻겠소 — 내가 상인이 되는 것을 당신들의 길드가 허락했소?",
+  "내가 땅을 사는 것을, 당신들의 법이 허락했소?",
+  "당신들은 내게 문을 하나만 열어두고, 그 문으로 들어온 나를 손가락질하며 더럽다 하는구려.",
+  "돈을 빌려주는 것. 그것이 당신들이 내게 허락한 유일한 일이었소.",
+  "그리고 이제 와서, 내가 그 일을 너무 잘한다고 나를 벌하려 하시오?",
   "이것이 베니스의 정의요?",
+  "당신들이 내게 증오를 가르쳤다면, 나는 그저 훌륭한 학생이었을 뿐이오.",
 ] as const;
 
 export const LAUNCELOT_INTRUSION_LINE = "론슬롯이 갑자기 법정으로 뛰어들었다! ";
@@ -29,10 +41,10 @@ export const LAUNCELOT_REACTION_LINES = [
   "이 틈을 타 숨을 고르자...",
 ] as const;
 
-/** DP gain is applied when this reaction line is shown. */
-export const LAUNCELOT_DP_GAIN_AT_REACTION_INDEX = 1;
+/** HP gain is applied when this reaction line is shown. */
+export const LAUNCELOT_HP_GAIN_AT_REACTION_INDEX = 1;
 
-export type SkillId = "launcelot" | "tubal" | "venice_contradiction";
+export type SkillId = "launcelot" | "tubal" | "venice_paradox";
 
 export const TUBAL_INTRO_LINE = "잠깐, 내가 증거를 가져왔소.";
 export const TUBAL_SEARCHING_LINE = "잠시만 기다리시오. 사본을 뒤져보겠소.";
@@ -41,16 +53,36 @@ export const TUBAL_SEARCH_FAILURE_LINE = "이번에는 증거가 될 만한 걸 
 export interface SkillDefinition {
   id: SkillId;
   label: string;
-  /** DP required to activate; 0 means no cost. */
+  /** Minimum DP required to activate (when skill costs DP). */
   cost: number;
 }
 
 export const SKILLS: SkillDefinition[] = [
-  { id: "launcelot", label: "🃏 론슬롯 난입 (+10 DP)", cost: 0 },
-  { id: "tubal", label: "🤝 투발의 도움 (-30 DP)", cost: SKILL_TUBAL_COST },
   {
-    id: "venice_contradiction",
-    label: "⚔️ 베니스의 모순 (-40 DP · 다음 선택 보호)",
-    cost: VENICE_CONTRADICTION_SKILL_COST,
+    id: "launcelot",
+    label: "🃏 론슬롯 난입 (-6 DP · +10 HP)",
+    cost: -LAUNCELOT_SKILL_EFFECT.dpChange,
+  },
+  { id: "tubal", label: "🤝 투발의 도움 (+14 DP · -2 HP)", cost: 0 },
+  {
+    id: "venice_paradox",
+    label: "⚔️ 베니스의 모순 (+16 DP · -6 HP · 1회)",
+    cost: 0,
   },
 ];
+
+export function canUseSkill(
+  skillId: SkillId,
+  ctx: { dp: number; sceneIdx: number; veniceParadoxUsed: boolean },
+): boolean {
+  switch (skillId) {
+    case "launcelot":
+      return ctx.dp >= -LAUNCELOT_SKILL_EFFECT.dpChange;
+    case "tubal":
+      return true;
+    case "venice_paradox":
+      return ctx.sceneIdx > CROWD_JEERS_SCENE_INDEX && !ctx.veniceParadoxUsed;
+    default:
+      return false;
+  }
+}

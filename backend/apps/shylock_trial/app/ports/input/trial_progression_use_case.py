@@ -8,7 +8,7 @@ from shylock_trial.app.dtos.trial_progression_dto import (
     StartTrialResultDto,
     SubmitChoiceInputDto,
     SubmitChoiceResultDto,
-    VeniceContradictionSkillResultDto,
+    VeniceParadoxSkillResultDto,
 )
 from shylock_trial.domain.entities.trial_entity import Trial
 
@@ -33,10 +33,10 @@ class TrialProgressionUseCase(ABC):
     async def use_launcelot_skill(self, trial_id: UUID) -> LauncelotSkillResultDto: ...
 
     @abstractmethod
-    async def use_venice_contradiction_skill(
+    async def use_venice_paradox_skill(
         self,
         trial_id: UUID,
-    ) -> VeniceContradictionSkillResultDto: ...
+    ) -> VeniceParadoxSkillResultDto: ...
 
     @abstractmethod
     async def start_dev_scene(self, scene_index: int, dp: int) -> StartTrialResultDto: ...

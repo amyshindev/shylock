@@ -2,10 +2,12 @@
 import {
   DP_DIGNITY_ENDING_THRESHOLD,
   DP_FOUGHT_TO_END_THRESHOLD,
+  DP_RESCUED_ENDING_THRESHOLD,
   DP_SURVIVAL_ENDING_THRESHOLD,
 } from "@/lib/constants/game-balance";
 
 export type EndingType =
+  | "rescued_ending"
   | "fought_to_end_ending"
   | "dignity_kept_ending"
   | "survived_ending"
@@ -18,6 +20,13 @@ export interface EndingMeta {
 }
 
 export function getEnding(dp: number): EndingMeta {
+  if (dp >= DP_RESCUED_ENDING_THRESHOLD) {
+    return {
+      title: "구원받은 자",
+      subtitle: "법정은 그를 꺾지 못했고, 그의 존엄은 온전했다",
+      emoji: "✨",
+    };
+  }
   if (dp >= DP_FOUGHT_TO_END_THRESHOLD) {
     return {
       title: "끝까지 싸운 자",
@@ -52,6 +61,8 @@ export function endingLabel(type: EndingType): string {
 
 export function getEndingMetaByType(type: EndingType): EndingMeta {
   switch (type) {
+    case "rescued_ending":
+      return getEnding(DP_RESCUED_ENDING_THRESHOLD);
     case "fought_to_end_ending":
       return getEnding(DP_FOUGHT_TO_END_THRESHOLD);
     case "dignity_kept_ending":
@@ -65,9 +76,15 @@ export function getEndingMetaByType(type: EndingType): EndingMeta {
   }
 }
 
-export type GameOverReason = "dp";
+export type GameOverReason = "dp" | "hp";
 
 export function gameOverMeta(reason: GameOverReason): { title: string; subtitle: string } {
+  if (reason === "hp") {
+    return {
+      title: "법정에서 쓰러지다",
+      subtitle: "샤일록이 더 이상 버틸 수 없었다. 정신과 몸이 한계에 달했다.",
+    };
+  }
   return {
     title: "스스로 포기하다",
     subtitle: "샤일록이 스스로 포기했다. 더 이상 싸울 수 없다.",

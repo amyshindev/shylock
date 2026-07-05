@@ -34,6 +34,7 @@ async def invoke_tubal_skill(
     return TubalSkillResponse(
         trial_id=result.trial_id,
         dp=result.dp,
+        hp=result.hp,
         success=agent.success,
         ftln=agent.ftln,
         passage=agent.passage,

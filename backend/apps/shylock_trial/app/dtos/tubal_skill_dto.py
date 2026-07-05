@@ -15,5 +15,6 @@ class TubalSkillInputDto:
 class TubalSkillResultDto:
     trial_id: UUID
     dp: int
+    hp: int
     agent: TubalAgentResult
     tubal_enhanced_choices: dict[str, str]

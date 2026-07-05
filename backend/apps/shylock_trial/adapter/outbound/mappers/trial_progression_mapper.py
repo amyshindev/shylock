@@ -11,6 +11,7 @@ from shylock_trial.app.utils.trial_metadata_store import (
 )
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 
 
 def to_entity(orm: TrialOrm) -> Trial:
@@ -18,6 +19,7 @@ def to_entity(orm: TrialOrm) -> Trial:
         trial_id=orm.trial_id,
         scene_index=orm.scene_index,
         dp=DpScore(orm.dp),
+        hp=HpScore(orm.hp),
         choice_history=[row.choice_id for row in orm.choice_history],
         phase=TrialPhase(orm.phase),
         narration_text=orm.narration_text,
@@ -26,6 +28,7 @@ def to_entity(orm: TrialOrm) -> Trial:
         presented_evidence=deserialize_string_tuple(orm.presented_evidence_json),
         tubal_enhanced_choices=deserialize_string_dict(orm.tubal_enhanced_choices),
         venice_dp_shield=orm.venice_dp_shield,
+        venice_paradox_used=orm.venice_paradox_used,
     )
 
 
@@ -34,6 +37,7 @@ def to_orm(entity: Trial) -> TrialOrm:
         trial_id=entity.trial_id,
         scene_index=entity.scene_index,
         dp=entity.dp.value,
+        hp=entity.hp.value,
         phase=entity.phase.value,
         narration_text=entity.narration_text,
         scene_dialogues_json=serialize_scene_dialogues(entity.scene_dialogues)
@@ -43,6 +47,7 @@ def to_orm(entity: Trial) -> TrialOrm:
         presented_evidence_json=serialize_string_tuple(entity.presented_evidence),
         tubal_enhanced_choices=serialize_string_dict(entity.tubal_enhanced_choices),
         venice_dp_shield=entity.venice_dp_shield,
+        venice_paradox_used=entity.venice_paradox_used,
     )
     orm.choice_history = [
         TrialChoiceHistoryOrm(trial_id=entity.trial_id, choice_id=choice_id)

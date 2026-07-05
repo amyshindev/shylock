@@ -14,6 +14,7 @@ export interface ChoiceOption {
   text: string;
   evidence: string | null;
   dpChange: number;
+  hpCost: number;
   special?: "climax";
 }
 
@@ -29,6 +30,8 @@ export interface Scene {
     text: string;
     options: ChoiceOption[];
   } | null;
+  /** When set, choice UI appears after advancing past this line index (0-based). */
+  challengeAfterLineIndex?: number;
   pressPresent?: PressPresentConfig;
   availableEvidence: string[];
 }
@@ -59,6 +62,7 @@ export interface ChoiceTemplate {
   fallbackText: string;
   evidence: string | null;
   dpChange: number;
+  hpCost: number;
   special?: "climax";
 }
 
@@ -74,6 +78,8 @@ export interface SceneTemplate {
     fallbackText: string;
     options: ChoiceTemplate[];
   } | null;
+  /** When set, choice UI appears after advancing past this line index (0-based). */
+  challengeAfterLineIndex?: number;
   pressPresent?: PressPresentConfig;
   availableEvidence: string[];
 }

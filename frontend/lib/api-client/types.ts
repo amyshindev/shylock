@@ -19,12 +19,14 @@ export interface TrialState {
   trial_id: string;
   scene_index: number;
   dp: number;
+  hp: number;
   phase: TrialPhase;
   choice_history?: string[];
   narration_text?: string | null;
   scene_dialogue?: SceneDialogueFromApi | null;
   tubal_enhanced_choices?: Record<string, string>;
   venice_dp_shield?: boolean;
+  venice_paradox_used?: boolean;
 }
 
 export interface StartTrialResponse extends TrialState {
@@ -35,6 +37,7 @@ export interface SubmitChoiceResponse {
   trial_id: string;
   scene_index: number;
   dp: number;
+  hp: number;
   phase: TrialPhase;
   portia_response: string;
   ending_type: string | null;
@@ -70,6 +73,7 @@ export interface EvidenceFromApi {
 export interface TubalSkillResponse {
   trial_id: string;
   dp: number;
+  hp: number;
   success: boolean;
   ftln: number | null;
   passage: string | null;
@@ -82,13 +86,15 @@ export interface TubalSkillResponse {
 export interface LauncelotSkillResponse {
   trial_id: string;
   dp: number;
+  hp: number;
   launcelot_comment: string;
 }
 
-export interface VeniceContradictionSkillResponse {
+export interface VeniceParadoxSkillResponse {
   trial_id: string;
   dp: number;
-  venice_dp_shield: boolean;
+  hp: number;
+  venice_paradox_used: boolean;
   skill_comment: string;
 }
 

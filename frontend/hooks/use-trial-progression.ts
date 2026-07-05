@@ -12,7 +12,7 @@ import {
   presentEvidence,
   submitChoice,
   useLauncelotSkill,
-  useVeniceContradictionSkill,
+  useVeniceParadoxSkill,
 } from "@/lib/api-client/trial-progression";
 import type {
   EndingResponse,
@@ -30,15 +30,17 @@ import {
 } from "@/lib/tubal-evidence";
 import {
   DP_MAX,
+  HP_MAX,
+  LOW_HP_THRESHOLD,
   SHYLOCK_DP_START,
-  LAUNCELOT_SKILL_DP_GAIN,
-  SKILLS,
-  LAUNCELOT_LINES,
+  SHYLOCK_HP_START,
+  LAUNCELOT_SKILL_HP_GAIN,
+  canUseSkill,
   LAUNCELOT_INTRUSION_LINE,
+  LAUNCELOT_LINES,
   LAUNCELOT_REACTION_LINES,
-  LAUNCELOT_DP_GAIN_AT_REACTION_INDEX,
-  VENICE_CONTRADICTION_SKILL_COST,
-  VENICE_CONTRADICTION_LINES,
+  LAUNCELOT_HP_GAIN_AT_REACTION_INDEX,
+  VENICE_PARADOX_LINES,
   TUBAL_INTRO_LINE,
   TUBAL_SEARCHING_LINE,
   TUBAL_SEARCH_FAILURE_LINE,
@@ -82,21 +84,38 @@ function clampDp(value: number): number {
   return Math.max(0, Math.min(DP_MAX, value));
 }
 
-function previewChoiceDpChange(
+function clampHp(value: number): number {
+  return Math.max(0, Math.min(HP_MAX, value));
+}
+
+function previewChoiceEffect(
   currentDp: number,
+  currentHp: number,
   dpChange: number,
+  hpCost: number,
   veniceDpShield: boolean,
-): { nextDp: number; nextShield: boolean } {
+): { nextDp: number; nextHp: number; nextShield: boolean } {
   let delta = dpChange;
   let nextShield = veniceDpShield;
   if (veniceDpShield) {
     if (delta < 0) delta = 0;
     nextShield = false;
   }
-  return { nextDp: clampDp(currentDp + delta), nextShield };
+
+  let dpGain = delta;
+  if (currentHp <= LOW_HP_THRESHOLD && dpGain > 0) {
+    dpGain = Math.floor(dpGain / 2);
+  }
+
+  return {
+    nextDp: clampDp(currentDp + dpGain),
+    nextHp: clampHp(currentHp - hpCost),
+    nextShield,
+  };
 }
 
-function resolveGameOver(dp: number): GameOverReason | null {
+function resolveGameOver(dp: number, hp: number): GameOverReason | null {
+  if (hp <= 0) return "hp";
   if (dp <= 0) return "dp";
   return null;
 }
@@ -107,11 +126,14 @@ export function useTrialProgression(trialId: string) {
   const [sceneIdx, setSceneIdx] = useState(0);
   const [lineIdx, setLineIdx] = useState(0);
   const [dp, setDp] = useState(SHYLOCK_DP_START);
+  const [hp, setHp] = useState(SHYLOCK_HP_START);
   const [veniceDpShield, setVeniceDpShield] = useState(false);
+  const [veniceParadoxUsed, setVeniceParadoxUsed] = useState(false);
   const [portiaReply, setPortiaReply] = useState("");
   const [loadingReply, setLoadingReply] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
+  const [pendingPortiaReply, setPendingPortiaReply] = useState<string | null>(null);
   const [climaxMode, setClimaxMode] = useState(false);
   const [showPressPresent, setShowPressPresent] = useState(false);
   const [testimonyIndex, setTestimonyIndex] = useState(0);
@@ -147,10 +169,11 @@ export function useTrialProgression(trialId: string) {
   const choiceLockRef = useRef(false);
   const sceneAdvanceLockRef = useRef(false);
   const climaxResolveRef = useRef<(() => void) | null>(null);
-  const launcelotPendingDpRef = useRef<number | null>(null);
-  const launcelotDpGainAppliedRef = useRef(false);
+  const launcelotPendingHpRef = useRef<number | null>(null);
+  const launcelotHpGainAppliedRef = useRef(false);
 
   const [dpGainFlash, setDpGainFlash] = useState<number | null>(null);
+  const [hpGainFlash, setHpGainFlash] = useState<number | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -160,7 +183,10 @@ export function useTrialProgression(trialId: string) {
   const currentLineEntry = scene.lines[lineIdx];
   const currentLine = currentLineEntry?.text ?? "";
   const isLastLine = lineIdx >= scene.lines.length - 1;
-  const isLastScene = isLastNarrativeScene(sceneIdx, dp);
+  const challengeLineIndex =
+    scene.challengeAfterLineIndex ??
+    (scene.challenge ? scene.lines.length - 1 : -1);
+  const isLastScene = isLastNarrativeScene(sceneIdx);
 
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
@@ -175,7 +201,7 @@ export function useTrialProgression(trialId: string) {
     if (launcelotPhase === "speaking") return LAUNCELOT_LINES[launcelotLineIdx] ?? "";
     if (launcelotPhase === "reaction") return LAUNCELOT_REACTION_LINES[launcelotLineIdx] ?? "";
     if (veniceSkillPhase === "speaking") {
-      return VENICE_CONTRADICTION_LINES[veniceLineIdx] ?? "";
+      return VENICE_PARADOX_LINES[veniceLineIdx] ?? "";
     }
     if (tubalPhase === "intro") return TUBAL_INTRO_LINE;
     if (isTubalSearching) return TUBAL_SEARCHING_LINE;
@@ -310,8 +336,8 @@ export function useTrialProgression(trialId: string) {
     setEvidenceDetailView(null);
   }, []);
 
-  const triggerGameOverIfNeeded = useCallback((currentDp: number) => {
-    const reason = resolveGameOver(currentDp);
+  const triggerGameOverIfNeeded = useCallback((currentDp: number, currentHp: number) => {
+    const reason = resolveGameOver(currentDp, currentHp);
     if (reason) {
       setGameOverReason(reason);
       setPhase("gameover");
@@ -336,7 +362,9 @@ export function useTrialProgression(trialId: string) {
         const idx = Math.min(trial.scene_index, SCENE_TEMPLATES.length - 1);
         setSceneIdx(idx);
         setDp(trial.dp);
+        setHp(trial.hp ?? SHYLOCK_HP_START);
         setVeniceDpShield(trial.venice_dp_shield ?? false);
+        setVeniceParadoxUsed(trial.venice_paradox_used ?? false);
         if (trial.scene_dialogue) {
           setSceneDialogues((prev) => ({ ...prev, [idx]: trial.scene_dialogue! }));
         }
@@ -392,6 +420,7 @@ export function useTrialProgression(trialId: string) {
     setPressPresentComplete(false);
     setClimaxMode(false);
     setShowChallenge(false);
+    setPendingPortiaReply(null);
     setLineIdx(0);
     setError(null);
 
@@ -420,14 +449,14 @@ export function useTrialProgression(trialId: string) {
     }
   }, [isLastScene, trialId, finishToEnding, loadingScene]);
 
-  const applyLauncelotDpGain = useCallback(() => {
-    if (launcelotDpGainAppliedRef.current || launcelotPendingDpRef.current === null) {
+  const applyLauncelotHpGain = useCallback(() => {
+    if (launcelotHpGainAppliedRef.current || launcelotPendingHpRef.current === null) {
       return;
     }
-    launcelotDpGainAppliedRef.current = true;
-    setDp(launcelotPendingDpRef.current);
-    setDpGainFlash(LAUNCELOT_SKILL_DP_GAIN);
-    launcelotPendingDpRef.current = null;
+    launcelotHpGainAppliedRef.current = true;
+    setHp(launcelotPendingHpRef.current);
+    setHpGainFlash(LAUNCELOT_SKILL_HP_GAIN);
+    launcelotPendingHpRef.current = null;
   }, []);
 
   const advanceLauncelotStep = useCallback(() => {
@@ -450,22 +479,22 @@ export function useTrialProgression(trialId: string) {
     if (launcelotPhase === "reaction") {
       if (launcelotLineIdx < LAUNCELOT_REACTION_LINES.length - 1) {
         const nextIdx = launcelotLineIdx + 1;
-        if (nextIdx === LAUNCELOT_DP_GAIN_AT_REACTION_INDEX) {
-          applyLauncelotDpGain();
+        if (nextIdx === LAUNCELOT_HP_GAIN_AT_REACTION_INDEX) {
+          applyLauncelotHpGain();
         }
         setLauncelotLineIdx(nextIdx);
         return;
       }
-      applyLauncelotDpGain();
+      applyLauncelotHpGain();
       setLauncelotPhase("idle");
       setLauncelotLineIdx(0);
     }
-  }, [launcelotPhase, launcelotLineIdx, applyLauncelotDpGain]);
+  }, [launcelotPhase, launcelotLineIdx, applyLauncelotHpGain]);
 
   const advanceVeniceSkillStep = useCallback(() => {
     if (veniceSkillPhase !== "speaking") return;
 
-    if (veniceLineIdx < VENICE_CONTRADICTION_LINES.length - 1) {
+    if (veniceLineIdx < VENICE_PARADOX_LINES.length - 1) {
       setVeniceLineIdx((index) => index + 1);
       return;
     }
@@ -512,7 +541,17 @@ export function useTrialProgression(trialId: string) {
     }
 
     if (!isLastLine) {
+      if (scene.challenge && !showChallenge && lineIdx === challengeLineIndex) {
+        setShowChallenge(true);
+        return;
+      }
       setLineIdx((i) => i + 1);
+      return;
+    }
+
+    if (pendingPortiaReply) {
+      setPortiaReply(pendingPortiaReply);
+      setPendingPortiaReply(null);
       return;
     }
 
@@ -522,7 +561,7 @@ export function useTrialProgression(trialId: string) {
       return;
     }
 
-    if (scene.challenge && !showChallenge) {
+    if (scene.challenge && !showChallenge && lineIdx === challengeLineIndex) {
       setShowChallenge(true);
     } else if (!scene.challenge) {
       void goNextScene();
@@ -543,6 +582,8 @@ export function useTrialProgression(trialId: string) {
     tubalMessage,
     tubalPhase,
     isLastLine,
+    challengeLineIndex,
+    pendingPortiaReply,
     scene.challenge,
     showChallenge,
     isLastScene,
@@ -566,12 +607,15 @@ export function useTrialProgression(trialId: string) {
       setVeniceSkillPhase("idle");
       setVeniceLineIdx(0);
 
-      const { nextDp, nextShield } = previewChoiceDpChange(
+      const { nextDp, nextHp, nextShield } = previewChoiceEffect(
         dp,
+        hp,
         option.dpChange,
+        option.hpCost,
         veniceDpShield,
       );
       setDp(nextDp);
+      setHp(nextHp);
       setVeniceDpShield(nextShield);
 
       const showEvidenceFlow = async () => {
@@ -583,7 +627,7 @@ export function useTrialProgression(trialId: string) {
         await showEvidenceFlow();
       }
 
-      if (triggerGameOverIfNeeded(nextDp)) {
+      if (triggerGameOverIfNeeded(nextDp, nextHp)) {
         choiceLockRef.current = false;
         return;
       }
@@ -595,6 +639,7 @@ export function useTrialProgression(trialId: string) {
       try {
         const res = await submitChoice(trialId, option.id);
         setDp(res.dp);
+        setHp(res.hp);
         setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
         setVeniceDpShield(res.venice_dp_shield);
 
@@ -611,11 +656,21 @@ export function useTrialProgression(trialId: string) {
           });
         }
 
-        if (triggerGameOverIfNeeded(res.dp)) {
+        if (triggerGameOverIfNeeded(res.dp, res.hp)) {
           return;
         }
 
-        setPortiaReply(extractPortiaText(res.portia_response));
+        const portiaText = extractPortiaText(res.portia_response);
+        const afterLine = scene.challengeAfterLineIndex;
+        if (
+          afterLine !== undefined &&
+          afterLine < scene.lines.length - 1
+        ) {
+          setPendingPortiaReply(portiaText);
+          setLineIdx(afterLine + 1);
+        } else {
+          setPortiaReply(portiaText);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Choice failed");
       } finally {
@@ -623,7 +678,7 @@ export function useTrialProgression(trialId: string) {
         choiceLockRef.current = false;
       }
     },
-    [trialId, dp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail],
+    [trialId, dp, hp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail, scene],
   );
 
   const makeChoice = useCallback(
@@ -645,9 +700,10 @@ export function useTrialProgression(trialId: string) {
       });
 
       setDp(res.dp);
+      setHp(res.hp);
       setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
 
-      if (triggerGameOverIfNeeded(res.dp)) {
+      if (triggerGameOverIfNeeded(res.dp, res.hp)) {
         setTubalPhase("idle");
         return;
       }
@@ -690,7 +746,7 @@ export function useTrialProgression(trialId: string) {
     setTubalPhase("intro");
   }, []);
 
-  const handleVeniceContradictionSkill = useCallback(async () => {
+  const handleVeniceParadoxSkill = useCallback(async () => {
     if (
       phase !== "game" ||
       loadingReply ||
@@ -702,7 +758,7 @@ export function useTrialProgression(trialId: string) {
       isTubalActive ||
       isVeniceSkillActive ||
       choiceLockRef.current ||
-      dp < VENICE_CONTRADICTION_SKILL_COST
+      !canUseSkill("venice_paradox", { dp, sceneIdx, veniceParadoxUsed })
     ) {
       return;
     }
@@ -711,13 +767,17 @@ export function useTrialProgression(trialId: string) {
     setError(null);
 
     try {
-      const res = await useVeniceContradictionSkill(trialId);
+      const res = await useVeniceParadoxSkill(trialId);
       setDp(res.dp);
-      setVeniceDpShield(res.venice_dp_shield);
+      setHp(res.hp);
+      setVeniceParadoxUsed(res.venice_paradox_used);
+      if (triggerGameOverIfNeeded(res.dp, res.hp)) {
+        return;
+      }
       setVeniceSkillPhase("speaking");
       setVeniceLineIdx(0);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Venice contradiction skill failed");
+    } catch {
+      // Availability is enforced in SkillPanel; no user-facing error.
     } finally {
       setLoadingVeniceSkill(false);
     }
@@ -732,7 +792,10 @@ export function useTrialProgression(trialId: string) {
     isTubalActive,
     isVeniceSkillActive,
     dp,
+    sceneIdx,
+    veniceParadoxUsed,
     trialId,
+    triggerGameOverIfNeeded,
   ]);
 
   const handleLauncelotSkill = useCallback(async () => {
@@ -754,8 +817,12 @@ export function useTrialProgression(trialId: string) {
 
     try {
       const res = await useLauncelotSkill(trialId);
-      launcelotPendingDpRef.current = res.dp;
-      launcelotDpGainAppliedRef.current = false;
+      setDp(res.dp);
+      launcelotPendingHpRef.current = res.hp;
+      launcelotHpGainAppliedRef.current = false;
+      if (triggerGameOverIfNeeded(res.dp, res.hp)) {
+        return;
+      }
       setLauncelotPhase("intrusion");
       setLauncelotLineIdx(0);
     } catch (e) {
@@ -772,6 +839,7 @@ export function useTrialProgression(trialId: string) {
     isLauncelotActive,
     isTubalActive,
     trialId,
+    triggerGameOverIfNeeded,
   ]);
 
   const useSkill = useCallback(
@@ -789,8 +857,7 @@ export function useTrialProgression(trialId: string) {
         return;
       }
 
-      const skill = SKILLS.find((s) => s.id === skillId);
-      if (!skill || dp < skill.cost) return;
+      if (!canUseSkill(skillId, { dp, sceneIdx, veniceParadoxUsed })) return;
 
       if (skillId === "launcelot") {
         void handleLauncelotSkill();
@@ -802,8 +869,8 @@ export function useTrialProgression(trialId: string) {
         return;
       }
 
-      if (skillId === "venice_contradiction") {
-        void handleVeniceContradictionSkill();
+      if (skillId === "venice_paradox") {
+        void handleVeniceParadoxSkill();
         return;
       }
     },
@@ -817,9 +884,11 @@ export function useTrialProgression(trialId: string) {
       isLauncelotActive,
       isVeniceSkillActive,
       dp,
+      sceneIdx,
+      veniceParadoxUsed,
       handleLauncelotSkill,
       startTubalSkill,
-      handleVeniceContradictionSkill,
+      handleVeniceParadoxSkill,
     ],
   );
 
@@ -887,6 +956,12 @@ export function useTrialProgression(trialId: string) {
   }, [tubalPhase, executeTubalSearch]);
 
   useEffect(() => {
+    if (hpGainFlash === null) return;
+    const timer = window.setTimeout(() => setHpGainFlash(null), 1400);
+    return () => window.clearTimeout(timer);
+  }, [hpGainFlash]);
+
+  useEffect(() => {
     if (dpGainFlash === null) return;
     const timer = window.setTimeout(() => setDpGainFlash(null), 1400);
     return () => window.clearTimeout(timer);
@@ -899,8 +974,11 @@ export function useTrialProgression(trialId: string) {
     sceneIdx,
     lineIdx,
     dp,
+    hp,
     dpGainFlash,
+    hpGainFlash,
     veniceDpShield,
+    veniceParadoxUsed,
     speaker,
     speakerLabel,
     showSpeakerTab,

@@ -34,14 +34,15 @@ class TrialProgressionPgRepository(TrialProgressionPort):
 
         existing.scene_index = trial.scene_index
         existing.dp = trial.dp.value
+        existing.hp = trial.hp.value
         existing.venice_dp_shield = trial.venice_dp_shield
+        existing.venice_paradox_used = trial.venice_paradox_used
         existing.phase = trial.phase.value
         existing.narration_text = trial.narration_text
         existing.scene_dialogues_json = serialize_scene_dialogues(trial.scene_dialogues)
         existing.tubal_used_scenes_json = serialize_string_tuple(trial.tubal_used_scenes)
         existing.presented_evidence_json = serialize_string_tuple(trial.presented_evidence)
         existing.tubal_enhanced_choices = serialize_string_dict(trial.tubal_enhanced_choices)
-        existing.venice_dp_shield = trial.venice_dp_shield
         existing.choice_history.clear()
         for choice_id in trial.choice_history:
             existing.choice_history.append(

@@ -6,6 +6,7 @@ from uuid import UUID
 
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueContent
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 
 
 class TrialPhase(StrEnum):
@@ -35,6 +36,7 @@ class Trial:
     trial_id: UUID
     scene_index: int
     dp: DpScore
+    hp: HpScore
     choice_history: list[str]
     phase: TrialPhase
     narration_text: str | None = None
@@ -43,6 +45,7 @@ class Trial:
     presented_evidence: tuple[str, ...] = ()
     tubal_enhanced_choices: dict[str, str] = field(default_factory=dict)
     venice_dp_shield: bool = False
+    venice_paradox_used: bool = False
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

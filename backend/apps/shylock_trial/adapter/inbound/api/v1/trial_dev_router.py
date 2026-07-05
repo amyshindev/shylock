@@ -6,7 +6,7 @@ from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     SceneDialogueResponse,
     StartTrialResponse,
 )
-from shylock_trial.app.constants.game_balance import DP_JESSICA_EPILOGUE_THRESHOLD
+from shylock_trial.app.constants.game_balance import SHYLOCK_DP_START
 from shylock_trial.app.constants.scene_progression import (
     JESSICA_DUET_SCENE_INDEX,
     JESSICA_INTERVENTION_SCENE_INDEX,
@@ -27,6 +27,7 @@ def _start_trial_response(result) -> StartTrialResponse:
         trial_id=result.trial_id,
         scene_index=result.scene_index,
         dp=result.dp,
+        hp=result.hp,
         phase=result.phase,
         scene_dialogue=SceneDialogueResponse(
             lines=[
@@ -51,7 +52,7 @@ async def dev_jessica_duet(
     _require_development()
     result = await use_case.start_dev_scene(
         scene_index=JESSICA_DUET_SCENE_INDEX,
-        dp=DP_JESSICA_EPILOGUE_THRESHOLD,
+        dp=SHYLOCK_DP_START,
     )
     return _start_trial_response(result)
 
@@ -67,6 +68,6 @@ async def dev_jessica_intervention(
     _require_development()
     result = await use_case.start_dev_scene(
         scene_index=JESSICA_INTERVENTION_SCENE_INDEX,
-        dp=DP_JESSICA_EPILOGUE_THRESHOLD,
+        dp=SHYLOCK_DP_START,
     )
     return _start_trial_response(result)

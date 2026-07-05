@@ -3,11 +3,13 @@ from enum import StrEnum
 from shylock_trial.app.constants.game_balance import (
     DP_DIGNITY_ENDING_THRESHOLD,
     DP_FOUGHT_TO_END_THRESHOLD,
+    DP_RESCUED_ENDING_THRESHOLD,
     DP_SURVIVAL_ENDING_THRESHOLD,
 )
 
 
 class EndingType(StrEnum):
+    RESCUED = "rescued_ending"
     FOUGHT_TO_END = "fought_to_end_ending"
     DIGNITY_KEPT = "dignity_kept_ending"
     SURVIVED = "survived_ending"
@@ -15,6 +17,8 @@ class EndingType(StrEnum):
 
 
 def resolve_ending_type(dp: int) -> EndingType:
+    if dp >= DP_RESCUED_ENDING_THRESHOLD:
+        return EndingType.RESCUED
     if dp >= DP_FOUGHT_TO_END_THRESHOLD:
         return EndingType.FOUGHT_TO_END
     if dp >= DP_DIGNITY_ENDING_THRESHOLD:

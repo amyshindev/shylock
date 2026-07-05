@@ -2,8 +2,12 @@ from uuid import UUID
 
 from shylock_trial.adapter.outbound.client.tubal_agent_client import TubalAgentClient
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
-from shylock_trial.app.constants.game_balance import SKILL_TUBAL_COST
 from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue, get_scene_template
+from shylock_trial.app.constants.scene_choices import (
+    ChoiceEffect,
+    apply_skill_resources,
+    get_skill_effect,
+)
 from shylock_trial.app.constants.scene_progression import resolve_next_scene_index
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_MAP
 from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDialoguePromptDto
@@ -14,6 +18,8 @@ from shylock_trial.app.ports.input.tubal_skill_use_case import TubalSkillUseCase
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.app.utils.trial_metadata_store import append_unique
 from shylock_trial.domain.entities.trial_entity import Trial
+from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 
 
 class TubalSkillInteractor(TubalSkillUseCase):
@@ -32,12 +38,14 @@ class TubalSkillInteractor(TubalSkillUseCase):
     async def invoke_tubal(self, input_dto: TubalSkillInputDto) -> TubalSkillResultDto:
         trial = await self._require_trial(input_dto.trial_id)
 
-        if trial.dp.value <= SKILL_TUBAL_COST:
-            raise ValueError(
-                f"Insufficient DP for Tubal skill (need > {SKILL_TUBAL_COST}, have {trial.dp.value})"
-            )
-
-        trial.dp = trial.dp.apply_delta(-SKILL_TUBAL_COST)
+        tubal_effect = get_skill_effect("tubal")
+        next_hp, next_dp = apply_skill_resources(
+            trial.hp.value,
+            trial.dp.value,
+            tubal_effect,
+        )
+        trial.hp = HpScore(next_hp)
+        trial.dp = DpScore(next_dp)
 
         scene_id, portia_claim = self._resolve_scene_context(trial, input_dto)
         agent_result = await self._tubal_agent.agentic_loop(
@@ -46,7 +54,13 @@ class TubalSkillInteractor(TubalSkillUseCase):
         )
 
         if not agent_result.success:
-            trial.dp = trial.dp.apply_delta(SKILL_TUBAL_COST)
+            revert_hp, revert_dp = apply_skill_resources(
+                trial.hp.value,
+                trial.dp.value,
+                ChoiceEffect(-tubal_effect.dp_delta, -tubal_effect.hp_cost),
+            )
+            trial.hp = HpScore(revert_hp)
+            trial.dp = DpScore(revert_dp)
         else:
             trial.tubal_used_scenes = append_unique(trial.tubal_used_scenes, scene_id)
             await self._apply_tubal_enhancement(trial, scene_id, agent_result)
@@ -57,6 +71,7 @@ class TubalSkillInteractor(TubalSkillUseCase):
         return TubalSkillResultDto(
             trial_id=trial.trial_id,
             dp=trial.dp.value,
+            hp=trial.hp.value,
             agent=agent_result,
             tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
         )

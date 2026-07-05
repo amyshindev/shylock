@@ -1,11 +1,13 @@
 "use client";
 
-import { DP_MAX } from "@/lib/constants/game-balance";
+import { DP_MAX, HP_MAX } from "@/lib/constants/game-balance";
 import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 
 interface MeterDisplayProps {
   dp: number;
+  hp: number;
   dpGainFlash?: number | null;
+  hpGainFlash?: number | null;
 }
 
 function MeterBar({
@@ -87,11 +89,18 @@ function dpColor(value: number): string {
   return "#3388dd";
 }
 
+function hpColor(value: number): string {
+  const ratio = value / HP_MAX;
+  if (ratio > 0.6) return "#ee8866";
+  if (ratio > 0.3) return "#dd5544";
+  return "#cc3333";
+}
+
 const LEFT_METER_COLUMN_WIDTH = 336;
 const LEFT_HUD_INSET = 10;
 const LEFT_HUD_TOP = 8;
-/** Approx. height of DP bar (used to stack skill panel below). */
-const LEFT_METERS_STACK_HEIGHT = 36;
+/** Approx. height of DP + HP bars (used to stack skill panel below). */
+const LEFT_METERS_STACK_HEIGHT = 72;
 
 export {
   LEFT_METER_COLUMN_WIDTH,
@@ -100,7 +109,7 @@ export {
   LEFT_METERS_STACK_HEIGHT,
 };
 
-export function MeterDisplay({ dp, dpGainFlash }: MeterDisplayProps) {
+export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: MeterDisplayProps) {
   return (
     <div
       style={{
@@ -110,6 +119,9 @@ export function MeterDisplay({ dp, dpGainFlash }: MeterDisplayProps) {
         zIndex: 10,
         pointerEvents: "none",
         width: LEFT_METER_COLUMN_WIDTH,
+        display: "flex",
+        flexDirection: "column",
+        gap: 6,
       }}
     >
       {dpGainFlash != null && (
@@ -136,6 +148,30 @@ export function MeterDisplay({ dp, dpGainFlash }: MeterDisplayProps) {
         color={dpColor(dp)}
         labelColor="#b8dcff"
       />
+      <MeterBar
+        label="HP (기력)"
+        value={hp}
+        max={HP_MAX}
+        color={hpColor(hp)}
+        labelColor="#ffc8b8"
+      />
+      {hpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: 38,
+            right: 0,
+            color: "#ffaa88",
+            fontSize: gameFontSize.sm,
+            fontWeight: 700,
+            letterSpacing: 1,
+            textShadow: "0 0 8px rgba(255, 136, 102, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{hpGainFlash} HP
+        </div>
+      )}
     </div>
   );
 }

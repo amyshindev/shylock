@@ -4,16 +4,20 @@ import asyncio
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
-    LAUNCELOT_SKILL_DP_GAIN,
     SHYLOCK_DP_START,
-    VENICE_CONTRADICTION_SKILL_COST,
+    SHYLOCK_HP_START,
 )
 from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
-from shylock_trial.app.constants.scene_progression import resolve_next_scene_index
-from shylock_trial.app.constants.scene_progression import resolve_next_scene_index
+from shylock_trial.app.constants.scene_progression import (
+    CROWD_JEERS_SCENE_INDEX,
+    resolve_next_scene_index,
+)
 from shylock_trial.app.constants.scene_choices import (
+    apply_skill_resources,
+    compute_choice_dp_gain,
     get_choice_effect,
     get_choice_evidence_id,
+    get_skill_effect,
 )
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_DP_BONUS
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
@@ -29,7 +33,7 @@ from shylock_trial.app.dtos.trial_progression_dto import (
     StartTrialResultDto,
     SubmitChoiceInputDto,
     SubmitChoiceResultDto,
-    VeniceContradictionSkillResultDto,
+    VeniceParadoxSkillResultDto,
 )
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
@@ -37,6 +41,7 @@ from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgre
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 from shylock_trial.app.utils.trial_metadata_store import append_unique
 
 
@@ -58,6 +63,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=uuid4(),
             scene_index=0,
             dp=DpScore(SHYLOCK_DP_START),
+            hp=HpScore(SHYLOCK_HP_START),
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
         )
@@ -69,6 +75,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
             dp=trial.dp.value,
+            hp=trial.hp.value,
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
         )
@@ -82,14 +89,18 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         if was_enhanced:
             del trial.tubal_enhanced_choices[input_dto.choice_id]
 
-        choice_dp_delta = effect.dp_delta
-        if trial.venice_dp_shield:
-            if choice_dp_delta < 0:
-                choice_dp_delta = 0
+        dp_gain, shield_consumed = compute_choice_dp_gain(
+            trial.hp.value,
+            effect.dp_delta,
+            dp_bonus=dp_bonus,
+            venice_dp_shield=trial.venice_dp_shield,
+        )
+        if shield_consumed:
             trial.venice_dp_shield = False
 
         trial.choice_history.append(input_dto.choice_id)
-        trial.dp = trial.dp.apply_delta(choice_dp_delta + dp_bonus)
+        trial.dp = trial.dp.apply_delta(dp_gain)
+        trial.hp = trial.hp.apply_delta(-effect.hp_cost)
 
         evidence_id = get_choice_evidence_id(input_dto.choice_id)
         if evidence_id:
@@ -117,6 +128,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
             dp=trial.dp.value,
+            hp=trial.hp.value,
             phase=trial.phase,
             portia_response=portia.text,
             ending_type=None,
@@ -174,31 +186,49 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
     async def use_launcelot_skill(self, trial_id: UUID) -> LauncelotSkillResultDto:
         trial = await self._require_trial(trial_id)
 
-        trial.dp = trial.dp.apply_delta(LAUNCELOT_SKILL_DP_GAIN)
+        effect = get_skill_effect("launcelot")
+        next_hp, next_dp = apply_skill_resources(
+            trial.hp.value,
+            trial.dp.value,
+            effect,
+        )
+        trial.hp = HpScore(next_hp)
+        trial.dp = DpScore(next_dp)
         trial = await self._port.save(trial)
 
         return LauncelotSkillResultDto(
             trial_id=trial.trial_id,
             dp=trial.dp.value,
+            hp=trial.hp.value,
         )
 
-    async def use_venice_contradiction_skill(
+    async def use_venice_paradox_skill(
         self,
         trial_id: UUID,
-    ) -> VeniceContradictionSkillResultDto:
+    ) -> VeniceParadoxSkillResultDto:
         trial = await self._require_trial(trial_id)
 
-        if trial.dp.value < VENICE_CONTRADICTION_SKILL_COST:
-            raise ValueError("DP가 부족합니다")
+        if trial.venice_paradox_used:
+            raise ValueError("skill_unavailable")
+        if trial.scene_index <= CROWD_JEERS_SCENE_INDEX:
+            raise ValueError("skill_unavailable")
 
-        trial.dp = trial.dp.apply_delta(-VENICE_CONTRADICTION_SKILL_COST)
-        trial.venice_dp_shield = True
+        effect = get_skill_effect("venice_paradox")
+        next_hp, next_dp = apply_skill_resources(
+            trial.hp.value,
+            trial.dp.value,
+            effect,
+        )
+        trial.hp = HpScore(next_hp)
+        trial.dp = DpScore(next_dp)
+        trial.venice_paradox_used = True
         trial = await self._port.save(trial)
 
-        return VeniceContradictionSkillResultDto(
+        return VeniceParadoxSkillResultDto(
             trial_id=trial.trial_id,
             dp=trial.dp.value,
-            venice_dp_shield=trial.venice_dp_shield,
+            hp=trial.hp.value,
+            venice_paradox_used=trial.venice_paradox_used,
         )
 
     async def start_dev_scene(self, scene_index: int, dp: int) -> StartTrialResultDto:
@@ -206,6 +236,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=uuid4(),
             scene_index=scene_index,
             dp=DpScore(dp),
+            hp=HpScore(SHYLOCK_HP_START),
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
         )
@@ -218,6 +249,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
             dp=trial.dp.value,
+            hp=trial.hp.value,
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
         )

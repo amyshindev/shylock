@@ -1,6 +1,7 @@
 import pytest
 
 from shylock_trial.app.constants.scene_progression import (
+    ALIEN_LAW_SCENE_INDEX,
     JESSICA_DUET_SCENE_INDEX,
     JESSICA_INTERVENTION_SCENE_INDEX,
     is_narrative_complete,
@@ -9,28 +10,26 @@ from shylock_trial.app.constants.scene_progression import (
 
 
 @pytest.mark.parametrize(
-    ("scene_index", "dp", "expected"),
+    ("scene_index", "expected"),
     [
-        (0, 50, 1),
-        (6, 50, 7),
-        (7, 89, None),
-        (7, 90, JESSICA_DUET_SCENE_INDEX),
-        (8, 90, JESSICA_INTERVENTION_SCENE_INDEX),
-        (9, 90, None),
+        (0, 1),
+        (6, JESSICA_DUET_SCENE_INDEX),
+        (JESSICA_DUET_SCENE_INDEX, ALIEN_LAW_SCENE_INDEX),
+        (ALIEN_LAW_SCENE_INDEX, JESSICA_INTERVENTION_SCENE_INDEX),
+        (JESSICA_INTERVENTION_SCENE_INDEX, None),
     ],
 )
-def test_resolve_next_scene_index(scene_index: int, dp: int, expected: int | None) -> None:
-    assert resolve_next_scene_index(scene_index, dp) == expected
+def test_resolve_next_scene_index(scene_index: int, expected: int | None) -> None:
+    assert resolve_next_scene_index(scene_index, dp=50) == expected
 
 
 @pytest.mark.parametrize(
-    ("scene_index", "dp", "expected"),
+    ("scene_index", "expected"),
     [
-        (7, 89, True),
-        (7, 90, False),
-        (8, 90, False),
-        (9, 90, True),
+        (ALIEN_LAW_SCENE_INDEX, False),
+        (JESSICA_DUET_SCENE_INDEX, False),
+        (JESSICA_INTERVENTION_SCENE_INDEX, True),
     ],
 )
-def test_is_narrative_complete(scene_index: int, dp: int, expected: bool) -> None:
-    assert is_narrative_complete(scene_index, dp) == expected
+def test_is_narrative_complete(scene_index: int, expected: bool) -> None:
+    assert is_narrative_complete(scene_index, dp=50) == expected

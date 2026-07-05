@@ -58,6 +58,7 @@ class StartTrialResponse(BaseModel):
     trial_id: UUID
     scene_index: int
     dp: int = Field(ge=0, le=100)
+    hp: int = Field(ge=0, le=100)
     phase: TrialPhase
     scene_dialogue: SceneDialogueResponse
 
@@ -89,12 +90,14 @@ class TrialResponse(BaseModel):
     trial_id: UUID
     scene_index: int
     dp: int = Field(ge=0, le=100)
+    hp: int = Field(ge=0, le=100)
     phase: TrialPhase
     choice_history: list[str]
     narration_text: str | None = None
     scene_dialogue: SceneDialogueResponse | None = None
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
     venice_dp_shield: bool = False
+    venice_paradox_used: bool = False
 
 
 class SubmitChoiceRequest(BaseModel):
@@ -125,12 +128,14 @@ class SubmitChoiceResponse(BaseModel):
     trial_id: UUID
     scene_index: int
     dp: int
+    hp: int
     phase: TrialPhase
     portia_response: str
     ending_type: str | None = None
     is_ending: bool
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
     venice_dp_shield: bool = False
+    venice_paradox_used: bool = False
 
 
 class AdvanceSceneResponse(BaseModel):
@@ -181,11 +186,13 @@ class EndingResponse(BaseModel):
 class LauncelotSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
+    hp: int
     launcelot_comment: str
 
 
-class VeniceContradictionSkillResponse(BaseModel):
+class VeniceParadoxSkillResponse(BaseModel):
     trial_id: UUID
     dp: int
-    venice_dp_shield: bool
+    hp: int
+    venice_paradox_used: bool
     skill_comment: str

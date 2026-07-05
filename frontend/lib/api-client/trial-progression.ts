@@ -9,7 +9,7 @@ import type {
   TubalSkillResponse,
   LauncelotSkillResponse,
   PresentEvidenceResponse,
-  VeniceContradictionSkillResponse,
+  VeniceParadoxSkillResponse,
 } from "./types";
 
 async function parseJson<T>(res: Response): Promise<T> {
@@ -111,11 +111,11 @@ export async function useLauncelotSkill(trialId: string): Promise<LauncelotSkill
   );
 }
 
-export async function useVeniceContradictionSkill(
+export async function useVeniceParadoxSkill(
   trialId: string,
-): Promise<VeniceContradictionSkillResponse> {
-  return requestJson<VeniceContradictionSkillResponse>(
-    `${API_BASE}${API_PREFIX}/trials/${trialId}/skills/venice-contradiction`,
+): Promise<VeniceParadoxSkillResponse> {
+  return requestJson<VeniceParadoxSkillResponse>(
+    `${API_BASE}${API_PREFIX}/trials/${trialId}/skills/venice-paradox`,
     { method: "POST" },
   );
 }

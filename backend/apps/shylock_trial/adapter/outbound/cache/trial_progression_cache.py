@@ -9,6 +9,7 @@ from shylock_trial.app.dtos.scene_dialogue_dto import (
 from shylock_trial.app.ports.output.trial_progression_cache_port import TrialProgressionCachePort
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
+from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 
 
 class TrialProgressionRedisCache(TrialProgressionCachePort):
@@ -65,6 +66,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             trial_id=UUID(data["trial_id"]),
             scene_index=data["scene_index"],
             dp=DpScore(data["dp"]),
+            hp=HpScore(data.get("hp", 100)),
             choice_history=data["choice_history"],
             phase=TrialPhase(data["phase"]),
             narration_text=data.get("narration_text"),
@@ -73,6 +75,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             presented_evidence=tuple(data.get("presented_evidence", [])),
             tubal_enhanced_choices=data.get("tubal_enhanced_choices", {}),
             venice_dp_shield=data.get("venice_dp_shield", False),
+            venice_paradox_used=data.get("venice_paradox_used", False),
         )
 
     async def set(self, trial: Trial, ttl_seconds: int = 3600) -> None:
@@ -81,6 +84,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "trial_id": str(trial.trial_id),
                 "scene_index": trial.scene_index,
                 "dp": trial.dp.value,
+                "hp": trial.hp.value,
                 "choice_history": trial.choice_history,
                 "phase": trial.phase.value,
                 "narration_text": trial.narration_text,
@@ -89,6 +93,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "presented_evidence": list(trial.presented_evidence),
                 "tubal_enhanced_choices": trial.tubal_enhanced_choices,
                 "venice_dp_shield": trial.venice_dp_shield,
+                "venice_paradox_used": trial.venice_paradox_used,
             }
         )
         await self._redis.set(self._key(trial.trial_id), payload, ex=ttl_seconds)

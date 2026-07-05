@@ -12,7 +12,7 @@ from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     SubmitChoiceRequest,
     SubmitChoiceResponse,
     TrialResponse,
-    VeniceContradictionSkillResponse,
+    VeniceParadoxSkillResponse,
     scene_dialogue_from_trial,
 )
 from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
@@ -47,6 +47,7 @@ async def start_trial(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
         dp=result.dp,
+        hp=result.hp,
         phase=result.phase,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
     )
@@ -65,12 +66,14 @@ async def get_trial(
         trial_id=trial.trial_id,
         scene_index=trial.scene_index,
         dp=trial.dp.value,
+        hp=trial.hp.value,
         phase=trial.phase,
         choice_history=trial.choice_history,
         narration_text=trial.narration_text,
         scene_dialogue=scene_dialogue_from_trial(trial),
         tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
         venice_dp_shield=trial.venice_dp_shield,
+        venice_paradox_used=trial.venice_paradox_used,
     )
 
 
@@ -90,6 +93,7 @@ async def submit_choice(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
         dp=result.dp,
+        hp=result.hp,
         phase=result.phase,
         portia_response=result.portia_response,
         ending_type=result.ending_type.value if result.ending_type else None,
@@ -151,6 +155,7 @@ async def use_launcelot_skill(
         return LauncelotSkillResponse(
             trial_id=result.trial_id,
             dp=result.dp,
+            hp=result.hp,
             launcelot_comment=result.launcelot_comment,
         )
     except ValueError as exc:
@@ -158,19 +163,20 @@ async def use_launcelot_skill(
 
 
 @trial_progression_router.post(
-    "/{trial_id}/skills/venice-contradiction",
-    response_model=VeniceContradictionSkillResponse,
+    "/{trial_id}/skills/venice-paradox",
+    response_model=VeniceParadoxSkillResponse,
 )
-async def use_venice_contradiction_skill(
+async def use_venice_paradox_skill(
     trial_id: UUID,
     use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
-) -> VeniceContradictionSkillResponse:
+) -> VeniceParadoxSkillResponse:
     try:
-        result = await use_case.use_venice_contradiction_skill(trial_id)
-        return VeniceContradictionSkillResponse(
+        result = await use_case.use_venice_paradox_skill(trial_id)
+        return VeniceParadoxSkillResponse(
             trial_id=result.trial_id,
             dp=result.dp,
-            venice_dp_shield=result.venice_dp_shield,
+            hp=result.hp,
+            venice_paradox_used=result.venice_paradox_used,
             skill_comment=result.skill_comment,
         )
     except ValueError as exc:

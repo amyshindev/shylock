@@ -19,7 +19,7 @@ type TrialState = ReturnType<typeof useTrialProgression>;
 
 const TUBAL_SCENE_IMAGE = "/assets/scene-tubal.png";
 const LAUNCELOT_SCENE_IMAGE = "/assets/scene-launcelot.png";
-const VENICE_SCENE_IMAGE = "/assets/scene-venice-contradiction.png";
+const VENICE_SCENE_IMAGE = "/assets/scene-venice-paradox.png";
 
 interface BattleScreenProps {
   trial: TrialState;
@@ -43,8 +43,12 @@ function SceneBackground({ backgroundImage }: { backgroundImage: string }) {
 export function BattleScreen({ trial }: BattleScreenProps) {
   const {
     scene,
+    sceneIdx,
     dp,
+    hp,
+    veniceParadoxUsed,
     dpGainFlash,
+    hpGainFlash,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -141,7 +145,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
           {showBattleHud && (
-            <MeterDisplay dp={dp} dpGainFlash={dpGainFlash} />
+            <MeterDisplay dp={dp} hp={hp} dpGainFlash={dpGainFlash} hpGainFlash={hpGainFlash} />
           )}
           {showBattleHud && (
           <div
@@ -166,6 +170,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             )}
             <SkillPanel
               dp={dp}
+              sceneIdx={sceneIdx}
+              veniceParadoxUsed={veniceParadoxUsed}
               disabled={
                 loadingReply ||
                 loadingScene ||
