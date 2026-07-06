@@ -17,6 +17,7 @@ class TrialOrm(Base):
     scene_index: Mapped[int] = mapped_column(Integer, default=0)
     dp: Mapped[int] = mapped_column(Integer, default=50)
     hp: Mapped[int] = mapped_column(Integer, default=100)
+    portia_hp: Mapped[int] = mapped_column(Integer, default=100)
     venice_dp_shield: Mapped[bool] = mapped_column(Boolean, default=False)
     venice_paradox_used: Mapped[bool] = mapped_column(Boolean, default=False)
     phase: Mapped[str] = mapped_column(String(32), default="in_progress")

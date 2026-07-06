@@ -5,14 +5,16 @@ export interface EvidenceMeta {
   desc: string;
   act: string;
   iconFallback?: string;
+  /** Adaptation note for items not grounded in the original play text. */
+  note?: string;
 }
 
 export const EVIDENCE_META: EvidenceMeta[] = [
   {
     id: "gaberdine",
-    name: "낡은 가브딘",
+    name: "낡은 외투",
     icon: "/assets/evidence-gaberdine.png",
-    desc: "침 자국이 남아있는 샤일록의 외투",
+    desc: "안토니오가 '개'라 부르며 침을 뱉었던 외투. 아직도 얼룩이 남아 있다.",
     act: "Act I, Scene 3",
   },
   {
@@ -21,6 +23,30 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     icon: "/assets/evidence-bond.png",
     desc: "안토니오와 맺은 계약. 법적으로 완전히 유효하다.",
     act: "Act I, Scene 3",
+  },
+  {
+    id: "venice_charter",
+    name: "베네치아의 헌장",
+    icon: "",
+    iconFallback: "🏛",
+    desc: "이 도시가 상인들의 도시로 설 수 있는 이유. 계약이 계약으로 지켜지기 때문이다.",
+    act: "Act IV, Scene 1",
+  },
+  {
+    id: "bassanio_gold",
+    name: "바사니오가 내민 돈",
+    icon: "",
+    iconFallback: "💰",
+    desc: "원금의 열 배. 바사니오가 안토니오를 대신해 내미는 돈이다.",
+    act: "Act IV, Scene 1",
+  },
+  {
+    id: "scales",
+    name: "저울",
+    icon: "",
+    iconFallback: "⚖",
+    desc: "계약서에 명시된, 살을 정확히 달기 위한 도구. 그 자체로는 죄가 없다.",
+    act: "Act IV, Scene 1",
   },
   {
     id: "hath_not",
@@ -51,6 +77,15 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     iconFallback: "🛂",
     desc: "베네치아 시민이 아닌 자가 시민의 목숨을 노리면 적용되는 법. 포샤의 두 번째 반전.",
     act: "Act IV, Scene 1",
+  },
+  {
+    id: "ghetto_gate",
+    name: "게토로 돌아가는 문",
+    icon: "",
+    iconFallback: "🕍",
+    desc: "밤마다 유대인을 격리 구역에 가두던 제도. 도시가 강제한 구조적 격리.",
+    act: "역사적 각색 (원작에 없음)",
+    note: "원작 희곡에는 없는 역사적 각색. 16세기 베네치아에는 유대인을 밤마다 게토에 가두는 제도가 있었으나, 셰익스피어는 이를 언급하지 않는다.",
   },
 ];
 

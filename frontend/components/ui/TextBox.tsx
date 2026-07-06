@@ -51,7 +51,10 @@ export function TextBox({
       <div
         onClick={onClick}
         style={{
-          padding: displayTab ? "16px 22px 10px" : "22px 26px 10px",
+          paddingTop: displayTab ? 16 : 22,
+          paddingRight: displayTab ? 22 : 26,
+          paddingLeft: displayTab ? 22 : 26,
+          paddingBottom: 10,
           minHeight: displayTab ? 84 : undefined,
           cursor: onClick ? "pointer" : "default",
           position: "relative",

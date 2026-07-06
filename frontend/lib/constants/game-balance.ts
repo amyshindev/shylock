@@ -7,17 +7,36 @@ export const SHYLOCK_HP_START = 100;
 export const HP_MAX = 100;
 export const LOW_HP_THRESHOLD = 30;
 
+export const PORTIA_HP_START = 100;
+export const PORTIA_HP_MAX = 100;
+
+/** Keep in sync with backend scene_choices.compute_portia_damage */
+export const PORTIA_DAMAGE_DP_RATIO = 0.55;
+export const PORTIA_DAMAGE_MIN = 2;
+export const PORTIA_DAMAGE_MAX = 14;
+
+/** Higher DP gains deal more Portia HP damage. Negative DP choices barely scratch Portia. */
+export function computePortiaDamage(dpChange: number): number {
+  if (dpChange <= 0) return dpChange <= -5 ? 0 : 1;
+  const scaled = Math.round(dpChange * PORTIA_DAMAGE_DP_RATIO);
+  return Math.max(PORTIA_DAMAGE_MIN, Math.min(PORTIA_DAMAGE_MAX, scaled));
+}
+
 export const DP_RESCUED_ENDING_THRESHOLD = 90;
 export const DP_FOUGHT_TO_END_THRESHOLD = 80;
 export const DP_DIGNITY_ENDING_THRESHOLD = 60;
 export const DP_SURVIVAL_ENDING_THRESHOLD = 40;
 
-export const TUBAL_SKILL_EFFECT = { dpChange: 14, hpCost: 2 } as const;
+// All skills convert DP into HP: negative dpChange spends DP, negative hpCost heals.
+// DP can only be *gained* through scene choices.
+export const TUBAL_SKILL_EFFECT = { dpChange: -6, hpCost: -8 } as const;
+export const TUBAL_SKILL_HP_GAIN = -TUBAL_SKILL_EFFECT.hpCost;
 
-export const LAUNCELOT_SKILL_EFFECT = { dpChange: -6, hpCost: -10 } as const;
+export const LAUNCELOT_SKILL_EFFECT = { dpChange: -8, hpCost: -12 } as const;
 export const LAUNCELOT_SKILL_HP_GAIN = -LAUNCELOT_SKILL_EFFECT.hpCost;
 
-export const VENICE_PARADOX_SKILL_EFFECT = { dpChange: 16, hpCost: 6 } as const;
+export const VENICE_PARADOX_SKILL_EFFECT = { dpChange: -14, hpCost: -20 } as const;
+export const VENICE_PARADOX_SKILL_HP_GAIN = -VENICE_PARADOX_SKILL_EFFECT.hpCost;
 export const VENICE_PARADOX_LINES = [
   "당신들은 나를 고리대금업자라 부르오.",
   "허나 묻겠소 — 내가 상인이 되는 것을 당신들의 길드가 허락했소?",
@@ -60,14 +79,18 @@ export interface SkillDefinition {
 export const SKILLS: SkillDefinition[] = [
   {
     id: "launcelot",
-    label: "🃏 론슬롯 난입 (-6 DP · +10 HP)",
+    label: "🃏 론슬롯 난입 (-8 DP · +12 HP)",
     cost: -LAUNCELOT_SKILL_EFFECT.dpChange,
   },
-  { id: "tubal", label: "🤝 투발의 도움 (+14 DP · -2 HP)", cost: 0 },
+  {
+    id: "tubal",
+    label: "🤝 투발의 도움 (-6 DP · +8 HP)",
+    cost: -TUBAL_SKILL_EFFECT.dpChange,
+  },
   {
     id: "venice_paradox",
-    label: "⚔️ 베니스의 모순 (+16 DP · -6 HP · 1회)",
-    cost: 0,
+    label: "⚔️ 베니스의 모순 (-14 DP · +20 HP · 1회)",
+    cost: -VENICE_PARADOX_SKILL_EFFECT.dpChange,
   },
 ];
 
@@ -79,9 +102,13 @@ export function canUseSkill(
     case "launcelot":
       return ctx.dp >= -LAUNCELOT_SKILL_EFFECT.dpChange;
     case "tubal":
-      return true;
+      return ctx.dp >= -TUBAL_SKILL_EFFECT.dpChange;
     case "venice_paradox":
-      return ctx.sceneIdx > CROWD_JEERS_SCENE_INDEX && !ctx.veniceParadoxUsed;
+      return (
+        ctx.sceneIdx > CROWD_JEERS_SCENE_INDEX &&
+        !ctx.veniceParadoxUsed &&
+        ctx.dp >= -VENICE_PARADOX_SKILL_EFFECT.dpChange
+      );
     default:
       return false;
   }

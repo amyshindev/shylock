@@ -7,6 +7,7 @@ from uuid import UUID
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueContent
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
 from shylock_trial.domain.value_objects.hp_score_vo import HpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 
 
 class TrialPhase(StrEnum):
@@ -37,6 +38,7 @@ class Trial:
     scene_index: int
     dp: DpScore
     hp: HpScore
+    portia_hp: PortiaHpScore
     choice_history: list[str]
     phase: TrialPhase
     narration_text: str | None = None

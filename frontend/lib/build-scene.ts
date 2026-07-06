@@ -1,5 +1,6 @@
 import type { DialogueLineKind, Scene, SceneLine, SceneTemplate, Speaker } from "@/data/scene-types";
 import type { SceneDialogueFromApi } from "@/lib/api-client/types";
+import { computePortiaDamage } from "@/lib/constants/game-balance";
 import { sanitizeDialogueLine, sanitizeGameText } from "@/lib/game-text";
 
 function coerceKind(raw: string | undefined, fallback: DialogueLineKind): DialogueLineKind {
@@ -97,6 +98,7 @@ export function buildScene(
         evidence: opt.evidence,
         dpChange: opt.dpChange,
         hpCost: opt.hpCost,
+        portiaDamage: computePortiaDamage(opt.dpChange),
         special: opt.special,
       })),
     },

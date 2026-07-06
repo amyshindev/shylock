@@ -12,6 +12,7 @@ class StartTrialResultDto:
     scene_index: int
     dp: int
     hp: int
+    portia_hp: int
     phase: TrialPhase
     scene_dialogue: SceneDialogueContent
 
@@ -28,6 +29,7 @@ class SubmitChoiceResultDto:
     scene_index: int
     dp: int
     hp: int
+    portia_hp: int
     phase: TrialPhase
     portia_response: str
     ending_type: EndingType | None

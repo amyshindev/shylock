@@ -20,6 +20,7 @@ export interface TrialState {
   scene_index: number;
   dp: number;
   hp: number;
+  portia_hp: number;
   phase: TrialPhase;
   choice_history?: string[];
   narration_text?: string | null;
@@ -38,6 +39,7 @@ export interface SubmitChoiceResponse {
   scene_index: number;
   dp: number;
   hp: number;
+  portia_hp: number;
   phase: TrialPhase;
   portia_response: string;
   ending_type: string | null;

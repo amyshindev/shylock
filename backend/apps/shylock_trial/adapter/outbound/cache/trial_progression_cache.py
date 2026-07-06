@@ -10,6 +10,7 @@ from shylock_trial.app.ports.output.trial_progression_cache_port import TrialPro
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
 from shylock_trial.domain.value_objects.hp_score_vo import HpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 
 
 class TrialProgressionRedisCache(TrialProgressionCachePort):
@@ -67,6 +68,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             scene_index=data["scene_index"],
             dp=DpScore(data["dp"]),
             hp=HpScore(data.get("hp", 100)),
+            portia_hp=PortiaHpScore(data.get("portia_hp", 100)),
             choice_history=data["choice_history"],
             phase=TrialPhase(data["phase"]),
             narration_text=data.get("narration_text"),
@@ -85,6 +87,7 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "scene_index": trial.scene_index,
                 "dp": trial.dp.value,
                 "hp": trial.hp.value,
+                "portia_hp": trial.portia_hp.value,
                 "choice_history": trial.choice_history,
                 "phase": trial.phase.value,
                 "narration_text": trial.narration_text,

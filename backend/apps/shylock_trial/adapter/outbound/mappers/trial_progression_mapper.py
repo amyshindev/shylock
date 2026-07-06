@@ -12,6 +12,7 @@ from shylock_trial.app.utils.trial_metadata_store import (
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
 from shylock_trial.domain.value_objects.hp_score_vo import HpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 
 
 def to_entity(orm: TrialOrm) -> Trial:
@@ -20,6 +21,7 @@ def to_entity(orm: TrialOrm) -> Trial:
         scene_index=orm.scene_index,
         dp=DpScore(orm.dp),
         hp=HpScore(orm.hp),
+        portia_hp=PortiaHpScore(orm.portia_hp),
         choice_history=[row.choice_id for row in orm.choice_history],
         phase=TrialPhase(orm.phase),
         narration_text=orm.narration_text,
@@ -38,6 +40,7 @@ def to_orm(entity: Trial) -> TrialOrm:
         scene_index=entity.scene_index,
         dp=entity.dp.value,
         hp=entity.hp.value,
+        portia_hp=entity.portia_hp.value,
         phase=entity.phase.value,
         narration_text=entity.narration_text,
         scene_dialogues_json=serialize_scene_dialogues(entity.scene_dialogues)

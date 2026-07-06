@@ -48,6 +48,7 @@ async def start_trial(
         scene_index=result.scene_index,
         dp=result.dp,
         hp=result.hp,
+        portia_hp=result.portia_hp,
         phase=result.phase,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
     )
@@ -67,6 +68,7 @@ async def get_trial(
         scene_index=trial.scene_index,
         dp=trial.dp.value,
         hp=trial.hp.value,
+        portia_hp=trial.portia_hp.value,
         phase=trial.phase,
         choice_history=trial.choice_history,
         narration_text=trial.narration_text,
@@ -94,6 +96,7 @@ async def submit_choice(
         scene_index=result.scene_index,
         dp=result.dp,
         hp=result.hp,
+        portia_hp=result.portia_hp,
         phase=result.phase,
         portia_response=result.portia_response,
         ending_type=result.ending_type.value if result.ending_type else None,

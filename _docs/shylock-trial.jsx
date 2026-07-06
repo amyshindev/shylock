@@ -5,7 +5,7 @@ const ANTHROPIC_API_KEY = ""; // demo only — production uses backend ANTHROPIC
 // ── 증거 데이터 ───────────────────────────────────────────────
 const EVIDENCE = {
   gaberdine: {
-    id: "gaberdine", name: "낡은 가브딘", icon: "🧥",
+    id: "gaberdine", name: "낡은 외투", icon: "🧥",
     desc: "침 자국이 남아있는 샤일록의 외투",
     quote: "You call me misbeliever, cut-throat dog, / And spit upon my Jewish gaberdine.",
     act: "Act I, Scene 3",

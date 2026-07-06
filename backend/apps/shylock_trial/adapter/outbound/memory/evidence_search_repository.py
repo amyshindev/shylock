@@ -10,7 +10,7 @@ CURATED_EVIDENCE: list[Evidence] = [
         quote="You call me misbeliever, cut-throat dog, / And spit upon my Jewish gaberdine.",
         act_scene="1.3",
         icon="gaberdine",
-        description="침 자국이 남아있는 샤일록의 외투",
+        description="안토니오가 '개'라 부르며 침을 뱉었던 외투. 아직도 얼룩이 남아 있다.",
         source_ftln_range=(100, 120),
     ),
     Evidence(

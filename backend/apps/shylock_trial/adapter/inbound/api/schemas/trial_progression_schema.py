@@ -59,6 +59,7 @@ class StartTrialResponse(BaseModel):
     scene_index: int
     dp: int = Field(ge=0, le=100)
     hp: int = Field(ge=0, le=100)
+    portia_hp: int = Field(ge=0, le=100)
     phase: TrialPhase
     scene_dialogue: SceneDialogueResponse
 
@@ -72,7 +73,7 @@ class TrialResponse(BaseModel):
                     "scene_index": 1,
                     "dp": 55,
                     "phase": "in_progress",
-                    "choice_history": ["appeal_mercy"],
+                    "choice_history": ["bond_signature"],
                     "narration_text": None,
                     "scene_dialogue": {
                         "lines": [
@@ -80,7 +81,9 @@ class TrialResponse(BaseModel):
                         ],
                         "challenge_header": "▶ 샤일록의 선택",
                         "challenge_text": "자비를 베풀라고?",
-                        "choice_texts": {"appeal_contract": "계약은 법적으로 유효합니다"},
+                        "choice_texts": {
+                            "bond_signature": "이 증서엔 내 서명도, 안토니오의 서명도 있소. 무엇이 문제요?"
+                        },
                     },
                 }
             ]
@@ -91,6 +94,7 @@ class TrialResponse(BaseModel):
     scene_index: int
     dp: int = Field(ge=0, le=100)
     hp: int = Field(ge=0, le=100)
+    portia_hp: int = Field(ge=0, le=100)
     phase: TrialPhase
     choice_history: list[str]
     narration_text: str | None = None
@@ -102,7 +106,7 @@ class TrialResponse(BaseModel):
 
 class SubmitChoiceRequest(BaseModel):
     model_config = ConfigDict(
-        json_schema_extra={"examples": [{"choice_id": "appeal_mercy"}]}
+        json_schema_extra={"examples": [{"choice_id": "bond_signature"}]}
     )
 
     choice_id: str
@@ -129,6 +133,7 @@ class SubmitChoiceResponse(BaseModel):
     scene_index: int
     dp: int
     hp: int
+    portia_hp: int
     phase: TrialPhase
     portia_response: str
     ending_type: str | None = None
@@ -150,7 +155,9 @@ class AdvanceSceneResponse(BaseModel):
                         "lines": [{"text": '"저 유대인을 보라!"', "kind": "speech"}],
                         "challenge_header": "▶ 샤일록의 선택",
                         "challenge_text": "군중의 조롱에 당신은—",
-                        "choice_texts": {"show_gaberdine": "외투의 침 자국을 보여준다"},
+                        "choice_texts": {
+                            "coat_show_spit": "보시오. 당신들이 뱉은 것이, 아직도 이 옷에 남아 있소"
+                        },
                     },
                 }
             ]

@@ -31,6 +31,8 @@ import {
 import {
   DP_MAX,
   HP_MAX,
+  PORTIA_HP_MAX,
+  PORTIA_HP_START,
   LOW_HP_THRESHOLD,
   SHYLOCK_DP_START,
   SHYLOCK_HP_START,
@@ -88,13 +90,19 @@ function clampHp(value: number): number {
   return Math.max(0, Math.min(HP_MAX, value));
 }
 
+function clampPortiaHp(value: number): number {
+  return Math.max(0, Math.min(PORTIA_HP_MAX, value));
+}
+
 function previewChoiceEffect(
   currentDp: number,
   currentHp: number,
+  currentPortiaHp: number,
   dpChange: number,
   hpCost: number,
+  portiaDamage: number,
   veniceDpShield: boolean,
-): { nextDp: number; nextHp: number; nextShield: boolean } {
+): { nextDp: number; nextHp: number; nextPortiaHp: number; nextShield: boolean } {
   let delta = dpChange;
   let nextShield = veniceDpShield;
   if (veniceDpShield) {
@@ -110,6 +118,7 @@ function previewChoiceEffect(
   return {
     nextDp: clampDp(currentDp + dpGain),
     nextHp: clampHp(currentHp - hpCost),
+    nextPortiaHp: clampPortiaHp(currentPortiaHp - portiaDamage),
     nextShield,
   };
 }
@@ -127,12 +136,14 @@ export function useTrialProgression(trialId: string) {
   const [lineIdx, setLineIdx] = useState(0);
   const [dp, setDp] = useState(SHYLOCK_DP_START);
   const [hp, setHp] = useState(SHYLOCK_HP_START);
+  const [portiaHp, setPortiaHp] = useState(PORTIA_HP_START);
   const [veniceDpShield, setVeniceDpShield] = useState(false);
   const [veniceParadoxUsed, setVeniceParadoxUsed] = useState(false);
   const [portiaReply, setPortiaReply] = useState("");
   const [loadingReply, setLoadingReply] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
+  const [selectedChoiceItem, setSelectedChoiceItem] = useState<string | null>(null);
   const [pendingPortiaReply, setPendingPortiaReply] = useState<string | null>(null);
   const [climaxMode, setClimaxMode] = useState(false);
   const [showPressPresent, setShowPressPresent] = useState(false);
@@ -363,6 +374,7 @@ export function useTrialProgression(trialId: string) {
         setSceneIdx(idx);
         setDp(trial.dp);
         setHp(trial.hp ?? SHYLOCK_HP_START);
+        setPortiaHp(trial.portia_hp ?? PORTIA_HP_START);
         setVeniceDpShield(trial.venice_dp_shield ?? false);
         setVeniceParadoxUsed(trial.venice_paradox_used ?? false);
         if (trial.scene_dialogue) {
@@ -420,6 +432,7 @@ export function useTrialProgression(trialId: string) {
     setPressPresentComplete(false);
     setClimaxMode(false);
     setShowChallenge(false);
+    setSelectedChoiceItem(null);
     setPendingPortiaReply(null);
     setLineIdx(0);
     setError(null);
@@ -599,6 +612,7 @@ export function useTrialProgression(trialId: string) {
     async (option: ChoiceOption) => {
       choiceLockRef.current = true;
       setShowChallenge(false);
+      setSelectedChoiceItem(null);
       setError(null);
       setTubalPhase("idle");
       setTubalMessage(null);
@@ -607,15 +621,18 @@ export function useTrialProgression(trialId: string) {
       setVeniceSkillPhase("idle");
       setVeniceLineIdx(0);
 
-      const { nextDp, nextHp, nextShield } = previewChoiceEffect(
+      const { nextDp, nextHp, nextPortiaHp, nextShield } = previewChoiceEffect(
         dp,
         hp,
+        portiaHp,
         option.dpChange,
         option.hpCost,
+        option.portiaDamage,
         veniceDpShield,
       );
       setDp(nextDp);
       setHp(nextHp);
+      setPortiaHp(nextPortiaHp);
       setVeniceDpShield(nextShield);
 
       const showEvidenceFlow = async () => {
@@ -640,6 +657,7 @@ export function useTrialProgression(trialId: string) {
         const res = await submitChoice(trialId, option.id);
         setDp(res.dp);
         setHp(res.hp);
+        setPortiaHp(res.portia_hp);
         setTubalEnhancedChoices(res.tubal_enhanced_choices ?? {});
         setVeniceDpShield(res.venice_dp_shield);
 
@@ -678,7 +696,7 @@ export function useTrialProgression(trialId: string) {
         choiceLockRef.current = false;
       }
     },
-    [trialId, dp, hp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail, scene],
+    [trialId, dp, hp, portiaHp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail, scene],
   );
 
   const makeChoice = useCallback(
@@ -688,6 +706,18 @@ export function useTrialProgression(trialId: string) {
     },
     [runChoiceSequence, loadingReply, loadingScene, phase],
   );
+
+  const selectChoiceItem = useCallback(
+    (itemId: string) => {
+      if (choiceLockRef.current || loadingReply || loadingScene || phase !== "game") return;
+      setSelectedChoiceItem(itemId);
+    },
+    [loadingReply, loadingScene, phase],
+  );
+
+  const clearChoiceItem = useCallback(() => {
+    setSelectedChoiceItem(null);
+  }, []);
 
   const executeTubalSearch = useCallback(async () => {
     setLoadingTubal(true);
@@ -975,6 +1005,7 @@ export function useTrialProgression(trialId: string) {
     lineIdx,
     dp,
     hp,
+    portiaHp,
     dpGainFlash,
     hpGainFlash,
     veniceDpShield,
@@ -1000,6 +1031,7 @@ export function useTrialProgression(trialId: string) {
     loadingReply,
     loadingScene,
     showChallenge,
+    selectedChoiceItem,
     showPressPresent,
     pressPresentComplete,
     pressedTestimonyIds,
@@ -1027,6 +1059,8 @@ export function useTrialProgression(trialId: string) {
     advance,
     goNextScene,
     makeChoice,
+    selectChoiceItem,
+    clearChoiceItem,
     useSkill,
     dismissClimax,
     dismissTubalMessage,

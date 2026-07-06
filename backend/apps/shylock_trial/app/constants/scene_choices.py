@@ -1,6 +1,14 @@
 from dataclasses import dataclass
 
-from shylock_trial.app.constants.game_balance import DP_MAX, HP_MAX, LOW_HP_THRESHOLD
+from shylock_trial.app.constants.game_balance import (
+    DP_MAX,
+    HP_MAX,
+    LOW_HP_THRESHOLD,
+    PORTIA_DAMAGE_DP_RATIO,
+    PORTIA_DAMAGE_MAX,
+    PORTIA_DAMAGE_MIN,
+    PORTIA_HP_MAX,
+)
 
 # Scene progression: see scene_progression.py (indices 0–9).
 from shylock_trial.app.constants.scene_progression import (  # noqa: F401
@@ -14,17 +22,38 @@ class ChoiceEffect:
     dp_delta: int
     hp_cost: int = 0
 
+    @property
+    def portia_damage(self) -> int:
+        return compute_portia_damage(self.dp_delta)
+
+
+def compute_portia_damage(dp_delta: int) -> int:
+    """Higher DP gains deal more Portia HP damage. Negative DP choices barely scratch Portia."""
+    if dp_delta <= 0:
+        return 0 if dp_delta <= -5 else 1
+    scaled = round(dp_delta * PORTIA_DAMAGE_DP_RATIO)
+    return max(PORTIA_DAMAGE_MIN, min(PORTIA_DAMAGE_MAX, scaled))
+
 
 CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
-    "appeal_contract": ChoiceEffect(0, 5),
-    "appeal_humanity": ChoiceEffect(20, 15),
-    "appeal_mercy": ChoiceEffect(-15, 0),
-    "invoke_bond": ChoiceEffect(15, 8),
-    "accuse_bassanio": ChoiceEffect(20, 15),
-    "cold_silence": ChoiceEffect(-15, 0),
-    "show_gaberdine": ChoiceEffect(15, 10),
-    "ignore_court": ChoiceEffect(5, 3),
-    "rage_at_crowd": ChoiceEffect(-10, 18),
+    "bond_signature": ChoiceEffect(12, 5),
+    "bond_double_standard": ChoiceEffect(18, 12),
+    "bond_lay_down": ChoiceEffect(5, 3),
+    "charter_merchant_trust": ChoiceEffect(16, 8),
+    "charter_law_precedent": ChoiceEffect(18, 10),
+    "charter_follow_law": ChoiceEffect(10, 4),
+    "gold_refuse_direct": ChoiceEffect(13, 6),
+    "gold_shame_bribe": ChoiceEffect(18, 12),
+    "gold_push_away": ChoiceEffect(6, 3),
+    "scales_no_reason": ChoiceEffect(14, 7),
+    "scales_humour": ChoiceEffect(18, 11),
+    "scales_weigh": ChoiceEffect(8, 4),
+    "coat_show_spit": ChoiceEffect(13, 6),
+    "coat_before_dry": ChoiceEffect(18, 12),
+    "coat_show_silent": ChoiceEffect(6, 3),
+    "ghetto_curfew": ChoiceEffect(15, 7),
+    "ghetto_who_guilty": ChoiceEffect(18, 11),
+    "ghetto_look_silent": ChoiceEffect(8, 4),
     "defend_jessica": ChoiceEffect(15, 12),
     "reject_private_matter": ChoiceEffect(10, 6),
     "speechless": ChoiceEffect(-20, 0),
@@ -41,10 +70,12 @@ CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
 }
 
 
+# All skills convert DP into HP: negative dp_delta spends DP, negative hp_cost heals.
+# DP can only be *gained* through scene choices.
 SKILL_EFFECTS: dict[str, ChoiceEffect] = {
-    "launcelot": ChoiceEffect(-6, -10),
-    "tubal": ChoiceEffect(14, 2),
-    "venice_paradox": ChoiceEffect(16, 6),
+    "launcelot": ChoiceEffect(-8, -12),
+    "tubal": ChoiceEffect(-6, -8),
+    "venice_paradox": ChoiceEffect(-14, -20),
 }
 
 
@@ -64,9 +95,24 @@ def get_choice_effect(choice_id: str) -> ChoiceEffect:
 
 # Must stay in sync with frontend scene-templates (choice.evidence).
 CHOICE_EVIDENCE: dict[str, str] = {
-    "appeal_contract": "bond",
-    "appeal_humanity": "hath_not",
-    "show_gaberdine": "gaberdine",
+    "bond_signature": "bond",
+    "bond_double_standard": "bond",
+    "bond_lay_down": "bond",
+    "charter_merchant_trust": "venice_charter",
+    "charter_law_precedent": "venice_charter",
+    "charter_follow_law": "venice_charter",
+    "gold_refuse_direct": "bassanio_gold",
+    "gold_shame_bribe": "bassanio_gold",
+    "gold_push_away": "bassanio_gold",
+    "scales_no_reason": "scales",
+    "scales_humour": "scales",
+    "scales_weigh": "scales",
+    "coat_show_spit": "gaberdine",
+    "coat_before_dry": "gaberdine",
+    "coat_show_silent": "gaberdine",
+    "ghetto_curfew": "ghetto_gate",
+    "ghetto_who_guilty": "ghetto_gate",
+    "ghetto_look_silent": "ghetto_gate",
     "defend_jessica": "jessica",
     "reject_private_matter": "bond",
     "hath_not_speech": "hath_not",
@@ -125,10 +171,11 @@ def apply_choice_resources(
     dp_before: int,
     effect: ChoiceEffect,
     *,
+    portia_hp_before: int = PORTIA_HP_MAX,
     dp_bonus: int = 0,
     venice_dp_shield: bool = False,
-) -> tuple[int, int, bool]:
-    """Return (next_hp, next_dp, shield_consumed)."""
+) -> tuple[int, int, bool, int]:
+    """Return (next_hp, next_dp, shield_consumed, next_portia_hp)."""
     dp_gain, shield_consumed = compute_choice_dp_gain(
         hp_before,
         effect.dp_delta,
@@ -137,4 +184,5 @@ def apply_choice_resources(
     )
     next_hp = max(0, min(HP_MAX, hp_before - effect.hp_cost))
     next_dp = max(0, min(DP_MAX, dp_before + dp_gain))
-    return next_hp, next_dp, shield_consumed
+    next_portia_hp = max(0, min(PORTIA_HP_MAX, portia_hp_before - effect.portia_damage))
+    return next_hp, next_dp, shield_consumed, next_portia_hp

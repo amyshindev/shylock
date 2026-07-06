@@ -138,6 +138,21 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
               >
                 &ldquo;{detail.quote}&rdquo;
               </p>
+              {meta?.note && (
+                <p
+                  style={{
+                    margin: "14px 0 0",
+                    color: "#8f8ab0",
+                    fontSize: gameFontSize.xs,
+                    lineHeight: 1.7,
+                    textAlign: "left",
+                    borderLeft: "2px solid rgba(143, 138, 176, 0.4)",
+                    paddingLeft: 12,
+                  }}
+                >
+                  {meta.note}
+                </p>
+              )}
             </>
           )}
 

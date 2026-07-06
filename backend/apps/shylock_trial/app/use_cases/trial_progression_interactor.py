@@ -4,6 +4,7 @@ import asyncio
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
+    PORTIA_HP_START,
     SHYLOCK_DP_START,
     SHYLOCK_HP_START,
 )
@@ -42,6 +43,7 @@ from shylock_trial.app.ports.output.trial_progression_port import TrialProgressi
 from shylock_trial.domain.entities.trial_entity import Trial, TrialPhase
 from shylock_trial.domain.value_objects.dp_score_vo import DpScore
 from shylock_trial.domain.value_objects.hp_score_vo import HpScore
+from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 from shylock_trial.app.utils.trial_metadata_store import append_unique
 
 
@@ -64,6 +66,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=0,
             dp=DpScore(SHYLOCK_DP_START),
             hp=HpScore(SHYLOCK_HP_START),
+            portia_hp=PortiaHpScore(PORTIA_HP_START),
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
         )
@@ -76,6 +79,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             dp=trial.dp.value,
             hp=trial.hp.value,
+            portia_hp=trial.portia_hp.value,
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
         )
@@ -101,6 +105,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         trial.choice_history.append(input_dto.choice_id)
         trial.dp = trial.dp.apply_delta(dp_gain)
         trial.hp = trial.hp.apply_delta(-effect.hp_cost)
+        trial.portia_hp = trial.portia_hp.apply_delta(-effect.portia_damage)
 
         evidence_id = get_choice_evidence_id(input_dto.choice_id)
         if evidence_id:
@@ -129,6 +134,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             dp=trial.dp.value,
             hp=trial.hp.value,
+            portia_hp=trial.portia_hp.value,
             phase=trial.phase,
             portia_response=portia.text,
             ending_type=None,
@@ -237,6 +243,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=scene_index,
             dp=DpScore(dp),
             hp=HpScore(SHYLOCK_HP_START),
+            portia_hp=PortiaHpScore(PORTIA_HP_START),
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
         )
@@ -250,6 +257,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             dp=trial.dp.value,
             hp=trial.hp.value,
+            portia_hp=trial.portia_hp.value,
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
         )

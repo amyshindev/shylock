@@ -35,6 +35,7 @@ class TrialProgressionPgRepository(TrialProgressionPort):
         existing.scene_index = trial.scene_index
         existing.dp = trial.dp.value
         existing.hp = trial.hp.value
+        existing.portia_hp = trial.portia_hp.value
         existing.venice_dp_shield = trial.venice_dp_shield
         existing.venice_paradox_used = trial.venice_paradox_used
         existing.phase = trial.phase.value

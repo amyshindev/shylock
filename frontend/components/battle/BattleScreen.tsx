@@ -9,7 +9,8 @@ import { ClimaxOverlay } from "./ClimaxOverlay";
 import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
-import { MeterDisplay, LEFT_HUD_TOP, LEFT_METERS_STACK_HEIGHT } from "./MeterDisplay";
+import { ItemChoiceList } from "./ItemChoiceList";
+import { MeterDisplay, PortiaMeterDisplay, LEFT_HUD_TOP, LEFT_METERS_STACK_HEIGHT } from "./MeterDisplay";
 import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
 
@@ -46,6 +47,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     sceneIdx,
     dp,
     hp,
+    portiaHp,
     veniceParadoxUsed,
     dpGainFlash,
     hpGainFlash,
@@ -60,6 +62,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isLauncelotActive,
     tubalEnhancedChoices,
     showChallenge,
+    selectedChoiceItem,
     showPressPresent,
     pressPresentComplete,
     pressedTestimonyIds,
@@ -78,6 +81,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     advance,
     goNextScene,
     makeChoice,
+    selectChoiceItem,
+    clearChoiceItem,
     useSkill,
     dismissClimax,
     dismissTubalMessage,
@@ -89,6 +94,20 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   } = trial;
 
   const showBattleHud = scene.id !== "opening";
+
+  const challengeOptions = scene.challenge?.options ?? [];
+  // Item-first scenes: every choice is tagged with an evidence item, so we ask
+  // the player to pick an item, then show only that item's choices.
+  const isItemFirst =
+    challengeOptions.length > 0 && challengeOptions.every((opt) => opt.evidence);
+  const itemChoiceIds = isItemFirst
+    ? Array.from(new Set(challengeOptions.map((opt) => opt.evidence as string)))
+    : [];
+  const showItemPhase = isItemFirst && !selectedChoiceItem;
+  const visibleChoiceOptions =
+    isItemFirst && selectedChoiceItem
+      ? challengeOptions.filter((opt) => opt.evidence === selectedChoiceItem)
+      : challengeOptions;
 
   const showEvidenceBar =
     showBattleHud &&
@@ -145,7 +164,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
           {showBattleHud && (
-            <MeterDisplay dp={dp} hp={hp} dpGainFlash={dpGainFlash} hpGainFlash={hpGainFlash} />
+            <>
+              <MeterDisplay dp={dp} hp={hp} dpGainFlash={dpGainFlash} hpGainFlash={hpGainFlash} />
+              <PortiaMeterDisplay portiaHp={portiaHp} />
+            </>
           )}
           {showBattleHud && (
           <div
@@ -202,15 +224,26 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             }}
           >
             <div style={{ ...textBoxDockInnerStyle(), pointerEvents: "auto" }}>
-              <ChoiceList
-                header={scene.challenge.header}
-                prompt={scene.challenge.text}
-                options={scene.challenge.options}
-                tubalEnhancedChoices={tubalEnhancedChoices}
-                tubalCourtRecords={tubalCourtRecords}
-                onSelect={makeChoice}
-                disabled={loadingReply || loadingScene || isLauncelotActive}
-              />
+              {showItemPhase ? (
+                <ItemChoiceList
+                  itemIds={itemChoiceIds}
+                  prompt={scene.challenge.text}
+                  onSelect={selectChoiceItem}
+                  disabled={loadingReply || loadingScene || isLauncelotActive}
+                />
+              ) : (
+                <ChoiceList
+                  header={scene.challenge.header}
+                  prompt={scene.challenge.text}
+                  options={visibleChoiceOptions}
+                  tubalEnhancedChoices={tubalEnhancedChoices}
+                  tubalCourtRecords={tubalCourtRecords}
+                  onSelect={makeChoice}
+                  onBack={isItemFirst ? clearChoiceItem : undefined}
+                  showEvidenceBadge={!isItemFirst}
+                  disabled={loadingReply || loadingScene || isLauncelotActive}
+                />
+              )}
             </div>
           </div>
         )}

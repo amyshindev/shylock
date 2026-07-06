@@ -15,6 +15,7 @@ export interface ChoiceOption {
   evidence: string | null;
   dpChange: number;
   hpCost: number;
+  portiaDamage: number;
   special?: "climax";
 }
 

@@ -18,6 +18,8 @@ interface ChoiceListProps {
   tubalEnhancedChoices?: Record<string, string>;
   tubalCourtRecords?: TubalCourtRecord[];
   onSelect: (option: ChoiceOption) => void;
+  onBack?: () => void;
+  showEvidenceBadge?: boolean;
   disabled?: boolean;
 }
 
@@ -106,6 +108,8 @@ export function ChoiceList({
   tubalEnhancedChoices,
   tubalCourtRecords = [],
   onSelect,
+  onBack,
+  showEvidenceBadge = true,
   disabled,
 }: ChoiceListProps) {
   const latestTubalRecord = tubalCourtRecords[tubalCourtRecords.length - 1];
@@ -122,14 +126,42 @@ export function ChoiceList({
     >
       <div
         style={{
-          fontSize: gameFontSize.nm,
-          color: "#5a3a4a",
-          letterSpacing: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
           marginBottom: 10,
-          paddingLeft: 4,
         }}
       >
-        {header ?? "▶ 샤일록의 선택"}
+        <div
+          style={{
+            fontSize: gameFontSize.nm,
+            color: "#5a3a4a",
+            letterSpacing: 2,
+            paddingLeft: 4,
+          }}
+        >
+          {header ?? "▶ 샤일록의 선택"}
+        </div>
+        {onBack && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={onBack}
+            style={{
+              background: "transparent",
+              border: "1px solid #3a1828",
+              borderRadius: 4,
+              color: "#7a5a6a",
+              fontSize: gameFontSize.sm,
+              padding: "4px 10px",
+              cursor: disabled ? "not-allowed" : "pointer",
+              flexShrink: 0,
+            }}
+          >
+            ← 다른 아이템
+          </button>
+        )}
       </div>
       <p
         style={{
@@ -181,11 +213,22 @@ export function ChoiceList({
                   <span
                     style={{
                       fontSize: gameFontSize.sm,
-                      color: "#cc5544",
+                      color: "#dd4848",
                       fontWeight: 600,
                     }}
                   >
                     -{opt.hpCost} HP
+                  </span>
+                )}
+                {opt.portiaDamage > 0 && (
+                  <span
+                    style={{
+                      fontSize: gameFontSize.sm,
+                      color: "#e84455",
+                      fontWeight: 600,
+                    }}
+                  >
+                    -{opt.portiaDamage} 포샤
                   </span>
                 )}
                 {isEnhanced ? (
@@ -193,6 +236,7 @@ export function ChoiceList({
                     name={latestTubalRecord?.name ?? "투발 아이템"}
                   />
                 ) : (
+                  showEvidenceBadge &&
                   opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />
                 )}
               </span>
