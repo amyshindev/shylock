@@ -13,6 +13,9 @@ class PortiaResponsePromptDto:
     choice_history: tuple[str, ...]
     context: str
     request_type: str  # "narration" | "reaction" | "ending"
+    portia_hp: int = 100
+    choice_id: str | None = None
+    previous_portia_reactions: tuple[str, ...] = ()
     tubal_used_scenes: tuple[str, ...] = ()
     presented_evidence: tuple[str, ...] = ()
 

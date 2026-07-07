@@ -9,6 +9,8 @@ LOW_HP_THRESHOLD = 30
 
 PORTIA_HP_START = 100
 PORTIA_HP_MAX = 100
+PORTIA_HP_HIGH_THRESHOLD = 67  # composed strategist — aphoristic, unhurried
+PORTIA_HP_LOW_THRESHOLD = 34  # below: authority/procedure only, composure fraying
 
 # Portia damage scales with DP gained on a choice (keep in sync with frontend computePortiaDamage).
 PORTIA_DAMAGE_DP_RATIO = 0.55

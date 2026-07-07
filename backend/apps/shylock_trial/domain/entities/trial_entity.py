@@ -48,6 +48,7 @@ class Trial:
     tubal_enhanced_choices: dict[str, str] = field(default_factory=dict)
     venice_dp_shield: bool = False
     venice_paradox_used: bool = False
+    portia_reactions: list[str] = field(default_factory=list)
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

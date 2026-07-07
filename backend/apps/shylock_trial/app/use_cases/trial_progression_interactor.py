@@ -115,6 +115,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             trial,
             context=f"choice:{input_dto.choice_id}",
             request_type="reaction",
+            choice_id=input_dto.choice_id,
         )
         next_scene_index = resolve_next_scene_index(trial.scene_index, trial.dp.value)
         if next_scene_index is not None:
@@ -124,6 +125,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             )
         else:
             portia = await self._portia.generate(portia_prompt)
+
+        trial.portia_reactions.append(portia.text)
 
         is_ending = False
 
@@ -299,6 +302,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         *,
         context: str,
         request_type: str,
+        choice_id: str | None = None,
     ) -> PortiaResponsePromptDto:
         return PortiaResponsePromptDto(
             trial_id=trial.trial_id,
@@ -308,6 +312,9 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             choice_history=tuple(trial.choice_history),
             context=context,
             request_type=request_type,
+            portia_hp=trial.portia_hp.value,
+            choice_id=choice_id,
+            previous_portia_reactions=tuple(trial.portia_reactions),
             tubal_used_scenes=trial.tubal_used_scenes,
             presented_evidence=trial.presented_evidence,
         )

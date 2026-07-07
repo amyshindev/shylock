@@ -1,5 +1,9 @@
 """LLM prompts grounded in shylock-trial.jsx / The Merchant of Venice."""
 
+from shylock_trial.app.constants.game_balance import (
+    PORTIA_HP_HIGH_THRESHOLD,
+    PORTIA_HP_LOW_THRESHOLD,
+)
 from shylock_trial.app.constants.scene_catalog import get_scene_template
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialoguePromptDto
@@ -51,6 +55,64 @@ CHOICE_BRIEFS: dict[str, str] = {
     "mock_mercy": "Is this what Venice calls mercy?",
 }
 
+# Stimulus category for the most recent Shylock choice — drives Portia reaction tone.
+CHOICE_STIMULUS: dict[str, str] = {
+    "bond_signature": "logical",
+    "bond_double_standard": "provocation",
+    "bond_lay_down": "silence",
+    "charter_merchant_trust": "logical",
+    "charter_law_precedent": "logical",
+    "charter_follow_law": "logical",
+    "gold_refuse_direct": "logical",
+    "gold_shame_bribe": "provocation",
+    "gold_push_away": "silence",
+    "scales_no_reason": "provocation",
+    "scales_humour": "provocation",
+    "scales_weigh": "silence",
+    "coat_show_spit": "emotional",
+    "coat_before_dry": "emotional",
+    "coat_show_silent": "silence",
+    "ghetto_curfew": "logical",
+    "ghetto_who_guilty": "provocation",
+    "ghetto_look_silent": "silence",
+    "defend_jessica": "emotional",
+    "reject_private_matter": "provocation",
+    "speechless": "silence",
+    "hath_not_speech": "emotional",
+    "bond_only": "logical",
+    "beg_mercy": "emotional",
+    "blood_impossible": "logical",
+    "drop_knife": "silence",
+    "take_principal_only": "logical",
+    "plead_for_principal": "emotional",
+    "reject_conversion": "provocation",
+    "bow_accept": "emotional",
+    "mock_mercy": "provocation",
+}
+
+STIMULUS_REACTION_GUIDE: dict[str, str] = {
+    "logical": (
+        "Shylock pressed a rational/legal point. Respond with measured deflection — "
+        "reframe to form, jurisdiction, or contract wording. Do NOT default to pleading mercy; "
+        "hold the floor with composed counter-logic."
+    ),
+    "emotional": (
+        "Shylock appealed to feeling, injury, or personal wound. Respond with cool procedural "
+        "distance — acknowledge the court's order, not his pain. Refuse to meet emotion with "
+        "emotion; let formality do the work."
+    ),
+    "silence": (
+        "Shylock answered with silence or a wordless gesture. Turn the void to your advantage — "
+        "fill it with procedural pressure: demand a clear position, cite what the record requires, "
+        "imply that silence concedes the court's frame."
+    ),
+    "provocation": (
+        "Shylock taunted, accused, or defied the court. Answer with sharp formal riposte — "
+        "expose impropriety or overreach without losing courtroom register. Never escalate into "
+        "shouting; precision cuts deeper than volume."
+    ),
+}
+
 SYSTEM_PROMPT = """\
 You write in-game text for *The Merchant of Venice* trial (shylock-trial.jsx canon).
 The judge is always called **포샤** in Korean player-facing text.
@@ -67,6 +129,8 @@ For request_type=reaction (포샤 대사):
 - Do NOT describe Portia speaking — only output the words she says.
 - Bad: "법정은 증서 위에 서 있노라고 그녀는 선언하였다."
 - Good: "법정은 말이 아니라 증서와 법조문 위에 서 있노라."
+- Portia enters this trial already holding a decisive legal insight she has not yet revealed. She may sound like a mercy-seeking judge, but underneath she is a strategist with hidden leverage — unhurried, faintly superior. NEVER mention blood, loopholes, hidden cards, or that she already knows the outcome.
+- Do NOT end every reaction by urging mercy or compassion. Match your stance to the stimulus type and portia_hp tier given in the user message.
 
 request_type:
 - narration: neutral narrator tone (opening lines only if requested).
@@ -203,17 +267,75 @@ def _ending_instruction(context: str) -> str:
         "Write 3–4 sentences of Korean literary closing narration."
     )
 
+
+def _portia_hp_tone_instruction(portia_hp: int) -> str:
+    if portia_hp >= PORTIA_HP_HIGH_THRESHOLD:
+        return (
+            f"portia_hp={portia_hp} (high — composure intact): "
+            "우아하고 여유로운 격언체. 짧은 격언·비유로 여지를 남기되, "
+            "상대를 가르치려 드는 듯한 여유를 유지하라. 절박함이나 변명은 금지."
+        )
+    if portia_hp >= PORTIA_HP_LOW_THRESHOLD:
+        return (
+            f"portia_hp={portia_hp} (mid — composure tested): "
+            "격언 대신 구체적 법조문·계약 조항·절차를 인용하며 방어적으로 후퇴하라. "
+            "여유는 줄고, 논점을 법률 문언에 고정하라."
+        )
+    return (
+        f"portia_hp={portia_hp} (low — composure fraying): "
+        "논리적 설득 대신 권위와 절차만으로 밀어붙여라. "
+        "이전의 여유와 격언은 사라졌다 — 법정의 명령·기록·질서를 내세우는 냉정한 어조."
+    )
+
+
+def _previous_reactions_instruction(previous: tuple[str, ...]) -> str:
+    if not previous:
+        return ""
+    numbered = "\n".join(f"  {index + 1}. {line}" for index, line in enumerate(previous))
+    return (
+        "\nPrior Portia reactions this trial — do NOT reuse their rhetorical images, "
+        "metaphors, recurring nouns (e.g. 저울·침묵·자비), sentence openings, or argument structures:\n"
+        f"{numbered}\n"
+    )
+
+
+def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
+    choice_id = prompt.choice_id
+    if choice_id is None and prompt.context.startswith("choice:"):
+        choice_id = prompt.context.removeprefix("choice:")
+
+    stimulus = CHOICE_STIMULUS.get(choice_id or "", "logical")
+    stimulus_guide = STIMULUS_REACTION_GUIDE.get(stimulus, STIMULUS_REACTION_GUIDE["logical"])
+    choice_brief = CHOICE_BRIEFS.get(choice_id or "", prompt.context)
+
+    return (
+        "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
+        "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
+        "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장.\n\n"
+        "Resource premise (do not explain to the player): Shylock's DP rises only through choices; "
+        "skills heal him and do not affect Portia. Portia's composure (portia_hp) falls only from "
+        "choice rebuttals — her tone should reflect how hard Shylock's argument has landed.\n\n"
+        "Character subtext: Portia already knows a decisive legal reversal she has not yet played. "
+        "Outwardly she may sound like a mercy-seeking judge; underneath she is unhurried, faintly "
+        "superior — a strategist indulging the room. NEVER mention blood, contract loopholes, hidden "
+        "cards, or foreknowledge of the verdict.\n\n"
+        f"Shylock's latest move ({choice_id or 'unknown'}): {choice_brief}\n"
+        f"Stimulus type: {stimulus} — {stimulus_guide}\n\n"
+        f"{_portia_hp_tone_instruction(prompt.portia_hp)}"
+        f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}\n"
+        "Anti-pattern: do NOT conclude with '자비를 베풀라' or any mercy plea unless the stimulus "
+        "is explicitly emotional AND portia_hp is high. Vary your closing move: procedure, reframe, "
+        "authority, dry irony, or a pointed question."
+    )
+
+
 def build_user_message(prompt: PortiaResponsePromptDto) -> str:
     scene_brief = SCENE_BRIEFS.get(prompt.scene_index, "Venice trial scene.")
     choices = [CHOICE_BRIEFS.get(cid, cid) for cid in prompt.choice_history]
 
     type_instruction = {
         "narration": "Opening narration for the trial.",
-        "reaction": (
-            "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
-            "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
-            "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장."
-        ),
+        "reaction": _reaction_instruction(prompt),
         "ending": _ending_instruction(prompt.context),
     }.get(prompt.request_type, "Next trial line.")
 
@@ -234,6 +356,7 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
 scene: {scene_brief}
 context: {prompt.context}
 dp: {prompt.dp} (max 100 — higher means stronger moral dignity retained through the trial)
+portia_hp: {prompt.portia_hp} (max 100 — lower means Shylock's rebuttals have worn down Portia's composure)
 choices: {choices if choices else ["(none)"]}
 tubal: {tubal_context}
 evidence: {evidence_context}

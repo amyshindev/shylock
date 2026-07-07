@@ -44,6 +44,7 @@ class TrialProgressionPgRepository(TrialProgressionPort):
         existing.tubal_used_scenes_json = serialize_string_tuple(trial.tubal_used_scenes)
         existing.presented_evidence_json = serialize_string_tuple(trial.presented_evidence)
         existing.tubal_enhanced_choices = serialize_string_dict(trial.tubal_enhanced_choices)
+        existing.portia_reactions_json = serialize_string_tuple(tuple(trial.portia_reactions))
         existing.choice_history.clear()
         for choice_id in trial.choice_history:
             existing.choice_history.append(
