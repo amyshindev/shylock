@@ -6,22 +6,23 @@ from shylock_trial.domain.value_objects.hp_score_vo import HpScore
 
 
 @pytest.mark.parametrize(
-    ("dp", "expected"),
+    ("dp", "portia_hp", "expected"),
     [
-        (90, EndingType.RESCUED),
-        (100, EndingType.RESCUED),
-        (89, EndingType.FOUGHT_TO_END),
-        (80, EndingType.FOUGHT_TO_END),
-        (60, EndingType.DIGNITY_KEPT),
-        (79, EndingType.DIGNITY_KEPT),
-        (40, EndingType.SURVIVED),
-        (59, EndingType.SURVIVED),
-        (39, EndingType.SILENT),
-        (0, EndingType.SILENT),
+        (50, 0, EndingType.RESCUED),
+        (100, 0, EndingType.RESCUED),
+        (39, 0, EndingType.RESCUED),
+        (100, 1, EndingType.FOUGHT_TO_END),
+        (80, 1, EndingType.FOUGHT_TO_END),
+        (79, 1, EndingType.DIGNITY_KEPT),
+        (60, 1, EndingType.DIGNITY_KEPT),
+        (59, 1, EndingType.SURVIVED),
+        (40, 1, EndingType.SURVIVED),
+        (39, 1, EndingType.SILENT),
+        (0, 1, EndingType.SILENT),
     ],
 )
-def test_resolve_ending_type(dp: int, expected: EndingType) -> None:
-    assert resolve_ending_type(dp) == expected
+def test_resolve_ending_type(dp: int, portia_hp: int, expected: EndingType) -> None:
+    assert resolve_ending_type(dp=dp, portia_hp=portia_hp) == expected
 
 
 def test_dp_score_clamps() -> None:

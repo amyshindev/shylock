@@ -22,7 +22,6 @@ export function computePortiaDamage(dpChange: number): number {
   return Math.max(PORTIA_DAMAGE_MIN, Math.min(PORTIA_DAMAGE_MAX, scaled));
 }
 
-export const DP_RESCUED_ENDING_THRESHOLD = 90;
 export const DP_FOUGHT_TO_END_THRESHOLD = 80;
 export const DP_DIGNITY_ENDING_THRESHOLD = 60;
 export const DP_SURVIVAL_ENDING_THRESHOLD = 40;

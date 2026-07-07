@@ -116,7 +116,10 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             context=f"choice:{input_dto.choice_id}",
             request_type="reaction",
         )
-        next_scene_index = resolve_next_scene_index(trial.scene_index, trial.dp.value)
+        next_scene_index = resolve_next_scene_index(
+            trial.scene_index,
+            portia_hp=trial.portia_hp.value,
+        )
         if next_scene_index is not None:
             portia, _ = await asyncio.gather(
                 self._portia.generate(portia_prompt),
@@ -145,7 +148,10 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
 
     async def advance_scene(self, trial_id: UUID) -> AdvanceSceneResultDto:
         trial = await self._require_trial(trial_id)
-        next_index = resolve_next_scene_index(trial.scene_index, trial.dp.value)
+        next_index = resolve_next_scene_index(
+            trial.scene_index,
+            portia_hp=trial.portia_hp.value,
+        )
         if next_index is None:
             raise ValueError("No further scenes to advance")
         trial.scene_index = next_index
@@ -161,7 +167,10 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
 
     async def generate_ending(self, trial_id: UUID) -> GenerateEndingResultDto:
         trial = await self._require_trial(trial_id)
-        ending_type = resolve_ending_type(dp=trial.dp.value)
+        ending_type = resolve_ending_type(
+            dp=trial.dp.value,
+            portia_hp=trial.portia_hp.value,
+        )
 
         ending = await self._portia.generate(
             self._build_portia_prompt(

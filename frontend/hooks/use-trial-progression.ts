@@ -197,7 +197,7 @@ export function useTrialProgression(trialId: string) {
   const challengeLineIndex =
     scene.challengeAfterLineIndex ??
     (scene.challenge ? scene.lines.length - 1 : -1);
-  const isLastScene = isLastNarrativeScene(sceneIdx);
+  const isLastScene = isLastNarrativeScene(sceneIdx, portiaHp);
 
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
