@@ -3,7 +3,6 @@ from enum import StrEnum
 from shylock_trial.app.constants.game_balance import (
     DP_DIGNITY_ENDING_THRESHOLD,
     DP_FOUGHT_TO_END_THRESHOLD,
-    DP_RESCUED_ENDING_THRESHOLD,
     DP_SURVIVAL_ENDING_THRESHOLD,
 )
 
@@ -16,8 +15,9 @@ class EndingType(StrEnum):
     SILENT = "silent_ending"
 
 
-def resolve_ending_type(dp: int) -> EndingType:
-    if dp >= DP_RESCUED_ENDING_THRESHOLD:
+def resolve_ending_type(*, dp: int, portia_hp: int) -> EndingType:
+    """Rescued when Portia's rhetorical HP is depleted; otherwise DP tiers only."""
+    if portia_hp <= 0:
         return EndingType.RESCUED
     if dp >= DP_FOUGHT_TO_END_THRESHOLD:
         return EndingType.FOUGHT_TO_END

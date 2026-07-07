@@ -138,7 +138,10 @@ class TubalSkillInteractor(TubalSkillUseCase):
         return trial
 
     async def _prefetch_next_scene_dialogue(self, trial: Trial) -> Trial:
-        next_index = resolve_next_scene_index(trial.scene_index, trial.dp.value)
+        next_index = resolve_next_scene_index(
+            trial.scene_index,
+            portia_hp=trial.portia_hp.value,
+        )
         if next_index is None or next_index in trial.scene_dialogues:
             return trial
 

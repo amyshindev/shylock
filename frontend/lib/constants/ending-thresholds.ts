@@ -2,7 +2,6 @@
 import {
   DP_DIGNITY_ENDING_THRESHOLD,
   DP_FOUGHT_TO_END_THRESHOLD,
-  DP_RESCUED_ENDING_THRESHOLD,
   DP_SURVIVAL_ENDING_THRESHOLD,
 } from "@/lib/constants/game-balance";
 
@@ -20,13 +19,6 @@ export interface EndingMeta {
 }
 
 export function getEnding(dp: number): EndingMeta {
-  if (dp >= DP_RESCUED_ENDING_THRESHOLD) {
-    return {
-      title: "구원받은 자",
-      subtitle: "법정은 그를 꺾지 못했고, 그의 존엄은 온전했다",
-      emoji: "✨",
-    };
-  }
   if (dp >= DP_FOUGHT_TO_END_THRESHOLD) {
     return {
       title: "끝까지 싸운 자",
@@ -62,7 +54,11 @@ export function endingLabel(type: EndingType): string {
 export function getEndingMetaByType(type: EndingType): EndingMeta {
   switch (type) {
     case "rescued_ending":
-      return getEnding(DP_RESCUED_ENDING_THRESHOLD);
+      return {
+        title: "구원받은 자",
+        subtitle: "법정은 그를 꺾지 못했고, 그의 존엄은 온전했다",
+        emoji: "✨",
+      };
     case "fought_to_end_ending":
       return getEnding(DP_FOUGHT_TO_END_THRESHOLD);
     case "dignity_kept_ending":
