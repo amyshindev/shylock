@@ -18,6 +18,7 @@ class PortiaResponsePromptDto:
     previous_portia_reactions: tuple[str, ...] = ()
     tubal_used_scenes: tuple[str, ...] = ()
     presented_evidence: tuple[str, ...] = ()
+    folger_context: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

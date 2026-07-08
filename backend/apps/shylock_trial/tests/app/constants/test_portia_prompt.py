@@ -77,3 +77,20 @@ def test_reaction_prompt_provocation_stimulus() -> None:
     )
 
     assert "Stimulus type: provocation" in message
+
+
+def test_reaction_prompt_includes_folger_context() -> None:
+    folger_context = (
+        "## 원작 맥락 (Folger MV RAG)\n"
+        "[1.3] ANTONIO: spit upon my Jewish gaberdine"
+    )
+    message = build_user_message(
+        _reaction_prompt(
+            choice_id="coat_show_spit",
+            context="choice:coat_show_spit",
+            folger_context=folger_context,
+        )
+    )
+
+    assert "spit upon my Jewish gaberdine" in message
+    assert "원작 맥락" in message

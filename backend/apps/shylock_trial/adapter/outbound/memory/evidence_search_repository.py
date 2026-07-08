@@ -1,4 +1,4 @@
-from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
+from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto, ScoredPlayLine
 from shylock_trial.app.ports.output.evidence_search_port import EvidenceSearchPort
 from shylock_trial.domain.entities.evidence_entity import Evidence
 from shylock_trial.domain.entities.play_line_entity import PlayLine
@@ -73,6 +73,13 @@ class InMemoryEvidenceSearchRepository(EvidenceSearchPort):
         self,
         input_dto: EvidenceSearchInputDto,
     ) -> list[PlayLine]:
+        scored = await self.search_similar_play_lines_scored(input_dto)
+        return [item.play_line for item in scored]
+
+    async def search_similar_play_lines_scored(
+        self,
+        input_dto: EvidenceSearchInputDto,
+    ) -> list[ScoredPlayLine]:
         return []
 
     async def list_curated_evidence(self) -> list[Evidence]:

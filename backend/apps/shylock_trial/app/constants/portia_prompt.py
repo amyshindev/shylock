@@ -299,6 +299,12 @@ def _previous_reactions_instruction(previous: tuple[str, ...]) -> str:
     )
 
 
+def _folger_context_instruction(folger_context: str | None) -> str:
+    if not folger_context:
+        return ""
+    return f"\n{folger_context}\n"
+
+
 def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
     choice_id = prompt.choice_id
     if choice_id is None and prompt.context.startswith("choice:"):
@@ -322,7 +328,8 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
         f"Shylock's latest move ({choice_id or 'unknown'}): {choice_brief}\n"
         f"Stimulus type: {stimulus} — {stimulus_guide}\n\n"
         f"{_portia_hp_tone_instruction(prompt.portia_hp)}"
-        f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}\n"
+        f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}"
+        f"{_folger_context_instruction(prompt.folger_context)}\n"
         "Anti-pattern: do NOT conclude with '자비를 베풀라' or any mercy plea unless the stimulus "
         "is explicitly emotional AND portia_hp is high. Vary your closing move: procedure, reframe, "
         "authority, dry irony, or a pointed question."

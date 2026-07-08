@@ -1,6 +1,7 @@
 from shylock_trial.app.dtos.evidence_search_dto import (
     EvidenceSearchInputDto,
     EvidenceSearchResultDto,
+    EvidenceSearchScoredResultDto,
 )
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.output.evidence_search_port import EvidenceSearchPort
@@ -14,6 +15,15 @@ class EvidenceSearchInteractor(EvidenceSearchUseCase):
     async def search(self, input_dto: EvidenceSearchInputDto) -> EvidenceSearchResultDto:
         play_lines = await self._port.search_similar_play_lines(input_dto)
         return EvidenceSearchResultDto(play_lines=tuple(play_lines[: input_dto.limit]))
+
+    async def search_scored(
+        self,
+        input_dto: EvidenceSearchInputDto,
+    ) -> EvidenceSearchScoredResultDto:
+        scored_lines = await self._port.search_similar_play_lines_scored(input_dto)
+        return EvidenceSearchScoredResultDto(
+            scored_lines=tuple(scored_lines[: input_dto.limit]),
+        )
 
     async def list_curated_evidence(self) -> list[Evidence]:
         return await self._port.list_curated_evidence()

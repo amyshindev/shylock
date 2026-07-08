@@ -4,9 +4,13 @@ from shylock_trial.app.constants.ending_type_map import EndingType
 
 
 class FakePortiaUseCase:
+    def __init__(self) -> None:
+        self.last_prompt = None
+
     async def generate(self, prompt):
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
 
+        self.last_prompt = prompt
         return PortiaResponseResultDto(text="Portia speaks.", fallback_used=False)
 
     async def generate_scene_dialogue(self, prompt):
@@ -24,6 +28,11 @@ class FakeEvidenceUseCase:
         from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchResultDto
 
         return EvidenceSearchResultDto(play_lines=())
+
+    async def search_scored(self, input_dto):
+        from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchScoredResultDto
+
+        return EvidenceSearchScoredResultDto(scored_lines=())
 
     async def list_curated_evidence(self):
         return []
@@ -189,4 +198,38 @@ async def test_venice_paradox_skill_is_one_time() -> None:
 
     with pytest.raises(ValueError, match="skill_unavailable"):
         await interactor.use_venice_paradox_skill(started.trial_id)
+
+
+@pytest.mark.asyncio
+async def test_submit_choice_passes_folger_context_to_portia() -> None:
+    from shylock_trial.app.constants.scene_progression import CROWD_JEERS_SCENE_INDEX
+    from shylock_trial.app.dtos.evidence_search_dto import ScoredPlayLine
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+    from shylock_trial.domain.entities.play_line_entity import PlayLine
+
+    portia = FakePortiaUseCase()
+    gaberdine_line = PlayLine(
+        ftln=1003120,
+        speaker="ANTONIO",
+        text="You call me misbeliever, cut-throat dog, / And spit upon my Jewish gaberdine.",
+        act_scene="1.3",
+    )
+    evidence = FakeEvidenceUseCase(
+        scored_lines=(ScoredPlayLine(play_line=gaberdine_line, cosine_distance=0.18),),
+    )
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=evidence,
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="coat_show_spit"),
+    )
+
+    assert portia.last_prompt is not None
+    assert portia.last_prompt.folger_context is not None
+    assert "spit upon my Jewish gaberdine" in portia.last_prompt.folger_context
 

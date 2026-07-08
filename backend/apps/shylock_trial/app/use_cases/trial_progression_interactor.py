@@ -21,7 +21,7 @@ from shylock_trial.app.constants.scene_choices import (
     get_skill_effect,
 )
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_DP_BONUS
-from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
+from shylock_trial.app.utils.choice_folger_context import get_choice_folger_context
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import (
     SceneDialogueContent,
@@ -111,11 +111,18 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         if evidence_id:
             trial.presented_evidence = append_unique(trial.presented_evidence, evidence_id)
 
+        choice_label = self._choice_label_for(trial, input_dto.choice_id)
+        folger_context = await get_choice_folger_context(
+            input_dto.choice_id,
+            self._evidence,
+            choice_label=choice_label,
+        )
         portia_prompt = self._build_portia_prompt(
             trial,
             context=f"choice:{input_dto.choice_id}",
             request_type="reaction",
             choice_id=input_dto.choice_id,
+            folger_context=folger_context,
         )
         next_scene_index = resolve_next_scene_index(
             trial.scene_index,
@@ -312,6 +319,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         context: str,
         request_type: str,
         choice_id: str | None = None,
+        folger_context: str | None = None,
     ) -> PortiaResponsePromptDto:
         return PortiaResponsePromptDto(
             trial_id=trial.trial_id,
@@ -326,4 +334,11 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             previous_portia_reactions=tuple(trial.portia_reactions),
             tubal_used_scenes=trial.tubal_used_scenes,
             presented_evidence=trial.presented_evidence,
+            folger_context=folger_context,
         )
+
+    def _choice_label_for(self, trial: Trial, choice_id: str) -> str | None:
+        scene_dialogue = trial.scene_dialogues.get(trial.scene_index)
+        if scene_dialogue is None:
+            return None
+        return scene_dialogue.choice_texts.get(choice_id)
