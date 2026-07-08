@@ -15,7 +15,6 @@ import {
   MeterDisplay,
   PortiaMeterDisplay,
   CompactMeterStrip,
-  LEFT_HUD_INSET_MOBILE,
   LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 } from "./MeterDisplay";
@@ -46,14 +45,14 @@ function SceneBackground({
       style={{
         position: "absolute",
         inset: 0,
-        // Empty backgroundImage = intentionally blank screen (illustration TBD).
         ...(backgroundImage
           ? {
+              // Landscape compact: keep the mid-screen (faces) open; shade only bottom dock area.
               backgroundImage: compact
-                ? `linear-gradient(to top, rgba(8,3,10,0.45) 0%, rgba(8,3,10,0.08) 22%, transparent 42%), url(${backgroundImage})`
+                ? `linear-gradient(to top, rgba(8,3,10,0.55) 0%, rgba(8,3,10,0.12) 18%, transparent 34%), url(${backgroundImage})`
                 : `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${backgroundImage})`,
               backgroundSize: "cover",
-              backgroundPosition: "center top",
+              backgroundPosition: "center center",
             }
           : {}),
         backgroundColor: theme.background,
@@ -119,8 +118,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   const showBattleHud = scene.id !== "opening";
 
   const challengeOptions = scene.challenge?.options ?? [];
-  // Item-first scenes: every choice is tagged with an evidence item, so we ask
-  // the player to pick an item, then show only that item's choices.
   const isItemFirst =
     challengeOptions.length > 0 && challengeOptions.every((opt) => opt.evidence);
   const itemChoiceIds = isItemFirst
@@ -161,7 +158,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     }
   };
 
-  const utilityLeft = isMobile ? LEFT_HUD_INSET_MOBILE : 16;
   const skillPanelDisabled =
     loadingReply ||
     loadingScene ||
@@ -173,6 +169,50 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isTubalActive ||
     showPressPresent ||
     !!portiaReply;
+
+  const dialogueProps = {
+    speaker: isLauncelotActive ? speaker : isTubalActive ? "PORTIA" : speaker,
+    speakerLabel: isLauncelotActive
+      ? speakerLabel
+      : isTubalActive
+        ? "투발"
+        : portiaReply || loadingReply
+          ? "포샤"
+          : speakerLabel,
+    showSpeakerTab,
+    text: loadingScene
+      ? ""
+      : loadingLauncelot
+        ? "론슬롯이 법정으로 달려오고 있다…"
+        : loadingVeniceSkill
+          ? "샤일록이 법정에 일어선다…"
+          : dialogueText,
+    replyMode: (isTubalActive
+      ? "tubal"
+      : portiaReply || loadingReply
+        ? "portia"
+        : undefined) as "tubal" | "portia" | undefined,
+    loadingReply: isTubalSearching || loadingReply || loadingLauncelot || loadingVeniceSkill,
+    disabled:
+      isTypingBlocked ||
+      (showChallenge && !isLauncelotActive && !isVeniceSkillActive) ||
+      loadingScene ||
+      (showPressPresent && !shylockPressReply),
+    showAdvanceArrow:
+      (!showChallenge || isLauncelotActive || isVeniceSkillActive) &&
+      !portiaReply &&
+      !isTubalActive &&
+      !loadingReply &&
+      !loadingScene &&
+      !loadingLauncelot &&
+      !loadingVeniceSkill &&
+      (isLauncelotActive ||
+        isVeniceSkillActive ||
+        !showPressPresent ||
+        !!shylockPressReply),
+    onAdvance: advance,
+    onPortiaComplete: handlePortiaComplete,
+  };
 
   const challengePanel = showChallenge &&
     scene.challenge &&
@@ -186,7 +226,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           ? {
               flexShrink: 0,
               width: "100%",
-              maxHeight: "28dvh",
+              maxHeight: "34dvh",
               overflowY: "auto",
               zIndex: 12,
               WebkitOverflowScrolling: "touch",
@@ -226,6 +266,20 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     </div>
   ) : null;
 
+  const pressPresent =
+    showPressPresent && scene.pressPresent && !portiaReply && !shylockPressReply ? (
+      <PressPresentPanel
+        config={scene.pressPresent}
+        testimonyIndex={testimonyIndex}
+        pressedIds={pressedTestimonyIds}
+        loadingPresent={loadingPresent}
+        onPress={handlePressTestimony}
+        onPresent={() => void handlePresentEvidence()}
+        onContinue={() => void goNextScene()}
+        canContinue={pressPresentComplete}
+      />
+    ) : null;
+
   return (
     <div
       style={{
@@ -240,6 +294,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         fontFamily: gameFontFamily,
         paddingTop: isMobile ? "env(safe-area-inset-top)" : undefined,
         paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : undefined,
+        paddingLeft: isMobile ? "env(safe-area-inset-left)" : undefined,
+        paddingRight: isMobile ? "env(safe-area-inset-right)" : undefined,
       }}
     >
       <SceneBackground backgroundImage={backgroundImage} compact={isMobile} />
@@ -256,8 +312,17 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         {isMobile ? (
           <>
+            {/* Landscape HUD: meters + side rails stay in a thin top band so faces stay visible. */}
             {showBattleHud && (
-              <div style={{ flexShrink: 0, padding: "4px 8px 0" }}>
+              <div
+                style={{
+                  flexShrink: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  padding: "4px 8px 0",
+                }}
+              >
                 <CompactMeterStrip
                   dp={dp}
                   hp={hp}
@@ -265,226 +330,106 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                   dpGainFlash={dpGainFlash}
                   hpGainFlash={hpGainFlash}
                 />
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    justifyContent: "space-between",
+                    gap: 8,
+                    minHeight: 0,
+                  }}
+                >
+                  <div style={{ minWidth: 0, maxWidth: "48%" }}>
+                    {showEvidenceBar && (
+                      <EvidenceList
+                        curatedIds={scene.availableEvidence}
+                        tubalRecords={tubalCourtRecords}
+                        onSelectCurated={inspectCuratedEvidence}
+                        onSelectTubal={inspectTubalEvidence}
+                        layout="horizontal"
+                      />
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0, maxWidth: "52%", marginLeft: "auto" }}>
+                    <SkillPanel
+                      dp={dp}
+                      sceneIdx={sceneIdx}
+                      veniceParadoxUsed={veniceParadoxUsed}
+                      disabled={skillPanelDisabled}
+                      onUseSkill={useSkill}
+                      horizontal
+                    />
+                  </div>
+                </div>
               </div>
             )}
 
+            {/* Open midframe for courtroom art */}
             <div style={{ flex: 1, minHeight: 0 }} />
-
-            <div
-              style={{
-                flexShrink: 0,
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                padding: "0 8px",
-              }}
-            >
-              {showBattleHud && showEvidenceBar && (
-                <EvidenceList
-                  curatedIds={scene.availableEvidence}
-                  tubalRecords={tubalCourtRecords}
-                  onSelectCurated={inspectCuratedEvidence}
-                  onSelectTubal={inspectTubalEvidence}
-                  layout="horizontal"
-                />
-              )}
-              {showBattleHud && (
-                <SkillPanel
-                  dp={dp}
-                  sceneIdx={sceneIdx}
-                  veniceParadoxUsed={veniceParadoxUsed}
-                  disabled={skillPanelDisabled}
-                  onUseSkill={useSkill}
-                  horizontal
-                />
-              )}
-            </div>
 
             <div style={textBoxDockStyle(true)}>
               {challengePanel}
               <div style={textBoxDockInnerStyle()}>
-                <DialogueBox
-                  speaker={
-                    isLauncelotActive
-                      ? speaker
-                      : isTubalActive
-                        ? "PORTIA"
-                        : speaker
-                  }
-                  speakerLabel={
-                    isLauncelotActive
-                      ? speakerLabel
-                      : isTubalActive
-                        ? "투발"
-                        : portiaReply || loadingReply
-                          ? "포샤"
-                          : speakerLabel
-                  }
-                  showSpeakerTab={showSpeakerTab}
-                  text={
-                    loadingScene
-                      ? ""
-                      : loadingLauncelot
-                        ? "론슬롯이 법정으로 달려오고 있다…"
-                        : loadingVeniceSkill
-                          ? "샤일록이 법정에 일어선다…"
-                          : dialogueText
-                  }
-                  replyMode={
-                    isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
-                  }
-                  loadingReply={isTubalSearching || loadingReply || loadingLauncelot || loadingVeniceSkill}
-                  disabled={
-                    isTypingBlocked ||
-                    (showChallenge && !isLauncelotActive && !isVeniceSkillActive) ||
-                    loadingScene ||
-                    (showPressPresent && !shylockPressReply)
-                  }
-                  showAdvanceArrow={
-                    ((!showChallenge || isLauncelotActive || isVeniceSkillActive) &&
-                      !portiaReply &&
-                      !isTubalActive &&
-                      !loadingReply &&
-                      !loadingScene &&
-                      !loadingLauncelot &&
-                      !loadingVeniceSkill &&
-                      (isLauncelotActive ||
-                        isVeniceSkillActive ||
-                        (!showPressPresent || !!shylockPressReply)))
-                  }
-                  onAdvance={advance}
-                  onPortiaComplete={handlePortiaComplete}
-                />
-
-                {showPressPresent && scene.pressPresent && !portiaReply && !shylockPressReply && (
-                  <PressPresentPanel
-                    config={scene.pressPresent}
-                    testimonyIndex={testimonyIndex}
-                    pressedIds={pressedTestimonyIds}
-                    loadingPresent={loadingPresent}
-                    onPress={handlePressTestimony}
-                    onPresent={() => void handlePresentEvidence()}
-                    onContinue={() => void goNextScene()}
-                    canContinue={pressPresentComplete}
-                  />
-                )}
+                <DialogueBox {...dialogueProps} />
+                {pressPresent}
               </div>
             </div>
           </>
         ) : (
           <>
-        <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-          {showBattleHud && (
-            <>
-              <MeterDisplay dp={dp} hp={hp} dpGainFlash={dpGainFlash} hpGainFlash={hpGainFlash} />
-              <PortiaMeterDisplay portiaHp={portiaHp} />
-            </>
-          )}
-          {showBattleHud && (
-          <div
-            style={{
-              position: "absolute",
-              left: utilityLeft,
-              top: LEFT_HUD_TOP + LEFT_METERS_STACK_HEIGHT + 8,
-              zIndex: 11,
-              display: "flex",
-              flexDirection: "column",
-              gap: 8,
-              alignItems: "flex-start",
-            }}
-          >
-            {showEvidenceBar && (
-              <EvidenceList
-                curatedIds={scene.availableEvidence}
-                tubalRecords={tubalCourtRecords}
-                onSelectCurated={inspectCuratedEvidence}
-                onSelectTubal={inspectTubalEvidence}
-              />
-            )}
-            <SkillPanel
-              dp={dp}
-              sceneIdx={sceneIdx}
-              veniceParadoxUsed={veniceParadoxUsed}
-              disabled={skillPanelDisabled}
-              onUseSkill={useSkill}
-              horizontal={false}
-            />
-          </div>
-          )}
-        </div>
+            <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
+              {showBattleHud && (
+                <>
+                  <MeterDisplay
+                    dp={dp}
+                    hp={hp}
+                    dpGainFlash={dpGainFlash}
+                    hpGainFlash={hpGainFlash}
+                  />
+                  <PortiaMeterDisplay portiaHp={portiaHp} />
+                </>
+              )}
+              {showBattleHud && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 16,
+                    top: LEFT_HUD_TOP + LEFT_METERS_STACK_HEIGHT + 8,
+                    zIndex: 11,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                    alignItems: "flex-start",
+                  }}
+                >
+                  {showEvidenceBar && (
+                    <EvidenceList
+                      curatedIds={scene.availableEvidence}
+                      tubalRecords={tubalCourtRecords}
+                      onSelectCurated={inspectCuratedEvidence}
+                      onSelectTubal={inspectTubalEvidence}
+                    />
+                  )}
+                  <SkillPanel
+                    dp={dp}
+                    sceneIdx={sceneIdx}
+                    veniceParadoxUsed={veniceParadoxUsed}
+                    disabled={skillPanelDisabled}
+                    onUseSkill={useSkill}
+                    horizontal={false}
+                  />
+                </div>
+              )}
+            </div>
 
-        {challengePanel}
+            {challengePanel}
 
-        <div style={textBoxDockStyle(false)}>
-          <div style={textBoxDockInnerStyle()}>
-            <DialogueBox
-              speaker={
-                isLauncelotActive
-                  ? speaker
-                  : isTubalActive
-                    ? "PORTIA"
-                    : speaker
-              }
-              speakerLabel={
-                isLauncelotActive
-                  ? speakerLabel
-                  : isTubalActive
-                    ? "투발"
-                    : portiaReply || loadingReply
-                      ? "포샤"
-                      : speakerLabel
-              }
-              showSpeakerTab={showSpeakerTab}
-              text={
-                loadingScene
-                  ? ""
-                  : loadingLauncelot
-                    ? "론슬롯이 법정으로 달려오고 있다…"
-                    : loadingVeniceSkill
-                      ? "샤일록이 법정에 일어선다…"
-                      : dialogueText
-              }
-              replyMode={
-                isTubalActive ? "tubal" : portiaReply || loadingReply ? "portia" : undefined
-              }
-              loadingReply={isTubalSearching || loadingReply || loadingLauncelot || loadingVeniceSkill}
-              disabled={
-                isTypingBlocked ||
-                (showChallenge && !isLauncelotActive && !isVeniceSkillActive) ||
-                loadingScene ||
-                (showPressPresent && !shylockPressReply)
-              }
-              showAdvanceArrow={
-                ((!showChallenge || isLauncelotActive || isVeniceSkillActive) &&
-                  !portiaReply &&
-                  !isTubalActive &&
-                  !loadingReply &&
-                  !loadingScene &&
-                  !loadingLauncelot &&
-                  !loadingVeniceSkill &&
-                  (isLauncelotActive ||
-                    isVeniceSkillActive ||
-                    (!showPressPresent || !!shylockPressReply)))
-              }
-              onAdvance={advance}
-              onPortiaComplete={handlePortiaComplete}
-            />
-
-            {showPressPresent && scene.pressPresent && !portiaReply && !shylockPressReply && (
-              <PressPresentPanel
-                config={scene.pressPresent}
-                testimonyIndex={testimonyIndex}
-                pressedIds={pressedTestimonyIds}
-                loadingPresent={loadingPresent}
-                onPress={handlePressTestimony}
-                onPresent={() => void handlePresentEvidence()}
-                onContinue={() => void goNextScene()}
-                canContinue={pressPresentComplete}
-              />
-            )}
-
-          </div>
-        </div>
+            <div style={textBoxDockStyle(false)}>
+              <div style={textBoxDockInnerStyle()}>
+                <DialogueBox {...dialogueProps} />
+                {pressPresent}
+              </div>
+            </div>
           </>
         )}
       </div>

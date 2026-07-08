@@ -13,10 +13,11 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
-@media (max-width: 768px) {
+@media (hover: none) and (pointer: coarse),
+  (max-width: 900px),
+  (orientation: landscape) and (max-height: 520px) {
   html,
   body {
-    /* Prefer visual viewport height on mobile browsers with dynamic toolbars. */
     min-height: 100dvh;
   }
 }
