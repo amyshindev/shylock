@@ -64,6 +64,14 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     act: "Act III, Scene 1",
   },
   {
+    id: "leah_ring",
+    name: "리아의 반지",
+    icon: "",
+    iconFallback: "💍",
+    desc: "죽은 아내 리아가 총각 시절의 샤일록에게 준 반지. 제시카가 훔쳐 달아나, 원숭이 한 마리와 바꿔버렸다.",
+    act: "Act III, Scene 1",
+  },
+  {
     id: "blood",
     name: "피 한 방울 조항",
     icon: "/assets/evidence-blood.png",

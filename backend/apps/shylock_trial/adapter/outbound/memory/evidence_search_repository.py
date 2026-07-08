@@ -38,6 +38,17 @@ CURATED_EVIDENCE: list[Evidence] = [
         source_ftln_range=(400, 420),
     ),
     Evidence(
+        evidence_id="leah_ring",
+        quote=(
+            "It was my turquoise! I had it of Leah when I was a bachelor. "
+            "I would not have given it for a wilderness of monkeys."
+        ),
+        act_scene="3.1",
+        icon="leah_ring",
+        description="죽은 아내 리아가 남긴 반지. 제시카가 훔쳐 달아나 원숭이 한 마리와 바꿔버렸다.",
+        source_ftln_range=(430, 450),
+    ),
+    Evidence(
         evidence_id="blood",
         quote="Shed thou no blood, nor cut thou less nor more but just a pound of flesh.",
         act_scene="4.1",

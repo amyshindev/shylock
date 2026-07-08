@@ -41,6 +41,22 @@ CHOICE_RAG_QUERY_OVERRIDES: dict[str, str] = {
         "Hath not a Jew eyes? If you prick us do we not bleed? Shylock's humanity speech"
     ),
     "defend_jessica": "Shylock's daughter Jessica eloped and converted; family wound",
+    "letter_irrelevant": (
+        "Shylock separates his daughter Jessica's elopement from the bond; a private "
+        "family matter has no bearing on the contract before the court"
+    ),
+    "ring_leah_gift": (
+        "It was my turquoise, I had it of Leah when I was a bachelor; I would not have "
+        "given it for a wilderness of monkeys — Shylock grieves his dead wife Leah's ring "
+        "that Jessica stole and traded for a monkey"
+    ),
+    "ring_loss_dignity": (
+        "Shylock's grief over Leah's stolen turquoise ring; Jessica took it when she fled; "
+        "his loss is dignity, not a weakness to be used against him"
+    ),
+    "ring_clutch_silent": (
+        "Shylock silently mourns the turquoise ring of his dead wife Leah, stolen by Jessica"
+    ),
     "scales_weigh": "Shylock weighs a pound of flesh on scales in the trial",
     "scales_humour": (
         "Shylock's humour speech: some cannot bear a bagpipe; I cannot master hatred"
