@@ -1,74 +1,88 @@
+from shylock_trial.app.constants.curated_evidence import CURATED_EVIDENCE
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto, ScoredPlayLine
 from shylock_trial.app.ports.output.evidence_search_port import EvidenceSearchPort
 from shylock_trial.domain.entities.evidence_entity import Evidence
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
-# Dev fallback — aligned with shylock-trial.jsx EVIDENCE
-CURATED_EVIDENCE: list[Evidence] = [
-    Evidence(
-        evidence_id="gaberdine",
-        quote="You call me misbeliever, cut-throat dog, / And spit upon my Jewish gaberdine.",
-        act_scene="1.3",
-        icon="gaberdine",
-        description="안토니오가 '개'라 부르며 침을 뱉었던 외투. 아직도 얼룩이 남아 있다.",
-        source_ftln_range=(100, 120),
-    ),
-    Evidence(
-        evidence_id="bond",
-        quote="If you repay me not on such a day... let the forfeit be nominated for an equal pound of your fair flesh.",
-        act_scene="1.3",
-        icon="bond",
-        description="안토니오와 맺은 계약. 법적으로 완전히 유효하다.",
-        source_ftln_range=(200, 220),
-    ),
-    Evidence(
-        evidence_id="hath_not",
-        quote="Hath not a Jew eyes? If you prick us, do we not bleed? If you wrong us, shall we not revenge?",
-        act_scene="3.1",
-        icon="hath_not",
-        description="하나의 인간으로서 샤일록이 한 말.",
-        source_ftln_range=(300, 330),
-    ),
-    Evidence(
-        evidence_id="jessica",
-        quote="I would my daughter were dead at my foot, and the jewels in her ear.",
-        act_scene="3.1",
-        icon="jessica",
-        description="딸이 도망치며 남긴 흔적.",
-        source_ftln_range=(400, 420),
-    ),
-    Evidence(
-        evidence_id="leah_ring",
-        quote=(
-            "It was my turquoise! I had it of Leah when I was a bachelor. "
-            "I would not have given it for a wilderness of monkeys."
-        ),
-        act_scene="3.1",
-        icon="leah_ring",
-        description="죽은 아내 리아가 남긴 반지. 제시카가 훔쳐 달아나 원숭이 한 마리와 바꿔버렸다.",
-        source_ftln_range=(430, 450),
-    ),
-    Evidence(
-        evidence_id="blood",
-        quote="Shed thou no blood, nor cut thou less nor more but just a pound of flesh.",
-        act_scene="4.1",
-        icon="blood",
-        description="포샤의 역전 논리. 살은 잘라도 피는 흘리면 안 된다.",
-        source_ftln_range=(1900, 1920),
-    ),
-    Evidence(
-        evidence_id="alien_law",
-        quote=(
-            "It is enacted in the laws of Venice, if it be proved against an "
-            "alien... Shall seize one half his goods; the other half comes to the "
-            "privy coffer of the state."
-        ),
-        act_scene="4.1",
-        icon="alien_law",
-        description="베네치아 시민이 아닌 자가 시민의 목숨을 노리면 적용되는 법. 포샤의 두 번째 반전.",
-        source_ftln_range=(2000, 2040),
-    ),
-]
+_STOPWORDS = frozenset(
+    {
+        "a",
+        "an",
+        "the",
+        "and",
+        "or",
+        "to",
+        "of",
+        "in",
+        "on",
+        "for",
+        "is",
+        "it",
+        "my",
+        "me",
+        "you",
+        "your",
+        "his",
+        "her",
+        "that",
+        "this",
+        "with",
+        "not",
+        "be",
+        "as",
+        "at",
+        "by",
+        "if",
+        "we",
+        "us",
+        "do",
+        "no",
+        "—",
+    }
+)
+
+
+def _tokenize(text: str) -> set[str]:
+    tokens: set[str] = set()
+    for raw in text.lower().replace("/", " ").replace(",", " ").split():
+        token = "".join(ch for ch in raw if ch.isalnum())
+        if len(token) >= 3 and token not in _STOPWORDS:
+            tokens.add(token)
+    return tokens
+
+
+def _evidence_to_play_line(evidence: Evidence) -> PlayLine:
+    return PlayLine(
+        ftln=evidence.source_ftln_range[0] or 1,
+        speaker="(curated)",
+        text=evidence.quote,
+        act_scene=evidence.act_scene,
+    )
+
+
+def rank_curated_play_lines(query: str, *, limit: int) -> list[ScoredPlayLine]:
+    query_tokens = _tokenize(query)
+    if not query_tokens:
+        return []
+
+    ranked: list[ScoredPlayLine] = []
+    for evidence in CURATED_EVIDENCE:
+        if not evidence.quote.strip():
+            continue
+        quote_tokens = _tokenize(evidence.quote)
+        overlap = query_tokens & quote_tokens
+        if not overlap:
+            continue
+        distance = max(0.05, 0.5 - (0.08 * len(overlap)))
+        ranked.append(
+            ScoredPlayLine(
+                play_line=_evidence_to_play_line(evidence),
+                cosine_distance=distance,
+            )
+        )
+
+    ranked.sort(key=lambda item: item.cosine_distance)
+    return ranked[:limit]
 
 
 class InMemoryEvidenceSearchRepository(EvidenceSearchPort):
@@ -91,10 +105,23 @@ class InMemoryEvidenceSearchRepository(EvidenceSearchPort):
         self,
         input_dto: EvidenceSearchInputDto,
     ) -> list[ScoredPlayLine]:
-        return []
+        if input_dto.evidence_id:
+            evidence = next(
+                (item for item in CURATED_EVIDENCE if item.evidence_id == input_dto.evidence_id),
+                None,
+            )
+            if evidence is not None and evidence.quote.strip():
+                return [
+                    ScoredPlayLine(
+                        play_line=_evidence_to_play_line(evidence),
+                        cosine_distance=0.12,
+                    )
+                ]
+
+        return rank_curated_play_lines(input_dto.query, limit=input_dto.limit)
 
     async def list_curated_evidence(self) -> list[Evidence]:
         return list(CURATED_EVIDENCE)
 
     async def find_evidence_by_id(self, evidence_id: str) -> Evidence | None:
-        return next((e for e in CURATED_EVIDENCE if e.evidence_id == evidence_id), None)
+        return next((item for item in CURATED_EVIDENCE if item.evidence_id == evidence_id), None)

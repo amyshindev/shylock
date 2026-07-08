@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from shylock_trial.app.constants.curated_evidence import (
+    get_curated_evidence_by_id,
+    get_curated_evidence_for_choice,
+)
 from shylock_trial.app.constants.portia_prompt import CHOICE_BRIEFS
 from shylock_trial.app.constants.scene_choices import get_choice_evidence_id
 from shylock_trial.app.dtos.evidence_search_dto import (
@@ -9,6 +13,7 @@ from shylock_trial.app.dtos.evidence_search_dto import (
     ScoredPlayLine,
 )
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
+from shylock_trial.domain.entities.evidence_entity import Evidence
 
 # pgvector cosine distance: 0 = identical. Above this → treat as weak / no match.
 MAX_RELEVANT_COSINE_DISTANCE = 0.42
@@ -95,8 +100,13 @@ async def get_choice_folger_context(
         return context
 
     query = await _build_rag_query(choice_id, evidence, choice_label)
+    evidence_id = get_choice_evidence_id(choice_id)
     result = await evidence.search_scored(
-        EvidenceSearchInputDto(query=query, limit=RAG_RESULT_LIMIT),
+        EvidenceSearchInputDto(
+            query=query,
+            evidence_id=evidence_id,
+            limit=RAG_RESULT_LIMIT,
+        ),
     )
     relevant = [
         scored
@@ -104,10 +114,14 @@ async def get_choice_folger_context(
         if scored.cosine_distance <= MAX_RELEVANT_COSINE_DISTANCE
     ]
 
-    if not relevant:
-        context = _weak_match_context(choice_id, choice_label)
-    else:
+    if relevant:
         context = _format_folger_passages(choice_id, relevant)
+    else:
+        curated = await _resolve_curated_evidence(evidence, choice_id, evidence_id)
+        if curated is not None and curated.quote.strip():
+            context = _format_curated_evidence(choice_id, curated)
+        else:
+            context = _weak_match_context(choice_id, choice_label)
 
     _choice_context_cache[choice_id] = context
     return context
@@ -130,6 +144,46 @@ async def _build_rag_query(
             parts.append(curated.quote)
 
     return " — ".join(part for part in parts if part)
+
+
+async def _resolve_curated_evidence(
+    evidence: EvidenceSearchUseCase,
+    choice_id: str,
+    evidence_id: str | None,
+) -> Evidence | None:
+    if evidence_id:
+        found = await evidence.get_evidence(evidence_id)
+        if found is not None:
+            return found
+        return get_curated_evidence_by_id(evidence_id)
+    return get_curated_evidence_for_choice(choice_id)
+
+
+def _format_curated_evidence(choice_id: str, curated: Evidence) -> str:
+    gloss = CHOICE_KOREAN_GLOSS.get(choice_id, curated.description)
+    lines = [
+        "## 원작 맥락 (curated evidence — ground truth for Shylock's move)",
+        "포샤는 아래 원작/게임 근거가 실제로 무엇을 의미하는지 정확히 이해한 뒤 반응해야 합니다.",
+        f"선택지 한국어 맥락: {gloss}",
+        f"1. [{curated.act_scene}] (curated evidence): \"{curated.quote}\"",
+    ]
+    if curated.description and curated.description not in gloss:
+        lines.append(f"   Korean note: {curated.description}")
+    lines.extend(_folger_understanding_principles())
+    return "\n".join(lines)
+
+
+def _folger_understanding_principles() -> list[str]:
+    return [
+        "",
+        "원작 이해 원칙:",
+        "- 제공된 원작 맥락이 실제로 의미하는 바(누가 누구에게 무엇을 했는지)를 정확히 파악한 뒤 반응하세요.",
+        "- 반박의 의미를 곡해하거나 엉뚱하게 받아쳐서는 안 됩니다 "
+        "(예: 외투의 침 자국을 단순히 '더러움' 정도로만 이해하면 안 됨).",
+        "- 다만 그 사실을 인정하면서 법정·계약·절차로 재해석하거나 무력화하려는 시도는 허용됩니다 "
+        "(예: '그렇다 해도 법정의 판단은 다르다').",
+        "- 아예 못 알아듣는 것과, 알아듣고 교묘하게 받아치는 것은 다릅니다.",
+    ]
 
 
 def _historical_only_context(choice_id: str, choice_label: str | None) -> str:
@@ -179,16 +233,5 @@ def _format_folger_passages(choice_id: str, passages: list[ScoredPlayLine]) -> s
             f"(distance={scored.cosine_distance:.3f})"
         )
 
-    lines.extend(
-        [
-            "",
-            "원작 이해 원칙:",
-            "- 제공된 원작 맥락이 실제로 의미하는 바(누가 누구에게 무엇을 했는지)를 정확히 파악한 뒤 반응하세요.",
-            "- 반박의 의미를 곡해하거나 엉뚱하게 받아쳐서는 안 됩니다 "
-            "(예: 외투의 침 자국을 단순히 '더러움' 정도로만 이해하면 안 됨).",
-            "- 다만 그 사실을 인정하면서 법정·계약·절차로 재해석하거나 무력화하려는 시도는 허용됩니다 "
-            "(예: '그렇다 해도 법정의 판단은 다르다').",
-            "- 아예 못 알아듣는 것과, 알아듣고 교묘하게 받아치는 것은 다릅니다.",
-        ]
-    )
+    lines.extend(_folger_understanding_principles())
     return "\n".join(lines)

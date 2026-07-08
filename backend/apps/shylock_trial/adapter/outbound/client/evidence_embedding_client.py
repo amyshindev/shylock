@@ -25,5 +25,13 @@ class EvidenceEmbeddingClient:
         return [list(vec) for vec in response.embeddings.float_]
 
     async def embed_query(self, query: str) -> list[float]:
-        vectors = await self.embed_texts([query])
-        return vectors[0] if vectors else []
+        if not query:
+            return []
+        response = await self._client.embed(
+            texts=[query],
+            model=EMBED_MODEL,
+            input_type="search_query",
+            embedding_types=["float"],
+        )
+        vectors = response.embeddings.float_
+        return list(vectors[0]) if vectors else []

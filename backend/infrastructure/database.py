@@ -51,3 +51,17 @@ async def get_optional_db_session() -> AsyncGenerator[AsyncSession | None, None]
     session_factory = get_session_factory()
     async with session_factory() as session:
         yield session
+
+
+def has_database_url() -> bool:
+    return bool(get_settings().database_url.strip())
+
+
+async def get_corpus_db_session() -> AsyncGenerator[AsyncSession | None, None]:
+    """DB session for Folger corpus / evidence search — independent of USE_MEMORY_STORE."""
+    if not has_database_url():
+        yield None
+        return
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        yield session

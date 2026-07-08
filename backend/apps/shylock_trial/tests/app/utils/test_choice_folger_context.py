@@ -121,3 +121,15 @@ def test_weak_match_does_not_force_unrelated_passage() -> None:
 
     assert "직접 대응하는 원작 구절을 찾지 못했습니다" in context
     assert "spit upon my Jewish gaberdine" not in context
+
+
+def test_coat_choice_falls_back_to_curated_when_search_empty() -> None:
+    evidence = FakeEvidenceUseCase(
+        scored_lines=(),
+        evidence_by_id={"gaberdine": GABERDINE_EVIDENCE},
+    )
+
+    context = asyncio.run(get_choice_folger_context("coat_show_spit", evidence))
+
+    assert "spit upon my Jewish gaberdine" in context
+    assert "curated evidence" in context
