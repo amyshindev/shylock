@@ -94,7 +94,7 @@ export function SkillPanel({
   const skillPanelWidth = horizontal
     ? undefined
     : isMobile
-      ? LEFT_METER_COLUMN_WIDTH_MOBILE
+      ? "100%"
       : LEFT_METER_COLUMN_WIDTH / 2;
   const skillCtx = { dp, sceneIdx, veniceParadoxUsed };
 
@@ -135,7 +135,7 @@ export function SkillPanel({
           const skillReady = canUseSkill(skill.id, skillCtx);
           const canUse = !disabled && skillReady;
           const lockedOut = !skillReady;
-          const label = horizontal ? MOBILE_SKILL_LABEL[skill.id] : skill.label;
+  const label = isMobile ? MOBILE_SKILL_LABEL[skill.id] : skill.label;
 
           return (
             <button

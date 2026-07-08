@@ -134,7 +134,103 @@ export {
   LEFT_METERS_STACK_HEIGHT,
 };
 
-/** Mobile top strip: three mini meters in one row, minimal vertical footprint. */
+/** Landscape left rail: Shylock DP + HP only (Portia sits separately on the top-right). */
+export function CompactShylockMeters({
+  dp,
+  hp,
+  dpGainFlash,
+  hpGainFlash,
+}: ShylockMeterDisplayProps) {
+  return (
+    <div
+      style={{
+        ...hudPanelStyle("5px 8px", true),
+        display: "flex",
+        flexDirection: "column",
+        gap: 4,
+        flexShrink: 0,
+        pointerEvents: "none",
+        position: "relative",
+        width: "100%",
+      }}
+    >
+      {dpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: -2,
+            right: 6,
+            color: "#88ccff",
+            fontSize: 10,
+            fontWeight: 700,
+            textShadow: "0 0 8px rgba(102, 187, 255, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{dpGainFlash}
+        </div>
+      )}
+      <MeterBar
+        label="DP"
+        value={dp}
+        max={DP_MAX}
+        color={dpColor(dp)}
+        labelColor="#b8dcff"
+        compact
+      />
+      <MeterBar
+        label="HP"
+        value={hp}
+        max={HP_MAX}
+        color={hpColor(hp)}
+        labelColor="#ffb0a0"
+        compact
+      />
+      {hpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: 22,
+            right: 6,
+            color: "#ff9980",
+            fontSize: 10,
+            fontWeight: 700,
+            textShadow: "0 0 8px rgba(255, 136, 102, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{hpGainFlash}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Landscape top-right: Portia HP alone. */
+export function CompactPortiaMeter({ portiaHp }: PortiaMeterDisplayProps) {
+  return (
+    <div
+      style={{
+        ...hudPanelStyle("5px 8px", true),
+        flexShrink: 0,
+        pointerEvents: "none",
+        minWidth: 100,
+        maxWidth: 140,
+      }}
+    >
+      <MeterBar
+        label="포샤"
+        value={portiaHp}
+        max={PORTIA_HP_MAX}
+        color={portiaHpColor(portiaHp)}
+        labelColor="#ffb8c0"
+        compact
+      />
+    </div>
+  );
+}
+
+/** @deprecated Prefer CompactShylockMeters + CompactPortiaMeter for landscape. */
 export function CompactMeterStrip({
   dp,
   hp,

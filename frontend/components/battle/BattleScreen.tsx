@@ -14,7 +14,8 @@ import { ItemChoiceList } from "./ItemChoiceList";
 import {
   MeterDisplay,
   PortiaMeterDisplay,
-  CompactMeterStrip,
+  CompactShylockMeters,
+  CompactPortiaMeter,
   LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 } from "./MeterDisplay";
@@ -214,22 +215,25 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     onPortiaComplete: handlePortiaComplete,
   };
 
-  const challengePanel = showChallenge &&
-    scene.challenge &&
-    !portiaReply &&
-    !isTubalActive &&
-    !isLauncelotActive &&
-    !isVeniceSkillActive ? (
+  const challengeActive = Boolean(
+    showChallenge &&
+      scene.challenge &&
+      !portiaReply &&
+      !isTubalActive &&
+      !isLauncelotActive &&
+      !isVeniceSkillActive,
+  );
+  // Mobile landscape: choices replace the dialogue dock to free vertical space.
+  const hideDialogueForChoices = isMobile && challengeActive;
+
+  const challengePanel = challengeActive ? (
     <div
       style={
         isMobile
           ? {
               flexShrink: 0,
               width: "100%",
-              maxHeight: "34dvh",
-              overflowY: "auto",
               zIndex: 12,
-              WebkitOverflowScrolling: "touch",
             }
           : {
               position: "absolute",
@@ -245,14 +249,14 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         {showItemPhase ? (
           <ItemChoiceList
             itemIds={itemChoiceIds}
-            prompt={scene.challenge.text}
+            prompt={scene.challenge!.text}
             onSelect={selectChoiceItem}
             disabled={loadingReply || loadingScene || isLauncelotActive}
           />
         ) : (
           <ChoiceList
-            header={scene.challenge.header}
-            prompt={scene.challenge.text}
+            header={scene.challenge!.header}
+            prompt={scene.challenge!.text}
             options={visibleChoiceOptions}
             tubalEnhancedChoices={tubalEnhancedChoices}
             tubalCourtRecords={tubalCourtRecords}
@@ -312,56 +316,61 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         {isMobile ? (
           <>
-            {/* Landscape HUD: meters + side rails stay in a thin top band so faces stay visible. */}
+            {/* Landscape HUD: Portia top-right; everything else stacked top-left. */}
             {showBattleHud && (
-              <div
-                style={{
-                  flexShrink: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  padding: "4px 8px 0",
-                }}
-              >
-                <CompactMeterStrip
-                  dp={dp}
-                  hp={hp}
-                  portiaHp={portiaHp}
-                  dpGainFlash={dpGainFlash}
-                  hpGainFlash={hpGainFlash}
-                />
+              <>
                 <div
                   style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    minHeight: 0,
+                    position: "absolute",
+                    top: 4,
+                    right: 8,
+                    zIndex: 12,
                   }}
                 >
-                  <div style={{ minWidth: 0, maxWidth: "48%" }}>
-                    {showEvidenceBar && (
-                      <EvidenceList
-                        curatedIds={scene.availableEvidence}
-                        tubalRecords={tubalCourtRecords}
-                        onSelectCurated={inspectCuratedEvidence}
-                        onSelectTubal={inspectTubalEvidence}
-                        layout="horizontal"
-                      />
-                    )}
-                  </div>
-                  <div style={{ minWidth: 0, maxWidth: "52%", marginLeft: "auto" }}>
-                    <SkillPanel
-                      dp={dp}
-                      sceneIdx={sceneIdx}
-                      veniceParadoxUsed={veniceParadoxUsed}
-                      disabled={skillPanelDisabled}
-                      onUseSkill={useSkill}
-                      horizontal
-                    />
-                  </div>
+                  <CompactPortiaMeter portiaHp={portiaHp} />
                 </div>
-              </div>
+                <div
+                  style={{
+                    position: "absolute",
+                    top: 4,
+                    left: 8,
+                    zIndex: 12,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    gap: 4,
+                    width: "min(168px, 34vw)",
+                    maxHeight: "calc(100% - 12px)",
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                  }}
+                >
+                  <CompactShylockMeters
+                    dp={dp}
+                    hp={hp}
+                    dpGainFlash={dpGainFlash}
+                    hpGainFlash={hpGainFlash}
+                  />
+                  {showEvidenceBar && (
+                    <EvidenceList
+                      curatedIds={scene.availableEvidence}
+                      tubalRecords={tubalCourtRecords}
+                      onSelectCurated={inspectCuratedEvidence}
+                      onSelectTubal={inspectTubalEvidence}
+                      layout="vertical"
+                      compact
+                    />
+                  )}
+                  <SkillPanel
+                    dp={dp}
+                    sceneIdx={sceneIdx}
+                    veniceParadoxUsed={veniceParadoxUsed}
+                    disabled={skillPanelDisabled}
+                    onUseSkill={useSkill}
+                    horizontal={false}
+                  />
+                </div>
+              </>
             )}
 
             {/* Open midframe for courtroom art */}
@@ -369,10 +378,12 @@ export function BattleScreen({ trial }: BattleScreenProps) {
 
             <div style={textBoxDockStyle(true)}>
               {challengePanel}
-              <div style={textBoxDockInnerStyle()}>
-                <DialogueBox {...dialogueProps} />
-                {pressPresent}
-              </div>
+              {!hideDialogueForChoices && (
+                <div style={textBoxDockInnerStyle()}>
+                  <DialogueBox {...dialogueProps} />
+                  {pressPresent}
+                </div>
+              )}
             </div>
           </>
         ) : (

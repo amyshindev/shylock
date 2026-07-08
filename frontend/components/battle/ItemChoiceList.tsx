@@ -5,7 +5,7 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import { useIsMobile } from "@/hooks/use-is-mobile";
-import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
+import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface ItemChoiceListProps {
@@ -18,9 +18,8 @@ interface ItemChoiceListProps {
 
 const ITEM_BORDER = "#c8a060";
 
-function ItemIcon({ evidenceId }: { evidenceId: string }) {
+function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
   const ev = EVIDENCE_BY_ID[evidenceId];
-  const size = 40;
 
   if (ev?.icon) {
     return (
@@ -52,7 +51,7 @@ function ItemIcon({ evidenceId }: { evidenceId: string }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: 18,
+        fontSize: size > 40 ? 22 : 18,
         color: theme.gold,
         flexShrink: 0,
       }}
@@ -78,11 +77,13 @@ export function ItemChoiceList({
 
   if (items.length === 0) return null;
 
+  const iconSize = isMobile ? 44 : 48;
+
   return (
     <div
       style={{
         padding: isMobile ? "8px 10px 10px" : "12px 14px 14px",
-        marginTop: isMobile ? 4 : 10,
+        marginTop: isMobile ? 0 : 10,
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -90,10 +91,10 @@ export function ItemChoiceList({
     >
       <div
         style={{
-          fontSize: gameFontSize.nm,
+          fontSize: isMobile ? gameFontSize.sm : gameFontSize.nm,
           color: "#5a3a4a",
           letterSpacing: 2,
-          marginBottom: 10,
+          marginBottom: isMobile ? 6 : 10,
           paddingLeft: 4,
         }}
       >
@@ -104,8 +105,8 @@ export function ItemChoiceList({
           style={{
             margin: "0 0 8px",
             paddingLeft: 4,
-            fontSize: gameFontSize.md,
-            lineHeight: 1.6,
+            fontSize: isMobile ? gameFontSize.sm : gameFontSize.md,
+            lineHeight: 1.5,
             color: "#7a5a6a",
             fontStyle: "italic",
           }}
@@ -113,7 +114,15 @@ export function ItemChoiceList({
           {prompt}
         </p>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {/* Side-by-side cards so two items fit without scrolling. */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: items.length === 1 ? "1fr" : "1fr 1fr",
+          gap: isMobile ? 6 : 8,
+          alignItems: "stretch",
+        }}
+      >
         {items.map((ev) => (
           <button
             key={ev.id}
@@ -121,11 +130,23 @@ export function ItemChoiceList({
             disabled={disabled}
             onClick={() => onSelect(ev.id)}
             style={{
-              ...choiceButtonStyle(isMobile),
-              gap: 12,
-              alignItems: "flex-start",
-              opacity: disabled ? 0.6 : 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: isMobile ? 6 : 8,
+              width: "100%",
+              minHeight: isMobile ? 120 : 140,
+              padding: isMobile ? "10px 8px" : "12px 10px",
+              textAlign: "center",
+              background: "#100510",
+              border: "1px solid #3a1828",
+              borderRadius: 4,
+              color: "#e0c090",
               cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.6 : 1,
+              fontFamily: "inherit",
+              transition: "all 0.15s",
             }}
             onMouseEnter={(e) => {
               if (!disabled) {
@@ -138,109 +159,90 @@ export function ItemChoiceList({
               e.currentTarget.style.borderColor = "#3a1828";
             }}
           >
+            <ItemIcon evidenceId={ev.id} size={iconSize} />
             <span
               style={{
+                color: "#e0c090",
+                fontSize: isMobile ? gameFontSize.sm : gameFontSize.md,
+                fontWeight: 600,
+                lineHeight: 1.35,
                 display: "inline-flex",
-                alignItems: "flex-start",
-                gap: 12,
-                minWidth: 0,
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
+                flexWrap: "wrap",
               }}
             >
-              <ItemIcon evidenceId={ev.id} />
-              <span style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0 }}>
+              {ev.name}
+              {ev.note && (
                 <span
+                  role="button"
+                  tabIndex={0}
+                  aria-label="각색 설명 보기"
+                  title="각색 설명"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenNoteId((cur) => (cur === ev.id ? null : ev.id));
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setOpenNoteId((cur) => (cur === ev.id ? null : ev.id));
+                    }
+                  }}
                   style={{
-                    color: "#e0c090",
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: 8,
+                    justifyContent: "center",
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    border: `1.5px solid ${theme.gold}`,
+                    background:
+                      openNoteId === ev.id ? theme.gold : "rgba(255, 215, 0, 0.14)",
+                    color: openNoteId === ev.id ? "#1a0810" : theme.gold,
+                    fontSize: 12,
+                    fontStyle: "italic",
+                    fontWeight: 800,
+                    lineHeight: 1,
+                    fontFamily: "Georgia, 'Times New Roman', serif",
+                    cursor: "pointer",
+                    userSelect: "none",
+                    flexShrink: 0,
                   }}
                 >
-                  {ev.name}
-                  {ev.note && (
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      aria-label="각색 설명 보기"
-                      title="각색 설명"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setOpenNoteId((cur) => (cur === ev.id ? null : ev.id));
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setOpenNoteId((cur) => (cur === ev.id ? null : ev.id));
-                        }
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = theme.gold;
-                        e.currentTarget.style.color = "#1a0810";
-                      }}
-                      onMouseLeave={(e) => {
-                        const active = openNoteId === ev.id;
-                        e.currentTarget.style.background = active
-                          ? theme.gold
-                          : "rgba(255, 215, 0, 0.14)";
-                        e.currentTarget.style.color = active ? "#1a0810" : theme.gold;
-                      }}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        width: 20,
-                        height: 20,
-                        borderRadius: "50%",
-                        border: `1.5px solid ${theme.gold}`,
-                        background:
-                          openNoteId === ev.id
-                            ? theme.gold
-                            : "rgba(255, 215, 0, 0.14)",
-                        color: openNoteId === ev.id ? "#1a0810" : theme.gold,
-                        fontSize: 13,
-                        fontStyle: "italic",
-                        fontWeight: 800,
-                        lineHeight: 1,
-                        fontFamily: "Georgia, 'Times New Roman', serif",
-                        cursor: "pointer",
-                        userSelect: "none",
-                        flexShrink: 0,
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      i
-                    </span>
-                  )}
+                  i
                 </span>
-                <span
-                  style={{
-                    fontSize: gameFontSize.sm,
-                    color: "#7a5a6a",
-                    lineHeight: 1.4,
-                    whiteSpace: "normal",
-                  }}
-                >
-                  {ev.desc}
-                </span>
-                {ev.note && openNoteId === ev.id && (
-                  <span
-                    style={{
-                      fontSize: gameFontSize.sm,
-                      color: "#8f8ab0",
-                      lineHeight: 1.5,
-                      fontStyle: "italic",
-                      whiteSpace: "normal",
-                      marginTop: 2,
-                      paddingLeft: 8,
-                      borderLeft: "2px solid rgba(143, 138, 176, 0.4)",
-                    }}
-                  >
-                    {ev.note}
-                  </span>
-                )}
-              </span>
+              )}
             </span>
+            <span
+              style={{
+                fontSize: isMobile ? 11 : gameFontSize.sm,
+                color: "#7a5a6a",
+                lineHeight: 1.4,
+                whiteSpace: "normal",
+              }}
+            >
+              {ev.desc}
+            </span>
+            {ev.note && openNoteId === ev.id && (
+              <span
+                style={{
+                  fontSize: 11,
+                  color: "#8f8ab0",
+                  lineHeight: 1.45,
+                  fontStyle: "italic",
+                  whiteSpace: "normal",
+                  textAlign: "left",
+                  width: "100%",
+                  paddingLeft: 6,
+                  borderLeft: "2px solid rgba(143, 138, 176, 0.4)",
+                }}
+              >
+                {ev.note}
+              </span>
+            )}
           </button>
         ))}
       </div>
