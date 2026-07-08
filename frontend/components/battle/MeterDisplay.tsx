@@ -119,6 +119,8 @@ export function portiaHpColor(value: number): string {
 
 const METER_COLUMN_WIDTH = 336;
 const METER_COLUMN_WIDTH_MOBILE = 148;
+/** Shared width for landscape left rail + Portia meter so both columns match. */
+const LANDSCAPE_HUD_RAIL_WIDTH = 132;
 const HUD_INSET = 10;
 const HUD_INSET_MOBILE = 8;
 const HUD_TOP = 8;
@@ -128,6 +130,7 @@ const LEFT_METERS_STACK_HEIGHT = 72;
 export {
   METER_COLUMN_WIDTH as LEFT_METER_COLUMN_WIDTH,
   METER_COLUMN_WIDTH_MOBILE as LEFT_METER_COLUMN_WIDTH_MOBILE,
+  LANDSCAPE_HUD_RAIL_WIDTH,
   HUD_INSET as LEFT_HUD_INSET,
   HUD_INSET_MOBILE as LEFT_HUD_INSET_MOBILE,
   HUD_TOP as LEFT_HUD_TOP,
@@ -151,7 +154,8 @@ export function CompactShylockMeters({
         flexShrink: 0,
         pointerEvents: "none",
         position: "relative",
-        width: "100%",
+        width: LANDSCAPE_HUD_RAIL_WIDTH,
+        boxSizing: "border-box",
       }}
     >
       {dpGainFlash != null && (
@@ -206,7 +210,7 @@ export function CompactShylockMeters({
   );
 }
 
-/** Landscape top-right: Portia HP alone. */
+/** Landscape top-right: Portia HP alone — same width as Shylock meter rail. */
 export function CompactPortiaMeter({ portiaHp }: PortiaMeterDisplayProps) {
   return (
     <div
@@ -214,8 +218,8 @@ export function CompactPortiaMeter({ portiaHp }: PortiaMeterDisplayProps) {
         ...hudPanelStyle("5px 8px", true),
         flexShrink: 0,
         pointerEvents: "none",
-        minWidth: 100,
-        maxWidth: 140,
+        width: LANDSCAPE_HUD_RAIL_WIDTH,
+        boxSizing: "border-box",
       }}
     >
       <MeterBar

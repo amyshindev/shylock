@@ -12,16 +12,16 @@ import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 
 import {
   LEFT_METER_COLUMN_WIDTH,
-  LEFT_METER_COLUMN_WIDTH_MOBILE,
+  LANDSCAPE_HUD_RAIL_WIDTH,
 } from "./MeterDisplay";
 
 const SKILL_ENABLED_COLOR = "#f0d8c8";
 const SKILL_LOCKED_COLOR = "#5c5c5c";
 
-const MOBILE_SKILL_LABEL: Record<SkillId, string> = {
-  launcelot: "🃏 론슬롯",
-  tubal: "🤝 투발",
-  venice_paradox: "⚔️ 모순",
+const SKILL_ICON: Record<SkillId, string> = {
+  launcelot: "🃏",
+  tubal: "🤝",
+  venice_paradox: "⚔️",
 };
 
 interface SkillPanelProps {
@@ -31,52 +31,72 @@ interface SkillPanelProps {
   disabled?: boolean;
   onUseSkill: (skillId: SkillId) => void;
   horizontal?: boolean;
+  /** Circular emoji buttons only — no captions. */
+  iconsOnly?: boolean;
 }
 
 function skillButtonStyle(
   canUse: boolean,
   lockedOut: boolean,
-  horizontal = false,
+  iconsOnly: boolean,
 ): CSSProperties {
-  if (canUse) {
+  if (iconsOnly) {
     return {
-      padding: horizontal ? "4px 8px" : "7px 10px",
-      fontSize: horizontal ? 10 : gameFontSize.xs,
-      letterSpacing: 0.2,
-      textAlign: horizontal ? "center" : "left",
-      whiteSpace: horizontal ? "nowrap" : "normal",
-      cursor: "pointer",
-      background: "rgba(20, 10, 18, 0.95)",
-      color: SKILL_ENABLED_COLOR,
-      border: "1px solid #5a3848",
-      borderRadius: horizontal ? 12 : 3,
+      width: 34,
+      height: 34,
+      padding: 0,
+      fontSize: 15,
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      cursor: canUse ? "pointer" : "not-allowed",
+      background: canUse ? "rgba(20, 10, 18, 0.95)" : "rgba(12, 12, 14, 0.92)",
+      color: canUse ? SKILL_ENABLED_COLOR : SKILL_LOCKED_COLOR,
+      border: `1px solid ${canUse ? "#5a3848" : "#2a2a2a"}`,
+      borderRadius: "50%",
       fontWeight: 600,
-      textShadow: "0 1px 2px rgba(0, 0, 0, 0.6)",
-      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
-      filter: "none",
-      opacity: 1,
+      filter: lockedOut ? "grayscale(1) brightness(0.72)" : canUse ? "none" : "grayscale(0.85)",
+      opacity: lockedOut ? 0.48 : canUse ? 1 : 0.62,
       flexShrink: 0,
       transition: "border-color 0.15s, background 0.15s, filter 0.2s, opacity 0.2s",
     };
   }
 
+  if (canUse) {
+    return {
+      padding: "7px 10px",
+      fontSize: gameFontSize.xs,
+      letterSpacing: 0.3,
+      textAlign: "left",
+      cursor: "pointer",
+      background: "rgba(20, 10, 18, 0.95)",
+      color: SKILL_ENABLED_COLOR,
+      border: "1px solid #5a3848",
+      borderRadius: 3,
+      fontWeight: 600,
+      textShadow: "0 1px 2px rgba(0, 0, 0, 0.6)",
+      boxShadow: "inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+      filter: "none",
+      opacity: 1,
+      transition: "border-color 0.15s, background 0.15s, filter 0.2s, opacity 0.2s",
+    };
+  }
+
   return {
-    padding: horizontal ? "4px 8px" : "7px 10px",
-    fontSize: horizontal ? 10 : gameFontSize.xs,
-    letterSpacing: 0.2,
-    textAlign: horizontal ? "center" : "left",
-    whiteSpace: horizontal ? "nowrap" : "normal",
+    padding: "7px 10px",
+    fontSize: gameFontSize.xs,
+    letterSpacing: 0.3,
+    textAlign: "left",
     cursor: "not-allowed",
     background: lockedOut ? "rgba(12, 12, 14, 0.92)" : "rgba(14, 8, 14, 0.88)",
     color: SKILL_LOCKED_COLOR,
     border: "1px solid #2a2a2a",
-    borderRadius: horizontal ? 12 : 3,
+    borderRadius: 3,
     fontWeight: 600,
     textShadow: "none",
     boxShadow: "none",
     filter: lockedOut ? "grayscale(1) brightness(0.72)" : "grayscale(0.85) brightness(0.85)",
     opacity: lockedOut ? 0.48 : 0.62,
-    flexShrink: 0,
     transition: "border-color 0.15s, background 0.15s, filter 0.2s, opacity 0.2s",
   };
 }
@@ -88,54 +108,61 @@ export function SkillPanel({
   disabled,
   onUseSkill,
   horizontal: horizontalProp,
+  iconsOnly = false,
 }: SkillPanelProps) {
   const isMobile = useIsMobile();
-  const horizontal = horizontalProp ?? isMobile;
-  const skillPanelWidth = horizontal
-    ? undefined
-    : isMobile
-      ? "100%"
-      : LEFT_METER_COLUMN_WIDTH / 2;
+  const horizontal = iconsOnly || (horizontalProp ?? false);
+  const skillPanelWidth = iconsOnly
+    ? "100%"
+    : horizontal
+      ? undefined
+      : isMobile
+        ? LANDSCAPE_HUD_RAIL_WIDTH
+        : LEFT_METER_COLUMN_WIDTH / 2;
   const skillCtx = { dp, sceneIdx, veniceParadoxUsed };
 
   return (
     <div
       style={{
-        ...hudPanelStyle(horizontal ? "4px 6px" : "8px 11px", horizontal),
+        ...hudPanelStyle(iconsOnly || horizontal ? "4px 6px" : "8px 11px", iconsOnly || horizontal),
         width: skillPanelWidth,
-        display: horizontal ? "flex" : "block",
-        alignItems: horizontal ? "center" : undefined,
-        gap: horizontal ? 6 : undefined,
-        overflowX: horizontal ? "auto" : undefined,
-        WebkitOverflowScrolling: horizontal ? "touch" : undefined,
-        flexShrink: horizontal ? 0 : undefined,
-        maxWidth: horizontal ? "100%" : undefined,
+        boxSizing: "border-box",
+        display: horizontal || iconsOnly ? "flex" : "block",
+        alignItems: horizontal || iconsOnly ? "center" : undefined,
+        justifyContent: iconsOnly ? "space-between" : undefined,
+        gap: horizontal || iconsOnly ? 6 : undefined,
+        flexShrink: 0,
+        maxWidth: "100%",
       }}
     >
-      <div
-        style={{
-          ...hudLabelStyle("#e8dce4"),
-          fontSize: horizontal ? 10 : gameFontSize.xs,
-          letterSpacing: horizontal ? 0.5 : 0.8,
-          marginBottom: horizontal ? 0 : 6,
-          flexShrink: 0,
-        }}
-      >
-        스킬
-      </div>
+      {!iconsOnly && (
+        <div
+          style={{
+            ...hudLabelStyle("#e8dce4"),
+            fontSize: horizontal ? 10 : gameFontSize.xs,
+            letterSpacing: 0.8,
+            marginBottom: horizontal ? 0 : 6,
+            flexShrink: 0,
+          }}
+        >
+          스킬
+        </div>
+      )}
       <div
         style={{
           display: "flex",
-          flexDirection: horizontal ? "row" : "column",
-          gap: horizontal ? 4 : 5,
-          flexShrink: horizontal ? 0 : undefined,
+          flexDirection: iconsOnly || horizontal ? "row" : "column",
+          gap: iconsOnly ? 4 : horizontal ? 4 : 5,
+          flex: iconsOnly ? 1 : undefined,
+          justifyContent: iconsOnly ? "space-between" : undefined,
+          width: iconsOnly ? "100%" : undefined,
         }}
       >
         {SKILLS.map((skill) => {
           const skillReady = canUseSkill(skill.id, skillCtx);
           const canUse = !disabled && skillReady;
           const lockedOut = !skillReady;
-  const label = isMobile ? MOBILE_SKILL_LABEL[skill.id] : skill.label;
+          const content = iconsOnly ? SKILL_ICON[skill.id] : skill.label;
 
           return (
             <button
@@ -144,10 +171,11 @@ export function SkillPanel({
               disabled={!canUse}
               aria-disabled={!canUse}
               title={skill.label}
+              aria-label={skill.label}
               onClick={() => {
                 if (canUse) onUseSkill(skill.id);
               }}
-              style={skillButtonStyle(canUse, lockedOut, horizontal)}
+              style={skillButtonStyle(canUse, lockedOut, iconsOnly)}
               onMouseEnter={(e) => {
                 if (!canUse) return;
                 e.currentTarget.style.borderColor = "#7a5060";
@@ -159,7 +187,7 @@ export function SkillPanel({
                 e.currentTarget.style.background = "rgba(20, 10, 18, 0.95)";
               }}
             >
-              {label}
+              {content}
             </button>
           );
         })}

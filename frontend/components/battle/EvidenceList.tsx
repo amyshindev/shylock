@@ -15,6 +15,8 @@ interface EvidenceListProps {
   presentMode?: boolean;
   compact?: boolean;
   layout?: "vertical" | "horizontal";
+  /** Icons only — no section title or item name captions. */
+  iconsOnly?: boolean;
 }
 
 const TUBAL_BORDER = "#6aaa5a";
@@ -30,40 +32,44 @@ export function EvidenceList({
   presentMode = false,
   compact = false,
   layout = "vertical",
+  iconsOnly = false,
 }: EvidenceListProps) {
   const curatedItems = curatedIds.map((id) => EVIDENCE_BY_ID[id]).filter(Boolean);
   const hasItems = curatedItems.length > 0 || tubalRecords.length > 0;
-  const isHorizontal = layout === "horizontal";
 
   if (!hasItems) return null;
 
-  const iconSize = isHorizontal ? 32 : compact ? 44 : 52;
-  const itemWidth = isHorizontal ? iconSize : compact ? 52 : 64;
-  const showLabels = !isHorizontal;
+  const iconSize = iconsOnly ? 34 : layout === "horizontal" ? 32 : compact ? 44 : 52;
+  const itemWidth = iconsOnly ? iconSize : layout === "horizontal" ? iconSize : compact ? 52 : 64;
+  const showLabels = !iconsOnly && layout !== "horizontal";
+  const showSectionLabel = !iconsOnly;
+  const isRow = iconsOnly || layout === "horizontal";
 
   return (
     <div
       style={{
-        ...hudPanelStyle(isHorizontal ? "4px 6px" : "8px 11px", isHorizontal || compact),
+        ...hudPanelStyle(isRow ? "4px 6px" : "8px 11px", isRow || compact),
         display: "flex",
-        flexDirection: isHorizontal ? "row" : "column-reverse",
-        alignItems: isHorizontal ? "center" : "flex-start",
-        gap: isHorizontal ? 6 : 8,
-        maxHeight: isHorizontal ? undefined : compact ? "min(28vh, 200px)" : "min(40vh, 280px)",
-        maxWidth: isHorizontal ? "100%" : undefined,
-        overflowX: isHorizontal ? "auto" : undefined,
-        overflowY: isHorizontal ? "hidden" : "auto",
+        flexDirection: isRow ? "row" : "column-reverse",
+        flexWrap: iconsOnly ? "wrap" : undefined,
+        alignItems: isRow ? "center" : "flex-start",
+        justifyContent: iconsOnly ? "flex-start" : undefined,
+        gap: isRow ? 6 : 8,
+        maxHeight: isRow && !iconsOnly ? undefined : compact && !iconsOnly ? "min(28vh, 200px)" : undefined,
+        width: iconsOnly ? "100%" : undefined,
+        maxWidth: isRow ? "100%" : undefined,
+        overflowX: isRow && !iconsOnly ? "auto" : undefined,
+        overflowY: isRow ? "hidden" : "auto",
         WebkitOverflowScrolling: "touch",
-        flexShrink: isHorizontal ? 0 : undefined,
+        flexShrink: 0,
+        boxSizing: "border-box",
         border: `1px solid ${presentMode ? theme.gold : "#4a2838"}`,
         boxShadow: presentMode
           ? "0 2px 12px rgba(255, 215, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.45)"
-          : isHorizontal
-            ? "0 1px 6px rgba(0, 0, 0, 0.35)"
-            : "0 2px 8px rgba(0, 0, 0, 0.45)",
+          : "0 1px 6px rgba(0, 0, 0, 0.35)",
       }}
     >
-      {isHorizontal && (
+      {showSectionLabel && layout === "horizontal" && (
         <div
           style={{
             ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
@@ -108,7 +114,7 @@ export function EvidenceList({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: isHorizontal ? 14 : compact ? 18 : 22,
+                fontSize: iconsOnly ? 14 : compact ? 18 : 22,
               }}
             >
               📜
@@ -183,7 +189,7 @@ export function EvidenceList({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: isHorizontal ? 14 : compact ? 18 : 22,
+                  fontSize: iconsOnly ? 14 : compact ? 18 : 22,
                   color: theme.gold,
                 }}
               >
@@ -209,7 +215,7 @@ export function EvidenceList({
         );
       })}
 
-      {!isHorizontal && (
+      {showSectionLabel && layout === "vertical" && (
         <div
           style={{
             ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),

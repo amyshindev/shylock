@@ -16,6 +16,7 @@ import {
   PortiaMeterDisplay,
   CompactShylockMeters,
   CompactPortiaMeter,
+  LANDSCAPE_HUD_RAIL_WIDTH,
   LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 } from "./MeterDisplay";
@@ -245,7 +246,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             }
       }
     >
-      <div style={{ ...textBoxDockInnerStyle(), pointerEvents: "auto" }}>
+      <div style={{ ...textBoxDockInnerStyle(isMobile), pointerEvents: "auto" }}>
         {showItemPhase ? (
           <ItemChoiceList
             itemIds={itemChoiceIds}
@@ -316,7 +317,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         {isMobile ? (
           <>
-            {/* Landscape HUD: Portia top-right; everything else stacked top-left. */}
+            {/* Landscape HUD: matching meter widths; icon-only items/skills under Shylock meters. */}
             {showBattleHud && (
               <>
                 <div
@@ -337,10 +338,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                     zIndex: 12,
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "flex-start",
+                    alignItems: "stretch",
                     gap: 4,
-                    width: "min(168px, 34vw)",
-                    maxHeight: "calc(100% - 12px)",
+                    width: LANDSCAPE_HUD_RAIL_WIDTH,
+                    maxHeight: "calc(100% - 96px)",
                     overflowY: "auto",
                     WebkitOverflowScrolling: "touch",
                   }}
@@ -357,8 +358,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                       tubalRecords={tubalCourtRecords}
                       onSelectCurated={inspectCuratedEvidence}
                       onSelectTubal={inspectTubalEvidence}
-                      layout="vertical"
-                      compact
+                      iconsOnly
                     />
                   )}
                   <SkillPanel
@@ -367,7 +367,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                     veniceParadoxUsed={veniceParadoxUsed}
                     disabled={skillPanelDisabled}
                     onUseSkill={useSkill}
-                    horizontal={false}
+                    iconsOnly
                   />
                 </div>
               </>
@@ -379,7 +379,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             <div style={textBoxDockStyle(true)}>
               {challengePanel}
               {!hideDialogueForChoices && (
-                <div style={textBoxDockInnerStyle()}>
+                <div style={textBoxDockInnerStyle(true)}>
                   <DialogueBox {...dialogueProps} />
                   {pressPresent}
                 </div>

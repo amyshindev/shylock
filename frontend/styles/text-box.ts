@@ -100,6 +100,8 @@ export function textBoxPanelStyle(compact = false): CSSProperties {
 }
 
 export const TEXT_BOX_MAX_WIDTH = 680;
+/** Narrower dock on landscape phones so dialogue does not span edge-to-edge. */
+export const TEXT_BOX_MAX_WIDTH_MOBILE = 420;
 
 /** Stable body height (~3 lines) so the box does not resize while typing. */
 export const DIALOGUE_BODY_MIN_HEIGHT = 96;
@@ -111,16 +113,16 @@ export function textBoxDockStyle(compact = false): CSSProperties {
   return {
     flexShrink: 0,
     width: "100%",
-    padding: compact ? "0 8px 8px" : "0 16px 20px",
+    padding: compact ? "0 14vw 8px" : "0 16px 20px",
     fontFamily: textBox.fontFamily,
     background: "transparent",
   };
 }
 
-export function textBoxDockInnerStyle(): CSSProperties {
+export function textBoxDockInnerStyle(compact = false): CSSProperties {
   return {
     width: "100%",
-    maxWidth: TEXT_BOX_MAX_WIDTH,
+    maxWidth: compact ? TEXT_BOX_MAX_WIDTH_MOBILE : TEXT_BOX_MAX_WIDTH,
     margin: "0 auto",
   };
 }
