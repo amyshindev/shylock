@@ -57,6 +57,19 @@ def test_compute_portia_damage_scales_with_dp() -> None:
     assert compute_portia_damage(30) == 14
 
 
+def test_blood_reveal_choices_deal_no_portia_damage() -> None:
+    # Reversal scene: Portia lands the blow, so no choice counter-damages her.
+    for choice_id in (
+        "blood_impossible",
+        "drop_knife",
+        "take_principal_only",
+        "wording_letter_turned",
+        "wording_accept_letter",
+        "wording_reread_silent",
+    ):
+        assert get_choice_effect(choice_id).portia_damage == 0
+
+
 def test_apply_choice_resources_deducts_hp_and_portia_hp() -> None:
     effect = get_choice_effect("gold_refuse_direct")
     next_hp, next_dp, _, next_portia_hp = apply_choice_resources(

@@ -311,11 +311,21 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         canonical_line_kinds=(DialogueLineKind.SPEECH,) * 4,
         challenge_header="▶ 샤일록의 선택",
         canonical_challenge_text="이건 말이 안 된다. 하지만 법정이 고개를 끄덕인다.",
-        choice_ids=("blood_impossible", "drop_knife", "take_principal_only"),
+        choice_ids=(
+            "blood_impossible",
+            "drop_knife",
+            "take_principal_only",
+            "wording_letter_turned",
+            "wording_accept_letter",
+            "wording_reread_silent",
+        ),
         canonical_choice_texts={
             "blood_impossible": "피 없이 살을 자르는 건 불가능하오!",
             "drop_knife": "...(칼을 내려놓는다)",
             "take_principal_only": "그렇다면 원금만 받겠소",
+            "wording_letter_turned": "문자 그대로를 원한 것은 나였소. 한데 이제 와서, 그 문자가 나를 겨눈단 말이오?",
+            "wording_accept_letter": "...좋소. 문자는 문자요. 그 문자에 기대어 산 자이니, 그 문자 앞에 물러서겠소.",
+            "wording_reread_silent": "(말없이 계약서의 문구를 다시 들여다본다)",
         },
     ),
     SceneTemplate(

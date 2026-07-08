@@ -76,6 +76,8 @@ export interface ChoiceTemplate {
   evidence: string | null;
   dpChange: number;
   hpCost: number;
+  /** Overrides computePortiaDamage(dpChange) — reversal scenes deal 0. */
+  portiaDamage?: number;
   special?: "climax";
 }
 

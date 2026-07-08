@@ -83,6 +83,31 @@ CURATED_EVIDENCE: tuple[Evidence, ...] = (
         source_ftln_range=(3001430, 3001450),
     ),
     Evidence(
+        evidence_id="whetted_knife",
+        quote=(
+            "Why dost thou whet thy knife so earnestly? — "
+            "To cut the forfeiture from that bankrupt there."
+        ),
+        act_scene="4.1",
+        icon="whetted_knife",
+        description=(
+            "재판 내내 조용히 갈아온 칼. 포샤의 선언과 함께, "
+            "정의를 집행할 도구는 휘두를 수 없는 물건이 되었다."
+        ),
+        source_ftln_range=(4001300, 4001320),
+    ),
+    Evidence(
+        evidence_id="bond_wording",
+        quote=(
+            "This bond doth give thee here no jot of blood; "
+            "the words expressly are 'a pound of flesh.'"
+        ),
+        act_scene="4.1",
+        icon="bond_wording",
+        description="'살 1파운드.' 문구에는 정확히 그렇게만 쓰여 있다. 더도, 덜도 아니게.",
+        source_ftln_range=(4001850, 4001870),
+    ),
+    Evidence(
         evidence_id="blood",
         quote="Shed thou no blood, nor cut thou less nor more but just a pound of flesh.",
         act_scene="4.1",

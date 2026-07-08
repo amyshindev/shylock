@@ -63,6 +63,30 @@ CHOICE_RAG_QUERY_OVERRIDES: dict[str, str] = {
     "scales_humour": (
         "Shylock's humour speech: some cannot bear a bagpipe; I cannot master hatred"
     ),
+    "blood_impossible": (
+        "Portia rules the bond gives no jot of blood; Shylock protests that cutting "
+        "a pound of flesh without shedding blood is impossible"
+    ),
+    "drop_knife": (
+        "Shylock lowers the knife he whetted through the trial, unable to execute "
+        "the forfeiture without shedding blood"
+    ),
+    "take_principal_only": (
+        "Shylock retreats from the forfeiture: give me my principal, the bare three "
+        "thousand ducats, and let me go"
+    ),
+    "wording_letter_turned": (
+        "Shylock demanded the letter of his bond; Portia turns that literalism "
+        "against him — the words expressly are a pound of flesh, no jot of blood"
+    ),
+    "wording_accept_letter": (
+        "Shylock yields to the strict letter of the bond he himself invoked; "
+        "the exact wording of the contract defeats him"
+    ),
+    "wording_reread_silent": (
+        "Shylock silently rereads the bond's exact words: an equal pound of flesh, "
+        "nothing more, nothing less"
+    ),
 }
 
 # Short Korean gloss for the model — keyed by choice_id.
@@ -73,6 +97,14 @@ CHOICE_KOREAN_GLOSS: dict[str, str] = {
     "ghetto_curfew": "해가 지면 게토 문으로 돌아가야 하는 베네치아의 유대인 통행 제한",
     "ghetto_who_guilty": "밤마다 갇히는 쪽과 밤마다 조롱하는 쪽 중 누가 가해자인가",
     "ghetto_look_silent": "게토 문을 향해 말 없이 바라보는 제스처",
+    "blood_impossible": "피 없이 살을 자르라는 판결은 집행이 불가능하다는 항변",
+    "drop_knife": "재판 내내 갈아온 칼을 말 없이 내려놓는 제스처",
+    "take_principal_only": "복수를 포기하고 원금만 받겠다는 후퇴",
+    "wording_letter_turned": (
+        "문자 그대로의 계약을 요구해온 샤일록에게, 그 문자주의가 그대로 되돌아왔다는 항변"
+    ),
+    "wording_accept_letter": "자신이 세워온 문자의 논리를 인정하며 물러서는 선택",
+    "wording_reread_silent": "말없이 계약서의 문구를 다시 들여다보는 제스처",
 }
 
 _choice_context_cache: dict[str, str] = {}

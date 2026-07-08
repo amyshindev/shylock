@@ -50,8 +50,16 @@ CHOICE_BRIEFS: dict[str, str] = {
     "ring_loss_dignity": "If you knew what I have lost, you would not dare call it a weakness.",
     "ring_clutch_silent": "(Quietly clasps his bare finger where the ring once sat.)",
     "blood_impossible": "Cutting flesh without blood is impossible!",
-    "drop_knife": "Lowers the knife.",
+    "drop_knife": "Lowers the knife he whetted through the trial.",
     "take_principal_only": "Will take only the principal sum.",
+    "wording_letter_turned": (
+        "It was I who demanded the letter of the bond — and now that very letter "
+        "is turned against me?"
+    ),
+    "wording_accept_letter": (
+        "So be it. The letter is the letter — I lived by it, and before it I step back."
+    ),
+    "wording_reread_silent": "(Silently reads the bond's exact wording over again.)",
     "plead_for_principal": "Please — let me have at least the principal sum.",
     "reject_conversion": "Death before forced conversion to Christianity.",
     "bow_accept": "Bows head and accepts conversion.",
@@ -87,6 +95,9 @@ CHOICE_STIMULUS: dict[str, str] = {
     "blood_impossible": "logical",
     "drop_knife": "silence",
     "take_principal_only": "logical",
+    "wording_letter_turned": "logical",
+    "wording_accept_letter": "emotional",
+    "wording_reread_silent": "silence",
     "plead_for_principal": "emotional",
     "reject_conversion": "provocation",
     "bow_accept": "emotional",

@@ -486,31 +486,62 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     challengeTemplate: {
       header: "▶ 샤일록의 선택",
       fallbackText: "이건 말이 안 된다. 하지만 법정이 고개를 끄덕인다.",
+      // Reversal scene: lower dpChange, higher hpCost, and portiaDamage 0 —
+      // Portia lands the blow here, so nothing counter-damages her.
       options: [
         {
           id: "blood_impossible",
           fallbackText: "피 없이 살을 자르는 건 불가능하오!",
-          evidence: "blood",
-          dpChange: 15,
-          hpCost: 10,
+          evidence: "whetted_knife",
+          dpChange: 10,
+          hpCost: 14,
+          portiaDamage: 0,
         },
         {
           id: "drop_knife",
           fallbackText: "...(칼을 내려놓는다)",
-          evidence: null,
+          evidence: "whetted_knife",
           dpChange: -10,
           hpCost: 0,
+          portiaDamage: 0,
         },
         {
           id: "take_principal_only",
           fallbackText: "그렇다면 원금만 받겠소",
-          evidence: "bond",
-          dpChange: 5,
-          hpCost: 3,
+          evidence: "whetted_knife",
+          dpChange: 6,
+          hpCost: 10,
+          portiaDamage: 0,
+        },
+        {
+          id: "wording_letter_turned",
+          fallbackText:
+            "문자 그대로를 원한 것은 나였소. 한데 이제 와서, 그 문자가 나를 겨눈단 말이오?",
+          evidence: "bond_wording",
+          dpChange: 10,
+          hpCost: 15,
+          portiaDamage: 0,
+        },
+        {
+          id: "wording_accept_letter",
+          fallbackText:
+            "...좋소. 문자는 문자요. 그 문자에 기대어 산 자이니, 그 문자 앞에 물러서겠소.",
+          evidence: "bond_wording",
+          dpChange: 7,
+          hpCost: 11,
+          portiaDamage: 0,
+        },
+        {
+          id: "wording_reread_silent",
+          fallbackText: "(말없이 계약서의 문구를 다시 들여다본다)",
+          evidence: "bond_wording",
+          dpChange: 4,
+          hpCost: 8,
+          portiaDamage: 0,
         },
       ],
     },
-    availableEvidence: ["blood", "bond", "hath_not"],
+    availableEvidence: ["whetted_knife", "bond_wording"],
   },
   {
     id: "alien_law_reveal",

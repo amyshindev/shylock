@@ -72,6 +72,22 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     act: "Act III, Scene 1",
   },
   {
+    id: "whetted_knife",
+    name: "갈아온 칼",
+    icon: "",
+    iconFallback: "🔪",
+    desc: "재판 내내 조용히 갈아온 칼. 방금 전까지는, 정의를 집행할 도구였다.",
+    act: "Act IV, Scene 1",
+  },
+  {
+    id: "bond_wording",
+    name: "계약서의 문구",
+    icon: "",
+    iconFallback: "✒",
+    desc: "'살 1파운드.' 그 문구엔 정확히 그렇게만 쓰여 있다. 더도, 덜도 아니게.",
+    act: "Act IV, Scene 1",
+  },
+  {
     id: "blood",
     name: "피 한 방울 조항",
     icon: "/assets/evidence-blood.png",

@@ -129,7 +129,7 @@ def test_weak_match_without_curated_evidence_reports_no_passage() -> None:
         scored_lines=(ScoredPlayLine(play_line=GABERDINE_LINE, cosine_distance=0.91),),
     )
 
-    context = asyncio.run(get_choice_folger_context("drop_knife", evidence))
+    context = asyncio.run(get_choice_folger_context("bow_accept", evidence))
 
     assert "직접 대응하는 원작 구절을 찾지 못했습니다" in context
     assert "spit upon my Jewish gaberdine" not in context

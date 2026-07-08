@@ -102,7 +102,7 @@ export function buildScene(
         evidence: opt.evidence,
         dpChange: opt.dpChange,
         hpCost: opt.hpCost,
-        portiaDamage: computePortiaDamage(opt.dpChange),
+        portiaDamage: opt.portiaDamage ?? computePortiaDamage(opt.dpChange),
         special: opt.special,
       })),
     },

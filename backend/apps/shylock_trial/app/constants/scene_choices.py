@@ -21,9 +21,13 @@ from shylock_trial.app.constants.scene_progression import (  # noqa: F401
 class ChoiceEffect:
     dp_delta: int
     hp_cost: int = 0
+    # Reversal scenes (Portia lands the blow) set this to 0 — no counter-damage.
+    portia_damage_override: int | None = None
 
     @property
     def portia_damage(self) -> int:
+        if self.portia_damage_override is not None:
+            return self.portia_damage_override
         return compute_portia_damage(self.dp_delta)
 
 
@@ -60,9 +64,14 @@ CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
     "ring_leah_gift": ChoiceEffect(18, 12),
     "ring_loss_dignity": ChoiceEffect(15, 8),
     "ring_clutch_silent": ChoiceEffect(8, 4),
-    "blood_impossible": ChoiceEffect(15, 10),
-    "drop_knife": ChoiceEffect(-10, 0),
-    "take_principal_only": ChoiceEffect(5, 3),
+    # blood_reveal — Shylock is the one being reversed: lower DP gains, higher HP
+    # costs, and no counter-damage to Portia (she holds the floor this scene).
+    "blood_impossible": ChoiceEffect(10, 14, portia_damage_override=0),
+    "drop_knife": ChoiceEffect(-10, 0, portia_damage_override=0),
+    "take_principal_only": ChoiceEffect(6, 10, portia_damage_override=0),
+    "wording_letter_turned": ChoiceEffect(10, 15, portia_damage_override=0),
+    "wording_accept_letter": ChoiceEffect(7, 11, portia_damage_override=0),
+    "wording_reread_silent": ChoiceEffect(4, 8, portia_damage_override=0),
     "plead_for_principal": ChoiceEffect(5, 3),
     "reject_conversion": ChoiceEffect(25, 18),
     "bow_accept": ChoiceEffect(-25, 0),
@@ -119,8 +128,12 @@ CHOICE_EVIDENCE: dict[str, str] = {
     "ring_leah_gift": "leah_ring",
     "ring_loss_dignity": "leah_ring",
     "ring_clutch_silent": "leah_ring",
-    "blood_impossible": "blood",
-    "take_principal_only": "bond",
+    "blood_impossible": "whetted_knife",
+    "drop_knife": "whetted_knife",
+    "take_principal_only": "whetted_knife",
+    "wording_letter_turned": "bond_wording",
+    "wording_accept_letter": "bond_wording",
+    "wording_reread_silent": "bond_wording",
     "plead_for_principal": "bond",
     "reject_conversion": "alien_law",
     "mock_mercy": "alien_law",
