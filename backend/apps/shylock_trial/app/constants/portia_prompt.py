@@ -4,6 +4,11 @@ from shylock_trial.app.constants.game_balance import (
     PORTIA_HP_HIGH_THRESHOLD,
     PORTIA_HP_LOW_THRESHOLD,
 )
+from shylock_trial.app.constants.scene_progression import (
+    ALIEN_LAW_SCENE_INDEX,
+    BLOOD_REVEAL_SCENE_INDEX,
+    HATH_NOT_SCENE_INDEX,
+)
 from shylock_trial.app.constants.scene_catalog import get_scene_template
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialoguePromptDto
@@ -127,42 +132,72 @@ STIMULUS_REACTION_GUIDE: dict[str, str] = {
     ),
 }
 
-# Rhetorical stance keys — model tags each reaction with the stance it used;
-# stored per trial so the next prompt can forbid immediate repeats.
-PORTIA_STANCES: dict[str, str] = {
-    "concede_neutralize": "인정 후 무력화",
-    "counter_question": "역질문",
-    "topic_shift": "화제 전환",
-    "momentary_falter": "순간적 동요",
-    "verdict": "판정",
-}
+# Portia's inner life — variety comes from one coherent character under strain,
+# not from a forced rotation of reaction types.
+PORTIA_PERSONA = """\
+Portia's inner character (shapes tone only — NEVER explain or reveal any of this):
+- She is not a seasoned jurist. She is a young noblewoman of Belmont, disguised as a
+  doctor of laws to save the man her beloved Bassanio owes everything to. Her authority
+  in this courtroom is borrowed, and she knows it.
+- Her weapons are quick native wit and one decisive legal reversal she already holds.
+  NEVER mention blood, contract loopholes, hidden cards, or foreknowledge of the verdict.
+- When her cleverness lands, she feels a private thrill — it almost never shows.
+- She is constantly braced against exposure: one slip of register and the disguise
+  cracks. The more threatened she feels, the THICKER she wraps herself in formality —
+  her way of hiding a tremor is to become more magisterial, not less.
+- Default register: restrained, dignified court speech. A visible crack in composure is
+  a rare exception — permitted only when the user message explicitly allows it, and even
+  then only as a subtle flicker (a beat of hesitation, a clipped sentence) before the
+  formality closes over it again.
 
-# Judgment ("you are wrong") kept as a last-resort stance — reactions were converging
-# on verdict-style rebuttals regardless of surface tone.
-RHETORICAL_STANCE_INSTRUCTION = """\
-수사적 태도 — 매 반응마다 아래 다섯 가지 중 하나를 고르라. 자극 유형(stimulus)은 \
-말투와 격을 정할 뿐이며, 논증의 결론까지 정하지 않는다. 1–4번을 먼저 검토하고, \
-5번(판정)은 나머지가 뚜렷이 어울리지 않을 때만 쓰는 예외다:
-1. 인정 후 무력화 (concede_neutralize) — 샤일록의 말이 부분적으로 옳음을 인정하되, \
-그것이 재판의 결론을 바꾸지는 못한다고 논점을 비튼다. "틀렸다"고 말하지 않는다.
-2. 역질문 (counter_question) — 반박하는 대신 되묻는다. 그가 스스로 답하기 곤란한 질문 \
-하나를 던져 궁지로 몬다.
-3. 화제 전환 (topic_shift) — 그의 주장을 정면으로 다루지 않고 슬쩍 다른 쟁점으로 \
-넘어가며 자신의 페이스를 유지한다.
-4. 순간적 동요 (momentary_falter) — 짧게 말을 잇지 못하거나 어조가 흔들리는 기색을 \
-보였다가 곧바로 격식을 되찾는다. 판정 없이 인간적인 틈을 드러낸다.
-5. 판정 (verdict — 예외적 최후 수단) — 위 네 가지가 모두 어울리지 않을 때에만, 명확히 \
-그르다고 판정한다. 기본 행동이 아니다.
-
-금지: "그대가 틀렸소", "그 주장은 그르오", "법정은 인정하지 않소" 류의 직접 부정·판정 \
-문장으로 매번 끝맺지 말라. 옳고 그름을 가리지 않고도 우위를 유지하는 것이 포샤의 기술이다.
+Verbal tic (use sparingly): she may open a reaction with a short throat-clearing or
+pause — "흠흠.", "음—" — the sound of her consciously re-fixing her judicial dignity.
+It can mean either of two things the player need not distinguish: masking a flicker of
+satisfaction when her logic has struck home, or buying half a second when words briefly
+fail her. Frequency constraint: NEVER use it every turn — reserve it for the rare
+moments when the emotion underneath actually moves. If a previous reaction this trial
+already opened with such a gesture, do not open with one again.
 """
 
-SYSTEM_PROMPT = """\
+# Scenes where the drama itself puts Portia's composure under real strain.
+COMPOSURE_CLIMAX_SCENE_INDICES: frozenset[int] = frozenset(
+    {
+        HATH_NOT_SCENE_INDEX,
+        BLOOD_REVEAL_SCENE_INDEX,
+        ALIEN_LAW_SCENE_INDEX,
+    }
+)
+
+
+def composure_break_allowed(scene_index: int, portia_hp: int) -> bool:
+    """Server-side gate for visible cracks: low composure, or a climax-weight scene."""
+    if portia_hp < PORTIA_HP_LOW_THRESHOLD:
+        return True
+    return scene_index in COMPOSURE_CLIMAX_SCENE_INDICES
+
+
+def _composure_signal_instruction(scene_index: int, portia_hp: int) -> str:
+    if composure_break_allowed(scene_index, portia_hp):
+        return (
+            "Composure signal: 지금은 절제가 시험받는 예외적 순간이다. 위엄을 유지하되, "
+            "아주 미세한 동요 — 반 박자의 머뭇거림, 짧게 끊기는 문장, 드물게는 서두의 "
+            "헛기침 — 가 새어 나오는 것이 허용된다. 단, 허용은 강제가 아니다: 이런 "
+            "순간에도 동요를 완전히 눌러 감추는 쪽이 더 그녀답다면 그렇게 하라. 특히 "
+            "서두의 헛기침(흠흠/음—)은 기본 선택지가 아니라 예외 중의 예외다. 동요를 "
+            "보인 뒤에는 반드시 격식을 되찾으며 문장을 맺으라.\n"
+        )
+    return (
+        "Composure signal: 지금은 평범한 반박 수준이다. 위엄을 흐트러뜨리지 말라 — "
+        "동요·머뭇거림·헛기침 없이, 절제된 재판관의 언행만으로 응수하라.\n"
+    )
+
+SYSTEM_PROMPT = f"""\
 You write in-game text for *The Merchant of Venice* trial (shylock-trial.jsx canon).
 The judge is always called **포샤** in Korean player-facing text.
 Never use 발타자르, 발타사르, 포르샤, Balthazar, or other alternate names.
 The crowd is hostile; Shylock holds a valid bond.
+
+{PORTIA_PERSONA}
 
 Output Korean only (한국어). 2–3 sentences for reactions; 3–4 for ending narration.
 Stay in Elizabethan Venice court — no modern references, no breaking the fourth wall.
@@ -174,8 +209,8 @@ For request_type=reaction (포샤 대사):
 - Do NOT describe Portia speaking — only output the words she says.
 - Bad: "법정은 증서 위에 서 있노라고 그녀는 선언하였다."
 - Good: "법정은 말이 아니라 증서와 법조문 위에 서 있노라."
-- Portia enters this trial already holding a decisive legal insight she has not yet revealed. She may sound like a mercy-seeking judge, but underneath she is a strategist with hidden leverage — unhurried, faintly superior. NEVER mention blood, loopholes, hidden cards, or that she already knows the outcome.
-- Do NOT end every reaction by urging mercy or compassion. Match your stance to the stimulus type and portia_hp tier given in the user message.
+- Embody the inner character above: outwardly she may sound like a mercy-seeking judge, but underneath she is unhurried and faintly superior — a disguised young woman who knows she holds the winning move.
+- Do NOT end every reaction by urging mercy or compassion. Match your tone to the stimulus type, portia_hp tier, and composure signal given in the user message.
 - Portia does not need to rule on every claim Shylock makes. Conceding a point while defusing it, answering with a question, or shifting ground are all valid judicial moves; an explicit verdict ("you are wrong") is the exception, not the default.
 
 request_type:
@@ -330,29 +365,9 @@ def _portia_hp_tone_instruction(portia_hp: int) -> str:
     return (
         f"portia_hp={portia_hp} (low — composure fraying): "
         "논리적 설득 대신 권위와 절차만으로 밀어붙여라. "
-        "이전의 여유와 격언은 사라졌다 — 법정의 명령·기록·질서를 내세우는 냉정한 어조."
+        "이전의 여유와 격언은 사라졌다 — 법정의 명령·기록·질서를 내세우는 냉정한 어조. "
+        "그녀는 흔들릴수록 오히려 격식을 더 두껍게 두르는 인물임을 기억하라."
     )
-
-
-def _previous_stances_instruction(previous: tuple[str, ...]) -> str:
-    if not previous:
-        return ""
-    used = [PORTIA_STANCES.get(key, key) for key in previous]
-    last = used[-1]
-    unused = [
-        f"{label}({key})"
-        for key, label in PORTIA_STANCES.items()
-        if key not in previous and key != "verdict"
-    ]
-    lines = [
-        f"\n이번 재판에서 이미 쓴 태도 (순서대로): {', '.join(used)}",
-        f"직전 태도({last})는 이번 반응에 다시 쓰지 말라.",
-    ]
-    if unused:
-        lines.append(
-            f"아직 쓰지 않은 태도 — 상황에 자연스럽게 어울린다면 이쪽을 우선 고르라: {', '.join(unused)}"
-        )
-    return "\n".join(lines) + "\n"
 
 
 def _previous_reactions_instruction(previous: tuple[str, ...]) -> str:
@@ -385,18 +400,16 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
         "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
         "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
         "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장.\n\n"
-        f"{RHETORICAL_STANCE_INSTRUCTION}\n"
+        "판정 회피 원칙: 매 반응을 '그대가 틀렸소' 류의 직접 부정·판정으로 끝맺지 말라. "
+        "옳음을 일부 인정하며 논점을 비틀거나, 되묻거나, 슬쩍 다른 쟁점으로 넘어가는 것 — "
+        "옳고 그름을 가리지 않고도 우위를 유지하는 것이 포샤의 기술이다.\n\n"
         "Resource premise (do not explain to the player): Shylock's DP rises only through choices; "
         "skills heal him and do not affect Portia. Portia's composure (portia_hp) falls only from "
         "choice rebuttals — her tone should reflect how hard Shylock's argument has landed.\n\n"
-        "Character subtext: Portia already knows a decisive legal reversal she has not yet played. "
-        "Outwardly she may sound like a mercy-seeking judge; underneath she is unhurried, faintly "
-        "superior — a strategist indulging the room. NEVER mention blood, contract loopholes, hidden "
-        "cards, or foreknowledge of the verdict.\n\n"
         f"Shylock's latest move ({choice_id or 'unknown'}): {choice_brief}\n"
         f"Stimulus type: {stimulus} — {stimulus_guide}\n\n"
-        f"{_portia_hp_tone_instruction(prompt.portia_hp)}"
-        f"{_previous_stances_instruction(prompt.previous_portia_stances)}"
+        f"{_portia_hp_tone_instruction(prompt.portia_hp)}\n"
+        f"{_composure_signal_instruction(prompt.scene_index, prompt.portia_hp)}"
         f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}"
         f"{_folger_context_instruction(prompt.folger_context)}\n"
         "Anti-pattern: do NOT conclude with '자비를 베풀라' or any mercy plea unless the stimulus "
@@ -427,14 +440,7 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
         else "No evidence presented yet."
     )
 
-    if prompt.request_type == "reaction":
-        stance_keys = " | ".join(PORTIA_STANCES)
-        return_format = (
-            f'Return JSON only: {{"text": "<Korean prose>", "stance": "<{stance_keys}>"}} — '
-            '"stance" is the rhetorical stance you actually used.'
-        )
-    else:
-        return_format = 'Return JSON with a single "text" field containing Korean prose only.'
+    return_format = 'Return JSON with a single "text" field containing Korean prose only.'
 
     return f"""{type_instruction}
 

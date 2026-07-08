@@ -8,7 +8,6 @@ from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDia
 
 from infrastructure.config import get_settings
 from shylock_trial.app.constants.portia_prompt import (
-    PORTIA_STANCES,
     SCENE_DIALOGUE_SYSTEM_PROMPT,
     SYSTEM_PROMPT,
     build_scene_dialogue_message,
@@ -34,6 +33,9 @@ from shylock_trial.app.utils.portia_text import extract_portia_text
 
 MODEL_ID = "claude-sonnet-5"
 
+# Last-resort line when the model returns empty text — keeps the trial advancing.
+REACTION_FALLBACK_TEXT = "법정은 그대의 말을 기록에 남기겠소. 다음 절차로 나아가시오."
+
 
 class PortiaResponseOutput(BaseModel):
     text: str = Field(
@@ -41,10 +43,6 @@ class PortiaResponseOutput(BaseModel):
             "Player-facing Korean prose. For reactions: Portia's direct speech to Shylock only "
             "(no third-person narration like '그녀는 말하였다'). 1–4 sentences."
         ),
-    )
-    stance: str | None = Field(
-        default=None,
-        description="Rhetorical stance key the reaction used (see PORTIA_STANCES).",
     )
 
 
@@ -149,14 +147,16 @@ class PortiaResponseClient(PortiaResponsePort):
             if text:
                 return PortiaResponseResultDto(
                     text=self._finalize_portia_text(text, prompt.request_type),
-                    stance=parsed.stance if parsed.stance in PORTIA_STANCES else None,
                 )
         except (ValidationError, json.JSONDecodeError):
             pass
 
-        return PortiaResponseResultDto(
-            text=self._finalize_portia_text(extract_portia_text(raw), prompt.request_type)
-        )
+        text = self._finalize_portia_text(extract_portia_text(raw), prompt.request_type)
+        if not text:
+            return PortiaResponseResultDto(
+                text=REACTION_FALLBACK_TEXT, fallback_used=True
+            )
+        return PortiaResponseResultDto(text=text)
 
     def _finalize_portia_text(self, text: str, request_type: str) -> str:
         cleaned = sanitize_game_text(text)

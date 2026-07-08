@@ -79,7 +79,6 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
             venice_dp_shield=data.get("venice_dp_shield", False),
             venice_paradox_used=data.get("venice_paradox_used", False),
             portia_reactions=data.get("portia_reactions", []),
-            portia_stances=data.get("portia_stances", []),
         )
 
     async def set(self, trial: Trial, ttl_seconds: int = 3600) -> None:
@@ -100,7 +99,6 @@ class TrialProgressionRedisCache(TrialProgressionCachePort):
                 "venice_dp_shield": trial.venice_dp_shield,
                 "venice_paradox_used": trial.venice_paradox_used,
                 "portia_reactions": trial.portia_reactions,
-                "portia_stances": trial.portia_stances,
             }
         )
         await self._redis.set(self._key(trial.trial_id), payload, ex=ttl_seconds)

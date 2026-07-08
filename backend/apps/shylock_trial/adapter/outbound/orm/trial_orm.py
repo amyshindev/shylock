@@ -27,7 +27,6 @@ class TrialOrm(Base):
     presented_evidence_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     tubal_enhanced_choices: Mapped[str | None] = mapped_column(Text, nullable=True)
     portia_reactions_json: Mapped[str | None] = mapped_column(Text, nullable=True)
-    portia_stances_json: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

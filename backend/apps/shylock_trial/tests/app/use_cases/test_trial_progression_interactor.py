@@ -10,18 +10,15 @@ def _clear_folger_cache() -> None:
 
 
 class FakePortiaUseCase:
-    def __init__(self, stance=None) -> None:
+    def __init__(self) -> None:
         self.last_prompt = None
-        self.stance = stance
         self.scene_dialogue_calls = 0
 
     async def generate(self, prompt):
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
 
         self.last_prompt = prompt
-        return PortiaResponseResultDto(
-            text="Portia speaks.", fallback_used=False, stance=self.stance
-        )
+        return PortiaResponseResultDto(text="Portia speaks.", fallback_used=False)
 
     async def generate_scene_dialogue(self, prompt):
         from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
@@ -283,11 +280,11 @@ async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
 
 
 @pytest.mark.asyncio
-async def test_submit_choice_records_stance_and_passes_history_to_next_prompt() -> None:
+async def test_submit_choice_passes_reaction_history_to_next_prompt() -> None:
     from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
 
-    portia = FakePortiaUseCase(stance="counter_question")
+    portia = FakePortiaUseCase()
     port = InMemoryTrialPort()
     interactor = TrialProgressionInteractor(
         port=port,
@@ -300,36 +297,15 @@ async def test_submit_choice_records_stance_and_passes_history_to_next_prompt() 
         SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
     )
 
-    assert portia.last_prompt.previous_portia_stances == ()
+    assert portia.last_prompt.previous_portia_reactions == ()
 
     await interactor.submit_choice(
         SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="bond_signature"),
     )
 
-    assert portia.last_prompt.previous_portia_stances == ("counter_question",)
+    assert portia.last_prompt.previous_portia_reactions == ("Portia speaks.",)
     trial = await port.find_by_id(started.trial_id)
-    assert trial.portia_stances == ["counter_question", "counter_question"]
-
-
-@pytest.mark.asyncio
-async def test_submit_choice_skips_stance_history_when_untagged() -> None:
-    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
-    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
-
-    port = InMemoryTrialPort()
-    interactor = TrialProgressionInteractor(
-        port=port,
-        portia=FakePortiaUseCase(),
-        evidence=FakeEvidenceUseCase(),
-        tubal_enhancement=FakeTubalEnhancementClient(),
-    )
-    started = await interactor.start()
-    await interactor.submit_choice(
-        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
-    )
-
-    trial = await port.find_by_id(started.trial_id)
-    assert trial.portia_stances == []
+    assert trial.portia_reactions == ["Portia speaks.", "Portia speaks."]
 
 
 @pytest.mark.asyncio

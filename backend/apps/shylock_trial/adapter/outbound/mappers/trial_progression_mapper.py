@@ -32,7 +32,6 @@ def to_entity(orm: TrialOrm) -> Trial:
         venice_dp_shield=orm.venice_dp_shield,
         venice_paradox_used=orm.venice_paradox_used,
         portia_reactions=list(deserialize_string_tuple(orm.portia_reactions_json)),
-        portia_stances=list(deserialize_string_tuple(orm.portia_stances_json)),
     )
 
 
@@ -54,7 +53,6 @@ def to_orm(entity: Trial) -> TrialOrm:
         venice_dp_shield=entity.venice_dp_shield,
         venice_paradox_used=entity.venice_paradox_used,
         portia_reactions_json=serialize_string_tuple(tuple(entity.portia_reactions)),
-        portia_stances_json=serialize_string_tuple(tuple(entity.portia_stances)),
     )
     orm.choice_history = [
         TrialChoiceHistoryOrm(trial_id=entity.trial_id, choice_id=choice_id)

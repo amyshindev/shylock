@@ -16,7 +16,6 @@ class PortiaResponsePromptDto:
     portia_hp: int = 100
     choice_id: str | None = None
     previous_portia_reactions: tuple[str, ...] = ()
-    previous_portia_stances: tuple[str, ...] = ()
     tubal_used_scenes: tuple[str, ...] = ()
     presented_evidence: tuple[str, ...] = ()
     folger_context: str | None = None
@@ -26,4 +25,3 @@ class PortiaResponsePromptDto:
 class PortiaResponseResultDto:
     text: str
     fallback_used: bool = False
-    stance: str | None = None
