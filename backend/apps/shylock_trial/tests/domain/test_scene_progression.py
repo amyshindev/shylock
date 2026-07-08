@@ -13,8 +13,9 @@ from shylock_trial.app.constants.scene_progression import (
     ("scene_index", "portia_hp", "expected"),
     [
         (0, 100, 1),
-        (6, 50, JESSICA_DUET_SCENE_INDEX),
-        (JESSICA_DUET_SCENE_INDEX, 50, ALIEN_LAW_SCENE_INDEX),
+        (4, 50, JESSICA_DUET_SCENE_INDEX),
+        (JESSICA_DUET_SCENE_INDEX, 50, JESSICA_DUET_SCENE_INDEX + 1),
+        (7, 50, ALIEN_LAW_SCENE_INDEX),
         (ALIEN_LAW_SCENE_INDEX, 0, JESSICA_INTERVENTION_SCENE_INDEX),
         (ALIEN_LAW_SCENE_INDEX, 1, None),
         (JESSICA_INTERVENTION_SCENE_INDEX, 0, None),

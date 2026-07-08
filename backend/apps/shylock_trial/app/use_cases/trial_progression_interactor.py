@@ -4,13 +4,20 @@ import asyncio
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.constants.ending_type_map import resolve_ending_type
 from shylock_trial.app.constants.game_balance import (
+    HATH_NOT_SCENE_DP_GAIN,
+    HATH_NOT_SCENE_HP_COST,
+    HATH_NOT_SCENE_PORTIA_DAMAGE,
     PORTIA_HP_START,
     SHYLOCK_DP_START,
     SHYLOCK_HP_START,
 )
-from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
+from shylock_trial.app.constants.scene_catalog import (
+    fallback_scene_dialogue,
+    is_fixed_script_scene,
+)
 from shylock_trial.app.constants.scene_progression import (
     CROWD_JEERS_SCENE_INDEX,
+    HATH_NOT_SCENE_INDEX,
     resolve_next_scene_index,
 )
 from shylock_trial.app.constants.scene_choices import (
@@ -166,6 +173,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         )
         if next_index is None:
             raise ValueError("No further scenes to advance")
+        if trial.scene_index == HATH_NOT_SCENE_INDEX:
+            self._apply_hath_not_scene_effect(trial)
         trial.scene_index = next_index
         scene_dialogue = await self._ensure_scene_dialogue(trial, trial.scene_index)
         trial = await self._port.save(trial)
@@ -175,7 +184,19 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             scene_index=trial.scene_index,
             scene_data={"scene_index": trial.scene_index},
             scene_dialogue=scene_dialogue,
+            dp=trial.dp.value,
+            hp=trial.hp.value,
+            portia_hp=trial.portia_hp.value,
         )
+
+    @staticmethod
+    def _apply_hath_not_scene_effect(trial: Trial) -> None:
+        # Fixed climax scene: the speech itself lands as the trial's strongest blow,
+        # applied once when the player advances past the scene.
+        trial.dp = trial.dp.apply_delta(HATH_NOT_SCENE_DP_GAIN)
+        trial.hp = trial.hp.apply_delta(-HATH_NOT_SCENE_HP_COST)
+        trial.portia_hp = trial.portia_hp.apply_delta(-HATH_NOT_SCENE_PORTIA_DAMAGE)
+        trial.presented_evidence = append_unique(trial.presented_evidence, "hath_not")
 
     async def generate_ending(self, trial_id: UUID) -> GenerateEndingResultDto:
         trial = await self._require_trial(trial_id)
@@ -291,6 +312,11 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         cached = trial.scene_dialogues.get(scene_index)
         if cached is not None:
             return cached
+
+        if is_fixed_script_scene(scene_index):
+            content = fallback_scene_dialogue(scene_index)
+            trial.scene_dialogues[scene_index] = content
+            return content
 
         try:
             result = await self._portia.generate_scene_dialogue(

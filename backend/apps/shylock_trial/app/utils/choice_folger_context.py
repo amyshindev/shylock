@@ -42,9 +42,6 @@ CHOICE_RAG_QUERY_OVERRIDES: dict[str, str] = {
     "coat_show_silent": (
         "Shylock silently displays the gaberdine coat Antonio spat upon"
     ),
-    "hath_not_speech": (
-        "Hath not a Jew eyes? If you prick us do we not bleed? Shylock's humanity speech"
-    ),
     "defend_jessica": "Shylock's daughter Jessica eloped and converted; family wound",
     "letter_irrelevant": (
         "Shylock separates his daughter Jessica's elopement from the bond; a private "

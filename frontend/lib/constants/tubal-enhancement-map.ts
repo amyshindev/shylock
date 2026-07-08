@@ -4,7 +4,7 @@ export const TUBAL_ENHANCEMENT_BY_SCENE: Record<string, string | null> = {
   bassanio_plea: "gold_shame_bribe",
   crowd_jeers: "coat_before_dry",
   jessica_attack: "defend_jessica",
-  hath_not_moment: "hath_not_speech",
+  hath_not_moment: null,
   blood_reveal: null,
   alien_law_reveal: null,
   jessica_duet: null,

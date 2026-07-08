@@ -53,6 +53,9 @@ export interface AdvanceSceneResponse {
   scene_index: number;
   scene_data: { scene_index: number };
   scene_dialogue: SceneDialogueFromApi;
+  dp: number;
+  hp: number;
+  portia_hp: number;
 }
 
 export interface EndingResponse {

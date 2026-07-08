@@ -92,13 +92,13 @@ def test_apply_skill_resources_venice_paradox() -> None:
 
 
 def test_apply_choice_resources_low_hp_halves_gain() -> None:
-    effect = get_choice_effect("hath_not_speech")
+    effect = get_choice_effect("ring_leah_gift")
     next_hp, next_dp, _, next_portia_hp = apply_choice_resources(
         hp_before=25,
         dp_before=50,
         effect=effect,
         portia_hp_before=100,
     )
-    assert next_hp == 5
-    assert next_dp == 65
-    assert next_portia_hp == 86
+    assert next_hp == 13
+    assert next_dp == 59
+    assert next_portia_hp == 90

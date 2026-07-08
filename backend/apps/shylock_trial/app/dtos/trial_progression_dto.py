@@ -44,6 +44,9 @@ class AdvanceSceneResultDto:
     scene_index: int
     scene_data: dict
     scene_dialogue: SceneDialogueContent
+    dp: int
+    hp: int
+    portia_hp: int
 
 
 @dataclass(frozen=True, slots=True)

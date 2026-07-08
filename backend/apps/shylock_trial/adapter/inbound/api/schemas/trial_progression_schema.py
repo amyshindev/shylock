@@ -168,6 +168,9 @@ class AdvanceSceneResponse(BaseModel):
     scene_index: int
     scene_data: dict
     scene_dialogue: SceneDialogueResponse
+    dp: int = Field(ge=0, le=100)
+    hp: int = Field(ge=0, le=100)
+    portia_hp: int = Field(ge=0, le=100)
 
 
 class EndingResponse(BaseModel):

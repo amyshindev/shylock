@@ -13,6 +13,7 @@ class FakePortiaUseCase:
     def __init__(self, stance=None) -> None:
         self.last_prompt = None
         self.stance = stance
+        self.scene_dialogue_calls = 0
 
     async def generate(self, prompt):
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
@@ -26,6 +27,7 @@ class FakePortiaUseCase:
         from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
         from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueResultDto
 
+        self.scene_dialogue_calls += 1
         return SceneDialogueResultDto(
             content=fallback_scene_dialogue(prompt.scene_index),
             fallback_used=False,
@@ -214,6 +216,67 @@ async def test_venice_paradox_skill_is_one_time() -> None:
 
     with pytest.raises(ValueError, match="skill_unavailable"):
         await interactor.use_venice_paradox_skill(started.trial_id)
+
+
+@pytest.mark.asyncio
+async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
+    from shylock_trial.app.constants.scene_progression import (
+        HATH_NOT_SCENE_INDEX,
+        JESSICA_DUET_SCENE_INDEX,
+    )
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX, 50)
+    result = await interactor.advance_scene(started.trial_id)
+
+    assert result.scene_index == HATH_NOT_SCENE_INDEX
+    assert portia.scene_dialogue_calls == 0
+    speeches = [line.text for line in result.scene_dialogue.lines]
+    assert "유대인은 눈이 없소?" in speeches
+    assert result.scene_dialogue.challenge_text is None
+    assert result.scene_dialogue.choice_text_map() == {}
+    speakers = [line.speaker for line in result.scene_dialogue.lines]
+    assert speakers[0] == "PORTIA"
+    assert "SHYLOCK" in speakers
+    # Entering the scene costs nothing — the effect lands when it finishes.
+    assert result.dp == 50
+    assert result.hp == 100
+    assert result.portia_hp == 100
+
+
+@pytest.mark.asyncio
+async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
+    from shylock_trial.app.constants.game_balance import (
+        HATH_NOT_SCENE_DP_GAIN,
+        HATH_NOT_SCENE_HP_COST,
+        HATH_NOT_SCENE_PORTIA_DAMAGE,
+    )
+    from shylock_trial.app.constants.scene_progression import HATH_NOT_SCENE_INDEX
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    port = InMemoryTrialPort()
+    interactor = TrialProgressionInteractor(
+        port=port,
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(HATH_NOT_SCENE_INDEX, 50)
+    result = await interactor.advance_scene(started.trial_id)
+
+    assert result.scene_index == HATH_NOT_SCENE_INDEX + 1
+    assert result.dp == 50 + HATH_NOT_SCENE_DP_GAIN
+    assert result.hp == 100 - HATH_NOT_SCENE_HP_COST
+    assert result.portia_hp == 100 - HATH_NOT_SCENE_PORTIA_DAMAGE
+    trial = await port.find_by_id(started.trial_id)
+    assert "hath_not" in trial.presented_evidence
 
 
 @pytest.mark.asyncio

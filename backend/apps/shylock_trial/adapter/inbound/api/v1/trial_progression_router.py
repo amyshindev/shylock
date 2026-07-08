@@ -125,6 +125,9 @@ async def advance_scene(
         scene_index=result.scene_index,
         scene_data=result.scene_data,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
+        dp=result.dp,
+        hp=result.hp,
+        portia_hp=result.portia_hp,
     )
 
 

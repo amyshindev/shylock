@@ -7,6 +7,7 @@ const SPEAKER_LABELS: Record<Speaker, string | undefined> = {
   CROWD: "군중",
   JESSICA: "제시카",
   LORENZO: "로렌조",
+  SHYLOCK: "샤일록",
 };
 
 export function resolveSpeakerLabel(

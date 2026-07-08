@@ -454,13 +454,18 @@ export function useTrialProgression(trialId: string) {
         [result.scene_index]: result.scene_dialogue,
       }));
       setSceneIdx(result.scene_index);
+      // Fixed scenes (hath_not_moment) apply stat effects server-side on advance.
+      setDp(result.dp);
+      setHp(result.hp);
+      setPortiaHp(result.portia_hp);
+      triggerGameOverIfNeeded(result.dp, result.hp);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to advance scene");
     } finally {
       setLoadingScene(false);
       sceneAdvanceLockRef.current = false;
     }
-  }, [isLastScene, trialId, finishToEnding, loadingScene]);
+  }, [isLastScene, trialId, finishToEnding, loadingScene, triggerGameOverIfNeeded]);
 
   const applyLauncelotHpGain = useCallback(() => {
     if (launcelotHpGainAppliedRef.current || launcelotPendingHpRef.current === null) {

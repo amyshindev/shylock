@@ -183,47 +183,6 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         },
     ),
     SceneTemplate(
-        scene_id="hath_not_moment",
-        speaker="PORTIA",
-        speaker_label="포샤",
-        brief="Portia's final question — does Shylock know mercy?",
-        canonical_lines=(
-            "샤일록, 마지막으로 묻겠소.",
-            "당신은 왜 자비를 모르오?",
-            "당신 안에 인간의 감정이 있기는 하오?",
-        ),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 3,
-        challenge_header="▶ 샤일록의 선택",
-        canonical_challenge_text="이 순간이다. 당신의 말로 대답할 것인가.",
-        choice_ids=("hath_not_speech", "bond_only", "beg_mercy"),
-        canonical_choice_texts={
-            "hath_not_speech": '"유대인에게 눈이 없소? 피가 없소?"',
-            "bond_only": "자비는 계약서에 없소. 법만이 있을 뿐",
-            "beg_mercy": "...부탁이오. 제발 계약을 이행해주시오",
-        },
-    ),
-    SceneTemplate(
-        scene_id="blood_reveal",
-        speaker="PORTIA",
-        speaker_label="포샤",
-        brief="Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
-        canonical_lines=(
-            "살을 잘라도 좋소.",
-            "단—",
-            "피를 한 방울도 흘려서는 안 되오.",
-            "살은 딱 1파운드. 그 이상도 이하도 안 되오.",
-        ),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 4,
-        challenge_header="▶ 샤일록의 선택",
-        canonical_challenge_text="이건 말이 안 된다. 하지만 법정이 고개를 끄덕인다.",
-        choice_ids=("blood_impossible", "drop_knife", "take_principal_only"),
-        canonical_choice_texts={
-            "blood_impossible": "피 없이 살을 자르는 건 불가능하오!",
-            "drop_knife": "...(칼을 내려놓는다)",
-            "take_principal_only": "그렇다면 원금만 받겠소",
-        },
-    ),
-    SceneTemplate(
         scene_id="jessica_duet",
         speaker="JESSICA",
         speaker_label="제시카",
@@ -287,6 +246,69 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         choice_ids=(),
         canonical_choice_texts={},
     ),
+    # Fixed climax scene — scripted verbatim, no choices, no LLM rewrite.
+    # Scene-level stat effects live in game_balance (HATH_NOT_SCENE_*).
+    SceneTemplate(
+        scene_id="hath_not_moment",
+        speaker="SHYLOCK",
+        speaker_label="샤일록",
+        brief="Climax — Shylock's 'Hath not a Jew eyes?' speech silences the court.",
+        canonical_lines=(
+            "샤일록, 마지막으로 묻겠소. 당신은 자비가 무엇인지 아시오?",
+            "...",
+            "유대인은 눈이 없소?",
+            "손이, 오장육부가, 감정이 없소?",
+            "찌르면 피 흘리지 않소? 간지럽히면 웃지 않소? 독을 먹이면 죽지 않소?",
+            "당신들이 나머지 모든 점에서 우리와 같다면, 이 점에서도 우리는 같을 것이오.",
+            "법정 안이 일순 조용해진다. 야유하던 이들조차, 잠시 입을 다문다.",
+            "...계속하시오, 재판을 진행하겠소.",
+        ),
+        canonical_line_kinds=(
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+        ),
+        canonical_line_speakers=(
+            "PORTIA",
+            "SHYLOCK",
+            "SHYLOCK",
+            "SHYLOCK",
+            "SHYLOCK",
+            "SHYLOCK",
+            "NARRATOR",
+            "PORTIA",
+        ),
+        challenge_header=None,
+        canonical_challenge_text=None,
+        choice_ids=(),
+        canonical_choice_texts={},
+    ),
+    SceneTemplate(
+        scene_id="blood_reveal",
+        speaker="PORTIA",
+        speaker_label="포샤",
+        brief="Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
+        canonical_lines=(
+            "살을 잘라도 좋소.",
+            "단—",
+            "피를 한 방울도 흘려서는 안 되오.",
+            "살은 딱 1파운드. 그 이상도 이하도 안 되오.",
+        ),
+        canonical_line_kinds=(DialogueLineKind.SPEECH,) * 4,
+        challenge_header="▶ 샤일록의 선택",
+        canonical_challenge_text="이건 말이 안 된다. 하지만 법정이 고개를 끄덕인다.",
+        choice_ids=("blood_impossible", "drop_knife", "take_principal_only"),
+        canonical_choice_texts={
+            "blood_impossible": "피 없이 살을 자르는 건 불가능하오!",
+            "drop_knife": "...(칼을 내려놓는다)",
+            "take_principal_only": "그렇다면 원금만 받겠소",
+        },
+    ),
     SceneTemplate(
         scene_id="alien_law_reveal",
         speaker="PORTIA",
@@ -324,6 +346,14 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         canonical_choice_texts={},
     ),
 )
+
+
+# Scenes whose script is authored verbatim — never rewritten by the LLM.
+FIXED_SCRIPT_SCENE_IDS: frozenset[str] = frozenset({"hath_not_moment"})
+
+
+def is_fixed_script_scene(scene_index: int) -> bool:
+    return get_scene_template(scene_index).scene_id in FIXED_SCRIPT_SCENE_IDS
 
 
 def get_scene_template(scene_index: int) -> SceneTemplate:

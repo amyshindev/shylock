@@ -1,4 +1,11 @@
-export type Speaker = "NARRATOR" | "PORTIA" | "BASSANIO" | "CROWD" | "JESSICA" | "LORENZO";
+export type Speaker =
+  | "NARRATOR"
+  | "PORTIA"
+  | "BASSANIO"
+  | "CROWD"
+  | "JESSICA"
+  | "LORENZO"
+  | "SHYLOCK";
 
 export type DialogueLineKind = "speech" | "narration";
 
