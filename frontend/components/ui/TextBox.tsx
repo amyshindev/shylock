@@ -35,7 +35,7 @@ export function TextBox({
   const topPad = displayTab ? (isMobile ? 12 : 16) : isMobile ? 16 : 22;
 
   return (
-    <div style={{ ...textBoxPanelStyle(), ...style }}>
+    <div style={{ ...textBoxPanelStyle(isMobile), ...style }}>
       {displayTab && speaker && (
         <div
           style={{

@@ -17,13 +17,16 @@ export const gameFontSize = {
 } as const;
 
 /** Shared HUD panel chrome (meters, evidence, skills). */
-export function hudPanelStyle(padding = "6px 11px"): CSSProperties {
+export function hudPanelStyle(padding = "6px 11px", compact = false): CSSProperties {
   return {
-    background: "rgba(12, 6, 16, 0.94)",
-    borderRadius: 4,
+    background: compact ? "rgba(12, 6, 16, 0.82)" : "rgba(12, 6, 16, 0.94)",
+    borderRadius: compact ? 6 : 4,
     padding,
     border: "1px solid #4a2838",
-    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.45)",
+    boxShadow: compact
+      ? "0 1px 6px rgba(0, 0, 0, 0.35)"
+      : "0 2px 8px rgba(0, 0, 0, 0.45)",
+    backdropFilter: compact ? "blur(6px)" : undefined,
   };
 }
 
@@ -81,16 +84,16 @@ export function dialogueTextStyle(speaker: string, compact = false): CSSProperti
     color: speaker === "NARRATOR" ? "#9a8aaa" : "#e8e0d0",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
-    minHeight: compact ? "4.5em" : "5.25em",
+    minHeight: compact ? "3.25em" : "5.25em",
   };
 }
 
-export function textBoxPanelStyle(): CSSProperties {
+export function textBoxPanelStyle(compact = false): CSSProperties {
   return {
-    background: textBox.background,
+    background: compact ? "rgba(18, 12, 24, 0.82)" : textBox.background,
     border: textBox.border,
-    borderRadius: textBox.borderRadius,
-    backdropFilter: "blur(4px)",
+    borderRadius: compact ? 8 : textBox.borderRadius,
+    backdropFilter: "blur(6px)",
     fontFamily: textBox.fontFamily,
     position: "relative",
   };
@@ -108,7 +111,7 @@ export function textBoxDockStyle(compact = false): CSSProperties {
   return {
     flexShrink: 0,
     width: "100%",
-    padding: compact ? "0 10px 12px" : "0 16px 20px",
+    padding: compact ? "0 8px 8px" : "0 16px 20px",
     fontFamily: textBox.fontFamily,
     background: "transparent",
   };

@@ -15,39 +15,47 @@ interface PortiaMeterDisplayProps {
   portiaHp: number;
 }
 
+interface CompactMeterStripProps extends ShylockMeterDisplayProps {
+  portiaHp: number;
+}
+
 function MeterBar({
   label,
   value,
   max,
   color,
   labelColor = "#e8dce4",
+  compact = false,
 }: {
   label: string;
   value: number;
   max: number;
   color: string;
   labelColor?: string;
+  compact?: boolean;
 }) {
   const clamped = Math.max(0, Math.min(max, value));
   const pct = max > 0 ? (clamped / max) * 100 : 0;
 
   return (
-    <div style={hudPanelStyle()}>
+    <div style={compact ? { flex: 1, minWidth: 0 } : hudPanelStyle()}>
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: gameFontSize.xs,
-          letterSpacing: 0.8,
-          marginBottom: 5,
-          gap: 6,
+          fontSize: compact ? 10 : gameFontSize.xs,
+          letterSpacing: compact ? 0.2 : 0.8,
+          marginBottom: compact ? 2 : 5,
+          gap: 4,
         }}
       >
         <span
           style={{
             ...hudLabelStyle(labelColor),
             whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {label}
@@ -56,17 +64,18 @@ function MeterBar({
           style={{
             color,
             fontWeight: 700,
-            fontSize: gameFontSize.xs,
+            fontSize: compact ? 10 : gameFontSize.xs,
             textShadow: `0 0 6px ${color}66`,
+            flexShrink: 0,
           }}
         >
-          {clamped}/{max}
+          {clamped}
         </span>
       </div>
       <div
         style={{
           background: "#120810",
-          height: 5,
+          height: compact ? 3 : 5,
           borderRadius: 2,
           overflow: "hidden",
           border: "1px solid #2a1828",
@@ -124,6 +133,85 @@ export {
   HUD_TOP as LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 };
+
+/** Mobile top strip: three mini meters in one row, minimal vertical footprint. */
+export function CompactMeterStrip({
+  dp,
+  hp,
+  portiaHp,
+  dpGainFlash,
+  hpGainFlash,
+}: CompactMeterStripProps) {
+  return (
+    <div
+      style={{
+        ...hudPanelStyle("5px 8px", true),
+        display: "flex",
+        gap: 8,
+        flexShrink: 0,
+        pointerEvents: "none",
+        position: "relative",
+      }}
+    >
+      {dpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: -2,
+            right: 8,
+            color: "#88ccff",
+            fontSize: 10,
+            fontWeight: 700,
+            textShadow: "0 0 8px rgba(102, 187, 255, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{dpGainFlash}
+        </div>
+      )}
+      <MeterBar
+        label="DP"
+        value={dp}
+        max={DP_MAX}
+        color={dpColor(dp)}
+        labelColor="#b8dcff"
+        compact
+      />
+      <MeterBar
+        label="HP"
+        value={hp}
+        max={HP_MAX}
+        color={hpColor(hp)}
+        labelColor="#ffb0a0"
+        compact
+      />
+      <MeterBar
+        label="포샤"
+        value={portiaHp}
+        max={PORTIA_HP_MAX}
+        color={portiaHpColor(portiaHp)}
+        labelColor="#ffb8c0"
+        compact
+      />
+      {hpGainFlash != null && (
+        <div
+          style={{
+            position: "absolute",
+            top: -2,
+            left: "38%",
+            color: "#ff9980",
+            fontSize: 10,
+            fontWeight: 700,
+            textShadow: "0 0 8px rgba(255, 136, 102, 0.8)",
+            animation: "dpGainFlash 1.4s ease-out forwards",
+          }}
+        >
+          +{hpGainFlash}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: ShylockMeterDisplayProps) {
   const isMobile = useIsMobile();

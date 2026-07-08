@@ -125,8 +125,8 @@ export function ChoiceList({
   return (
     <div
       style={{
-        padding: isMobile ? "10px 12px 12px" : "12px 14px 14px",
-        marginTop: isMobile ? 6 : 10,
+        padding: isMobile ? "8px 10px 10px" : "12px 14px 14px",
+        marginTop: isMobile ? 4 : 10,
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,

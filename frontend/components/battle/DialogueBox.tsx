@@ -105,7 +105,7 @@ export function DialogueBox({
     fontFamily: gameFontFamily,
     whiteSpace: "pre-wrap" as const,
     wordBreak: "break-word" as const,
-    minHeight: isMobile ? "4.5em" : "5.25em",
+    minHeight: isMobile ? "3.25em" : "5.25em",
   };
 
   return (
@@ -116,8 +116,8 @@ export function DialogueBox({
       onClick={isClickable ? handleClick : undefined}
       showAdvanceArrow={showArrow}
       bodyStyle={{
-        minHeight: isMobile ? 80 : DIALOGUE_BODY_MIN_HEIGHT,
-        paddingBottom: DIALOGUE_BODY_PADDING_BOTTOM,
+        minHeight: isMobile ? 64 : DIALOGUE_BODY_MIN_HEIGHT,
+        paddingBottom: isMobile ? 22 : DIALOGUE_BODY_PADDING_BOTTOM,
         cursor: isClickable ? "pointer" : "default",
       }}
     >
