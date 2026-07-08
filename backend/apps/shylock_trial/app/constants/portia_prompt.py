@@ -122,6 +122,37 @@ STIMULUS_REACTION_GUIDE: dict[str, str] = {
     ),
 }
 
+# Rhetorical stance keys — model tags each reaction with the stance it used;
+# stored per trial so the next prompt can forbid immediate repeats.
+PORTIA_STANCES: dict[str, str] = {
+    "concede_neutralize": "인정 후 무력화",
+    "counter_question": "역질문",
+    "topic_shift": "화제 전환",
+    "momentary_falter": "순간적 동요",
+    "verdict": "판정",
+}
+
+# Judgment ("you are wrong") kept as a last-resort stance — reactions were converging
+# on verdict-style rebuttals regardless of surface tone.
+RHETORICAL_STANCE_INSTRUCTION = """\
+수사적 태도 — 매 반응마다 아래 다섯 가지 중 하나를 고르라. 자극 유형(stimulus)은 \
+말투와 격을 정할 뿐이며, 논증의 결론까지 정하지 않는다. 1–4번을 먼저 검토하고, \
+5번(판정)은 나머지가 뚜렷이 어울리지 않을 때만 쓰는 예외다:
+1. 인정 후 무력화 (concede_neutralize) — 샤일록의 말이 부분적으로 옳음을 인정하되, \
+그것이 재판의 결론을 바꾸지는 못한다고 논점을 비튼다. "틀렸다"고 말하지 않는다.
+2. 역질문 (counter_question) — 반박하는 대신 되묻는다. 그가 스스로 답하기 곤란한 질문 \
+하나를 던져 궁지로 몬다.
+3. 화제 전환 (topic_shift) — 그의 주장을 정면으로 다루지 않고 슬쩍 다른 쟁점으로 \
+넘어가며 자신의 페이스를 유지한다.
+4. 순간적 동요 (momentary_falter) — 짧게 말을 잇지 못하거나 어조가 흔들리는 기색을 \
+보였다가 곧바로 격식을 되찾는다. 판정 없이 인간적인 틈을 드러낸다.
+5. 판정 (verdict — 예외적 최후 수단) — 위 네 가지가 모두 어울리지 않을 때에만, 명확히 \
+그르다고 판정한다. 기본 행동이 아니다.
+
+금지: "그대가 틀렸소", "그 주장은 그르오", "법정은 인정하지 않소" 류의 직접 부정·판정 \
+문장으로 매번 끝맺지 말라. 옳고 그름을 가리지 않고도 우위를 유지하는 것이 포샤의 기술이다.
+"""
+
 SYSTEM_PROMPT = """\
 You write in-game text for *The Merchant of Venice* trial (shylock-trial.jsx canon).
 The judge is always called **포샤** in Korean player-facing text.
@@ -140,6 +171,7 @@ For request_type=reaction (포샤 대사):
 - Good: "법정은 말이 아니라 증서와 법조문 위에 서 있노라."
 - Portia enters this trial already holding a decisive legal insight she has not yet revealed. She may sound like a mercy-seeking judge, but underneath she is a strategist with hidden leverage — unhurried, faintly superior. NEVER mention blood, loopholes, hidden cards, or that she already knows the outcome.
 - Do NOT end every reaction by urging mercy or compassion. Match your stance to the stimulus type and portia_hp tier given in the user message.
+- Portia does not need to rule on every claim Shylock makes. Conceding a point while defusing it, answering with a question, or shifting ground are all valid judicial moves; an explicit verdict ("you are wrong") is the exception, not the default.
 
 request_type:
 - narration: neutral narrator tone (opening lines only if requested).
@@ -297,6 +329,27 @@ def _portia_hp_tone_instruction(portia_hp: int) -> str:
     )
 
 
+def _previous_stances_instruction(previous: tuple[str, ...]) -> str:
+    if not previous:
+        return ""
+    used = [PORTIA_STANCES.get(key, key) for key in previous]
+    last = used[-1]
+    unused = [
+        f"{label}({key})"
+        for key, label in PORTIA_STANCES.items()
+        if key not in previous and key != "verdict"
+    ]
+    lines = [
+        f"\n이번 재판에서 이미 쓴 태도 (순서대로): {', '.join(used)}",
+        f"직전 태도({last})는 이번 반응에 다시 쓰지 말라.",
+    ]
+    if unused:
+        lines.append(
+            f"아직 쓰지 않은 태도 — 상황에 자연스럽게 어울린다면 이쪽을 우선 고르라: {', '.join(unused)}"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def _previous_reactions_instruction(previous: tuple[str, ...]) -> str:
     if not previous:
         return ""
@@ -327,6 +380,7 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
         "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
         "3인칭 서술·'라고 그녀는 말하였다' 형식 금지. "
         "포샤 본인의 입으로 법정 연설체(~하오/~이오/~노라)로 2–3문장.\n\n"
+        f"{RHETORICAL_STANCE_INSTRUCTION}\n"
         "Resource premise (do not explain to the player): Shylock's DP rises only through choices; "
         "skills heal him and do not affect Portia. Portia's composure (portia_hp) falls only from "
         "choice rebuttals — her tone should reflect how hard Shylock's argument has landed.\n\n"
@@ -337,6 +391,7 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
         f"Shylock's latest move ({choice_id or 'unknown'}): {choice_brief}\n"
         f"Stimulus type: {stimulus} — {stimulus_guide}\n\n"
         f"{_portia_hp_tone_instruction(prompt.portia_hp)}"
+        f"{_previous_stances_instruction(prompt.previous_portia_stances)}"
         f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}"
         f"{_folger_context_instruction(prompt.folger_context)}\n"
         "Anti-pattern: do NOT conclude with '자비를 베풀라' or any mercy plea unless the stimulus "
@@ -367,6 +422,15 @@ def build_user_message(prompt: PortiaResponsePromptDto) -> str:
         else "No evidence presented yet."
     )
 
+    if prompt.request_type == "reaction":
+        stance_keys = " | ".join(PORTIA_STANCES)
+        return_format = (
+            f'Return JSON only: {{"text": "<Korean prose>", "stance": "<{stance_keys}>"}} — '
+            '"stance" is the rhetorical stance you actually used.'
+        )
+    else:
+        return_format = 'Return JSON with a single "text" field containing Korean prose only.'
+
     return f"""{type_instruction}
 
 scene: {scene_brief}
@@ -377,5 +441,5 @@ choices: {choices if choices else ["(none)"]}
 tubal: {tubal_context}
 evidence: {evidence_context}
 
-Return JSON with a single "text" field containing Korean prose only."""
+{return_format}"""
 

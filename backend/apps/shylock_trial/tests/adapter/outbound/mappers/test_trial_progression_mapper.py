@@ -17,6 +17,8 @@ def test_trial_mapper_roundtrip() -> None:
         portia_hp=PortiaHpScore(72),
         choice_history=["appeal_mercy"],
         phase=TrialPhase.IN_PROGRESS,
+        portia_reactions=["법정은 증서 위에 서 있노라."],
+        portia_stances=["concede_neutralize"],
     )
     orm = to_orm(entity)
     restored = to_entity(orm)
@@ -27,6 +29,8 @@ def test_trial_mapper_roundtrip() -> None:
     assert restored.hp.value == 80
     assert restored.portia_hp.value == 72
     assert restored.choice_history == ["appeal_mercy"]
+    assert restored.portia_reactions == ["법정은 증서 위에 서 있노라."]
+    assert restored.portia_stances == ["concede_neutralize"]
 
 
 def test_trial_orm_entity_fields() -> None:

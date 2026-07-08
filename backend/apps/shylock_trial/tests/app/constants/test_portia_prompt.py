@@ -31,6 +31,55 @@ def test_reaction_prompt_includes_stimulus_and_hp_tone() -> None:
     assert "Anti-pattern: do NOT conclude with '자비를 베풀라'" in message
 
 
+def test_reaction_prompt_includes_rhetorical_stances_with_verdict_demoted() -> None:
+    message = build_user_message(_reaction_prompt())
+
+    assert "수사적 태도" in message
+    assert "인정 후 무력화" in message
+    assert "역질문" in message
+    assert "화제 전환" in message
+    assert "순간적 동요" in message
+    assert "판정 (verdict — 예외적 최후 수단)" in message
+    assert "그대가 틀렸소" in message
+
+
+def test_reaction_prompt_requests_stance_field() -> None:
+    message = build_user_message(_reaction_prompt())
+
+    assert '"stance"' in message
+    assert "concede_neutralize | counter_question | topic_shift | momentary_falter | verdict" in message
+
+
+def test_narration_prompt_keeps_text_only_format() -> None:
+    message = build_user_message(
+        _reaction_prompt(request_type="narration", context="opening")
+    )
+
+    assert '"stance"' not in message
+    assert 'single "text" field' in message
+
+
+def test_reaction_prompt_forbids_repeating_last_stance() -> None:
+    message = build_user_message(
+        _reaction_prompt(
+            previous_portia_stances=("concede_neutralize", "counter_question"),
+        )
+    )
+
+    assert "이미 쓴 태도" in message
+    assert "인정 후 무력화, 역질문" in message
+    assert "직전 태도(역질문)는 이번 반응에 다시 쓰지 말라" in message
+    assert "화제 전환(topic_shift)" in message
+    assert "순간적 동요(momentary_falter)" in message
+    assert "판정(verdict)" not in message
+
+
+def test_reaction_prompt_without_stance_history_omits_instruction() -> None:
+    message = build_user_message(_reaction_prompt())
+
+    assert "이미 쓴 태도" not in message
+
+
 def test_reaction_prompt_includes_previous_reactions() -> None:
     message = build_user_message(
         _reaction_prompt(

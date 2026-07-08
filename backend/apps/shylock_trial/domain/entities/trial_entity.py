@@ -49,6 +49,7 @@ class Trial:
     venice_dp_shield: bool = False
     venice_paradox_used: bool = False
     portia_reactions: list[str] = field(default_factory=list)
+    portia_stances: list[str] = field(default_factory=list)
 
     def is_ended(self) -> bool:
         return self.phase == TrialPhase.ENDED

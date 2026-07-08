@@ -112,12 +112,24 @@ def test_ghetto_choice_skips_vector_search() -> None:
     assert evidence.search_calls == 0
 
 
-def test_weak_match_does_not_force_unrelated_passage() -> None:
+def test_weak_match_falls_back_to_curated_not_unrelated_passage() -> None:
     evidence = FakeEvidenceUseCase(
         scored_lines=(ScoredPlayLine(play_line=GABERDINE_LINE, cosine_distance=0.91),),
     )
 
     context = asyncio.run(get_choice_folger_context("bond_signature", evidence))
+
+    assert "curated evidence" in context
+    assert "pound of your fair flesh" in context
+    assert "spit upon my Jewish gaberdine" not in context
+
+
+def test_weak_match_without_curated_evidence_reports_no_passage() -> None:
+    evidence = FakeEvidenceUseCase(
+        scored_lines=(ScoredPlayLine(play_line=GABERDINE_LINE, cosine_distance=0.91),),
+    )
+
+    context = asyncio.run(get_choice_folger_context("drop_knife", evidence))
 
     assert "직접 대응하는 원작 구절을 찾지 못했습니다" in context
     assert "spit upon my Jewish gaberdine" not in context

@@ -137,6 +137,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia = await self._portia.generate(portia_prompt)
 
         trial.portia_reactions.append(portia.text)
+        if portia.stance:
+            trial.portia_stances.append(portia.stance)
 
         is_ending = False
 
@@ -332,6 +334,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia_hp=trial.portia_hp.value,
             choice_id=choice_id,
             previous_portia_reactions=tuple(trial.portia_reactions),
+            previous_portia_stances=tuple(trial.portia_stances),
             tubal_used_scenes=trial.tubal_used_scenes,
             presented_evidence=trial.presented_evidence,
             folger_context=folger_context,

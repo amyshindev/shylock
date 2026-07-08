@@ -8,6 +8,7 @@ from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDia
 
 from infrastructure.config import get_settings
 from shylock_trial.app.constants.portia_prompt import (
+    PORTIA_STANCES,
     SCENE_DIALOGUE_SYSTEM_PROMPT,
     SYSTEM_PROMPT,
     build_scene_dialogue_message,
@@ -40,6 +41,10 @@ class PortiaResponseOutput(BaseModel):
             "Player-facing Korean prose. For reactions: Portia's direct speech to Shylock only "
             "(no third-person narration like '그녀는 말하였다'). 1–4 sentences."
         ),
+    )
+    stance: str | None = Field(
+        default=None,
+        description="Rhetorical stance key the reaction used (see PORTIA_STANCES).",
     )
 
 
@@ -138,18 +143,13 @@ class PortiaResponseClient(PortiaResponsePort):
             block.text for block in response.content if block.type == "text"
         ).strip()
 
-        prose = extract_portia_text(raw)
-        if prose and not prose.startswith("{"):
-            return PortiaResponseResultDto(
-                text=self._finalize_portia_text(prose, prompt.request_type)
-            )
-
         try:
-            parsed = PortiaResponseOutput.model_validate_json(prose or raw)
+            parsed = PortiaResponseOutput.model_validate_json(_strip_json_fence(raw))
             text = parsed.text.strip()
             if text:
                 return PortiaResponseResultDto(
-                    text=self._finalize_portia_text(text, prompt.request_type)
+                    text=self._finalize_portia_text(text, prompt.request_type),
+                    stance=parsed.stance if parsed.stance in PORTIA_STANCES else None,
                 )
         except (ValidationError, json.JSONDecodeError):
             pass

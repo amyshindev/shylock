@@ -1,17 +1,26 @@
 import pytest
 
 from shylock_trial.app.constants.ending_type_map import EndingType
+from shylock_trial.app.utils.choice_folger_context import clear_choice_folger_cache
+
+
+@pytest.fixture(autouse=True)
+def _clear_folger_cache() -> None:
+    clear_choice_folger_cache()
 
 
 class FakePortiaUseCase:
-    def __init__(self) -> None:
+    def __init__(self, stance=None) -> None:
         self.last_prompt = None
+        self.stance = stance
 
     async def generate(self, prompt):
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
 
         self.last_prompt = prompt
-        return PortiaResponseResultDto(text="Portia speaks.", fallback_used=False)
+        return PortiaResponseResultDto(
+            text="Portia speaks.", fallback_used=False, stance=self.stance
+        )
 
     async def generate_scene_dialogue(self, prompt):
         from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
@@ -24,15 +33,22 @@ class FakePortiaUseCase:
 
 
 class FakeEvidenceUseCase:
+    def __init__(self, scored_lines=()) -> None:
+        self.scored_lines = tuple(scored_lines)
+
     async def search(self, input_dto):
         from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchResultDto
 
-        return EvidenceSearchResultDto(play_lines=())
+        return EvidenceSearchResultDto(
+            play_lines=tuple(item.play_line for item in self.scored_lines[: input_dto.limit]),
+        )
 
     async def search_scored(self, input_dto):
         from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchScoredResultDto
 
-        return EvidenceSearchScoredResultDto(scored_lines=())
+        return EvidenceSearchScoredResultDto(
+            scored_lines=tuple(self.scored_lines[: input_dto.limit]),
+        )
 
     async def list_curated_evidence(self):
         return []
@@ -198,6 +214,56 @@ async def test_venice_paradox_skill_is_one_time() -> None:
 
     with pytest.raises(ValueError, match="skill_unavailable"):
         await interactor.use_venice_paradox_skill(started.trial_id)
+
+
+@pytest.mark.asyncio
+async def test_submit_choice_records_stance_and_passes_history_to_next_prompt() -> None:
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    portia = FakePortiaUseCase(stance="counter_question")
+    port = InMemoryTrialPort()
+    interactor = TrialProgressionInteractor(
+        port=port,
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start()
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
+    )
+
+    assert portia.last_prompt.previous_portia_stances == ()
+
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="bond_signature"),
+    )
+
+    assert portia.last_prompt.previous_portia_stances == ("counter_question",)
+    trial = await port.find_by_id(started.trial_id)
+    assert trial.portia_stances == ["counter_question", "counter_question"]
+
+
+@pytest.mark.asyncio
+async def test_submit_choice_skips_stance_history_when_untagged() -> None:
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    port = InMemoryTrialPort()
+    interactor = TrialProgressionInteractor(
+        port=port,
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start()
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
+    )
+
+    trial = await port.find_by_id(started.trial_id)
+    assert trial.portia_stances == []
 
 
 @pytest.mark.asyncio
