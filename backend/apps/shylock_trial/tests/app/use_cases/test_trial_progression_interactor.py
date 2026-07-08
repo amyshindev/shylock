@@ -240,11 +240,14 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
     assert portia.scene_dialogue_calls == 0
     speeches = [line.text for line in result.scene_dialogue.lines]
     assert "유대인은 눈이 없소?" in speeches
+    assert "...그때, 저 사람은 아무 소리도 내지 않았었지." in speeches
     assert result.scene_dialogue.challenge_text is None
     assert result.scene_dialogue.choice_text_map() == {}
     speakers = [line.speaker for line in result.scene_dialogue.lines]
     assert speakers[0] == "PORTIA"
     assert "SHYLOCK" in speakers
+    # Antonio cut closes the scene after Portia's final line.
+    assert speakers[-3:] == ["NARRATOR", "ANTONIO", "NARRATOR"]
     # Entering the scene costs nothing — the effect lands when it finishes.
     assert result.dp == 50
     assert result.hp == 100

@@ -5,7 +5,8 @@ export type Speaker =
   | "CROWD"
   | "JESSICA"
   | "LORENZO"
-  | "SHYLOCK";
+  | "SHYLOCK"
+  | "ANTONIO";
 
 export type DialogueLineKind = "speech" | "narration";
 
@@ -14,6 +15,8 @@ export interface SceneLine {
   kind: DialogueLineKind;
   speaker?: Speaker;
   speakerLabel?: string;
+  /** Per-line background override; empty string renders a blank screen. */
+  backgroundImage?: string;
 }
 
 export interface ChoiceOption {
@@ -63,6 +66,8 @@ export interface FallbackLine {
   kind: DialogueLineKind;
   speaker?: Speaker;
   speakerLabel?: string;
+  /** Per-line background override; empty string renders a blank screen. */
+  backgroundImage?: string;
 }
 
 export interface ChoiceTemplate {

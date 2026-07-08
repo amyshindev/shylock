@@ -448,6 +448,26 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
         speaker: "PORTIA",
         speakerLabel: "포샤",
       },
+      // Antonio cut — illustration TBD, blank screen for now (backgroundImage: "").
+      {
+        text: "줄곧 침착했던 안토니오의 손끝이 미세하게 떨린다.",
+        kind: N,
+        speaker: "NARRATOR",
+        backgroundImage: "",
+      },
+      {
+        text: "...그때, 저 사람은 아무 소리도 내지 않았었지.",
+        kind: S,
+        speaker: "ANTONIO",
+        speakerLabel: "안토니오",
+        backgroundImage: "",
+      },
+      {
+        text: "그는 다시 고개를 든다. 여전히 죽음을 받아들일 준비가 된 얼굴로.",
+        kind: N,
+        speaker: "NARRATOR",
+        backgroundImage: "",
+      },
     ],
     challengeTemplate: null,
     availableEvidence: [],

@@ -15,7 +15,8 @@ function coerceSpeaker(raw: string | null | undefined): Speaker | undefined {
     raw === "CROWD" ||
     raw === "JESSICA" ||
     raw === "LORENZO" ||
-    raw === "SHYLOCK"
+    raw === "SHYLOCK" ||
+    raw === "ANTONIO"
   ) {
     return raw;
   }
@@ -35,6 +36,7 @@ function mergeLines(
         kind: coerceKind(line.kind, fallbackKind),
         speaker: coerceSpeaker(line.speaker) ?? fallback?.speaker,
         speakerLabel: fallback?.speakerLabel,
+        backgroundImage: fallback?.backgroundImage,
       };
     });
   }
@@ -44,6 +46,7 @@ function mergeLines(
     kind: line.kind,
     speaker: line.speaker,
     speakerLabel: line.speakerLabel,
+    backgroundImage: line.backgroundImage,
   }));
 }
 

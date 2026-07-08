@@ -1008,6 +1008,7 @@ export function useTrialProgression(trialId: string) {
     scene,
     sceneIdx,
     lineIdx,
+    lineBackgroundImage: currentLineEntry?.backgroundImage,
     dp,
     hp,
     portiaHp,

@@ -52,6 +52,7 @@ const SPEAKER_TAB: Record<Speaker, { bg: string; color: string }> = {
   LORENZO: { bg: "#1a1828", color: "#8a9acc" },
   JESSICA: { bg: "#2a1018", color: "#c87888" },
   SHYLOCK: { bg: "#241a08", color: "#c8a868" },
+  ANTONIO: { bg: "#101820", color: "#7a8a94" },
 };
 
 export function speakerTabStyle(speaker: string): CSSProperties {

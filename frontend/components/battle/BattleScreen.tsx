@@ -32,9 +32,14 @@ function SceneBackground({ backgroundImage }: { backgroundImage: string }) {
       style={{
         position: "absolute",
         inset: 0,
-        backgroundImage: `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${backgroundImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center top",
+        // Empty backgroundImage = intentionally blank screen (illustration TBD).
+        ...(backgroundImage
+          ? {
+              backgroundImage: `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center top",
+            }
+          : {}),
         backgroundColor: theme.background,
       }}
     />
@@ -45,6 +50,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   const {
     scene,
     sceneIdx,
+    lineBackgroundImage,
     dp,
     hp,
     portiaHp,
@@ -126,7 +132,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         ? VENICE_SCENE_IMAGE
         : isTubalActive
           ? TUBAL_SCENE_IMAGE
-          : scene.backgroundImage;
+          : (lineBackgroundImage ?? scene.backgroundImage);
 
   const handlePortiaComplete = () => {
     if (isTubalActive) {
