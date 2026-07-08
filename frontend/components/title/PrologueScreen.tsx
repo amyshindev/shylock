@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { DialogueBox } from "@/components/battle/DialogueBox";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { PROLOGUE_LINES } from "@/lib/constants/prologue";
 import {
   gameFontFamily,
@@ -17,6 +18,7 @@ interface PrologueScreenProps {
 }
 
 export function PrologueScreen({ onComplete }: PrologueScreenProps) {
+  const isMobile = useIsMobile();
   const [lineIdx, setLineIdx] = useState(0);
   const isLastLine = lineIdx >= PROLOGUE_LINES.length - 1;
   const currentLine = PROLOGUE_LINES[lineIdx] ?? "";
@@ -33,13 +35,15 @@ export function PrologueScreen({ onComplete }: PrologueScreenProps) {
     <div
       style={{
         position: "relative",
-        minHeight: "100vh",
+        minHeight: isMobile ? "100dvh" : "100vh",
         display: "flex",
         flexDirection: "column",
         background: theme.background,
         color: theme.textBright,
         overflow: "hidden",
         fontFamily: gameFontFamily,
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
       <div
@@ -79,11 +83,12 @@ export function PrologueScreen({ onComplete }: PrologueScreenProps) {
           display: "flex",
           flexDirection: "column",
           flex: 1,
+          minHeight: 0,
         }}
       >
         <div style={{ flex: 1, minHeight: 0 }} />
 
-        <div style={textBoxDockStyle()}>
+        <div style={textBoxDockStyle(true)}>
           <div style={textBoxDockInnerStyle()}>
             <DialogueBox
               speaker="NARRATOR"

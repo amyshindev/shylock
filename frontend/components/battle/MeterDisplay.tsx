@@ -1,5 +1,6 @@
 "use client";
 
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { DP_MAX, HP_MAX, PORTIA_HP_MAX } from "@/lib/constants/game-balance";
 import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 
@@ -108,28 +109,37 @@ export function portiaHpColor(value: number): string {
 }
 
 const METER_COLUMN_WIDTH = 336;
+const METER_COLUMN_WIDTH_MOBILE = 148;
 const HUD_INSET = 10;
+const HUD_INSET_MOBILE = 8;
 const HUD_TOP = 8;
 /** Approx. height of DP + HP bars (used to stack skill panel below). */
 const LEFT_METERS_STACK_HEIGHT = 72;
 
 export {
   METER_COLUMN_WIDTH as LEFT_METER_COLUMN_WIDTH,
+  METER_COLUMN_WIDTH_MOBILE as LEFT_METER_COLUMN_WIDTH_MOBILE,
   HUD_INSET as LEFT_HUD_INSET,
+  HUD_INSET_MOBILE as LEFT_HUD_INSET_MOBILE,
   HUD_TOP as LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 };
 
 export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: ShylockMeterDisplayProps) {
+  const isMobile = useIsMobile();
+  const width = isMobile ? METER_COLUMN_WIDTH_MOBILE : METER_COLUMN_WIDTH;
+  const inset = isMobile ? HUD_INSET_MOBILE : HUD_INSET;
+
   return (
     <div
       style={{
         position: "absolute",
         top: HUD_TOP,
-        left: HUD_INSET,
+        left: inset,
         zIndex: 10,
         pointerEvents: "none",
-        width: METER_COLUMN_WIDTH,
+        width,
+        maxWidth: isMobile ? "calc(50vw - 12px)" : undefined,
         display: "flex",
         flexDirection: "column",
         gap: 6,
@@ -188,21 +198,25 @@ export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: ShylockMeterD
 }
 
 export function PortiaMeterDisplay({ portiaHp }: PortiaMeterDisplayProps) {
+  const isMobile = useIsMobile();
   const color = portiaHpColor(portiaHp);
+  const width = isMobile ? METER_COLUMN_WIDTH_MOBILE : METER_COLUMN_WIDTH;
+  const inset = isMobile ? HUD_INSET_MOBILE : HUD_INSET;
 
   return (
     <div
       style={{
         position: "absolute",
         top: HUD_TOP,
-        right: HUD_INSET,
+        right: inset,
         zIndex: 10,
         pointerEvents: "none",
-        width: METER_COLUMN_WIDTH,
+        width,
+        maxWidth: isMobile ? "calc(50vw - 12px)" : undefined,
       }}
     >
       <MeterBar
-        label="포샤 HP (논리)"
+        label={isMobile ? "포샤 HP" : "포샤 HP (논리)"}
         value={portiaHp}
         max={PORTIA_HP_MAX}
         color={color}

@@ -28,7 +28,7 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
         alignItems: "center",
         justifyContent: "center",
         background: "rgba(0, 0, 0, 0.7)",
-        padding: 24,
+        padding: "max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))",
       }}
       onClick={onClose}
     >

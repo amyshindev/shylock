@@ -1,5 +1,6 @@
 "use client";
 
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
@@ -10,7 +11,13 @@ import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
 import { ItemChoiceList } from "./ItemChoiceList";
-import { MeterDisplay, PortiaMeterDisplay, LEFT_HUD_TOP, LEFT_METERS_STACK_HEIGHT } from "./MeterDisplay";
+import {
+  MeterDisplay,
+  PortiaMeterDisplay,
+  LEFT_HUD_INSET_MOBILE,
+  LEFT_HUD_TOP,
+  LEFT_METERS_STACK_HEIGHT,
+} from "./MeterDisplay";
 import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
 
@@ -99,6 +106,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     dismissEvidenceDetail,
   } = trial;
 
+  const isMobile = useIsMobile();
   const showBattleHud = scene.id !== "opening";
 
   const challengeOptions = scene.challenge?.options ?? [];
@@ -144,17 +152,73 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     }
   };
 
+  const utilityLeft = isMobile ? LEFT_HUD_INSET_MOBILE : 16;
+  const challengePanel = showChallenge &&
+    scene.challenge &&
+    !portiaReply &&
+    !isTubalActive &&
+    !isLauncelotActive &&
+    !isVeniceSkillActive ? (
+    <div
+      style={
+        isMobile
+          ? {
+              flexShrink: 0,
+              width: "100%",
+              maxHeight: "42dvh",
+              overflowY: "auto",
+              zIndex: 12,
+              WebkitOverflowScrolling: "touch",
+            }
+          : {
+              position: "absolute",
+              left: 16,
+              right: 16,
+              bottom: 172,
+              zIndex: 12,
+              pointerEvents: "none",
+            }
+      }
+    >
+      <div style={{ ...textBoxDockInnerStyle(), pointerEvents: "auto" }}>
+        {showItemPhase ? (
+          <ItemChoiceList
+            itemIds={itemChoiceIds}
+            prompt={scene.challenge.text}
+            onSelect={selectChoiceItem}
+            disabled={loadingReply || loadingScene || isLauncelotActive}
+          />
+        ) : (
+          <ChoiceList
+            header={scene.challenge.header}
+            prompt={scene.challenge.text}
+            options={visibleChoiceOptions}
+            tubalEnhancedChoices={tubalEnhancedChoices}
+            tubalCourtRecords={tubalCourtRecords}
+            onSelect={makeChoice}
+            onBack={isItemFirst ? clearChoiceItem : undefined}
+            showEvidenceBadge={!isItemFirst}
+            disabled={loadingReply || loadingScene || isLauncelotActive}
+          />
+        )}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <div
       style={{
         position: "relative",
-        minHeight: "100vh",
+        minHeight: isMobile ? "100dvh" : "100vh",
+        height: isMobile ? "100dvh" : undefined,
         display: "flex",
         flexDirection: "column",
         background: theme.background,
         color: theme.textBright,
         overflow: "hidden",
         fontFamily: gameFontFamily,
+        paddingTop: isMobile ? "env(safe-area-inset-top)" : undefined,
+        paddingBottom: isMobile ? "env(safe-area-inset-bottom)" : undefined,
       }}
     >
       <SceneBackground backgroundImage={backgroundImage} />
@@ -166,6 +230,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           display: "flex",
           flexDirection: "column",
           flex: 1,
+          minHeight: 0,
         }}
       >
         <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
@@ -179,13 +244,16 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           <div
             style={{
               position: "absolute",
-              left: 16,
+              left: utilityLeft,
               top: LEFT_HUD_TOP + LEFT_METERS_STACK_HEIGHT + 8,
               zIndex: 11,
               display: "flex",
               flexDirection: "column",
               gap: 8,
               alignItems: "flex-start",
+              maxHeight: isMobile ? "calc(100% - 12px)" : undefined,
+              overflowY: isMobile ? "auto" : undefined,
+              WebkitOverflowScrolling: isMobile ? "touch" : undefined,
             }}
           >
             {showEvidenceBar && (
@@ -194,6 +262,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 tubalRecords={tubalCourtRecords}
                 onSelectCurated={inspectCuratedEvidence}
                 onSelectTubal={inspectTubalEvidence}
+                compact={isMobile}
               />
             )}
             <SkillPanel
@@ -218,43 +287,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           )}
         </div>
 
-        {showChallenge && scene.challenge && !portiaReply && !isTubalActive && !isLauncelotActive && !isVeniceSkillActive && (
-          <div
-            style={{
-              position: "absolute",
-              left: 16,
-              right: 16,
-              bottom: 172,
-              zIndex: 12,
-              pointerEvents: "none",
-            }}
-          >
-            <div style={{ ...textBoxDockInnerStyle(), pointerEvents: "auto" }}>
-              {showItemPhase ? (
-                <ItemChoiceList
-                  itemIds={itemChoiceIds}
-                  prompt={scene.challenge.text}
-                  onSelect={selectChoiceItem}
-                  disabled={loadingReply || loadingScene || isLauncelotActive}
-                />
-              ) : (
-                <ChoiceList
-                  header={scene.challenge.header}
-                  prompt={scene.challenge.text}
-                  options={visibleChoiceOptions}
-                  tubalEnhancedChoices={tubalEnhancedChoices}
-                  tubalCourtRecords={tubalCourtRecords}
-                  onSelect={makeChoice}
-                  onBack={isItemFirst ? clearChoiceItem : undefined}
-                  showEvidenceBadge={!isItemFirst}
-                  disabled={loadingReply || loadingScene || isLauncelotActive}
-                />
-              )}
-            </div>
-          </div>
-        )}
+        {!isMobile && challengePanel}
 
-        <div style={textBoxDockStyle()}>
+        <div style={textBoxDockStyle(isMobile)}>
+          {isMobile && challengePanel}
           <div style={textBoxDockInnerStyle()}>
             <DialogueBox
               speaker={

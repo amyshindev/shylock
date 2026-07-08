@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -68,6 +69,7 @@ export function ItemChoiceList({
   onSelect,
   disabled,
 }: ItemChoiceListProps) {
+  const isMobile = useIsMobile();
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
   const items = itemIds
@@ -79,8 +81,8 @@ export function ItemChoiceList({
   return (
     <div
       style={{
-        padding: "12px 14px 14px",
-        marginTop: 10,
+        padding: isMobile ? "10px 12px 12px" : "12px 14px 14px",
+        marginTop: isMobile ? 6 : 10,
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -119,7 +121,7 @@ export function ItemChoiceList({
             disabled={disabled}
             onClick={() => onSelect(ev.id)}
             style={{
-              ...choiceButtonStyle(),
+              ...choiceButtonStyle(isMobile),
               gap: 12,
               alignItems: "flex-start",
               opacity: disabled ? 0.6 : 1,

@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { ChoiceOption } from "@/data/scenes";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { TubalCourtRecord } from "@/lib/tubal-evidence";
 import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
@@ -23,7 +24,13 @@ interface ChoiceListProps {
   disabled?: boolean;
 }
 
-function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
+function EvidenceBadge({
+  evidenceId,
+  compact,
+}: {
+  evidenceId: string;
+  compact?: boolean;
+}) {
   const ev = EVIDENCE_BY_ID[evidenceId];
   if (!ev) return null;
 
@@ -34,7 +41,7 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
         alignItems: "center",
         gap: 6,
         flexShrink: 0,
-        fontSize: gameFontSize.sm,
+        fontSize: compact ? gameFontSize.xs : gameFontSize.sm,
         color: "#8b6040",
       }}
     >
@@ -42,21 +49,21 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
         <Image
           src={ev.icon}
           alt=""
-          width={20}
-          height={20}
+          width={compact ? 18 : 20}
+          height={compact ? 18 : 20}
           style={{ borderRadius: "50%", objectFit: "cover" }}
         />
       ) : (
         <span
           style={{
-            width: 20,
-            height: 20,
+            width: compact ? 18 : 20,
+            height: compact ? 18 : 20,
             borderRadius: "50%",
             background: theme.border,
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: gameFontSize.sm,
+            fontSize: compact ? gameFontSize.xs : gameFontSize.sm,
           }}
         >
           {ev.iconFallback ?? "✦"}
@@ -67,7 +74,7 @@ function EvidenceBadge({ evidenceId }: { evidenceId: string }) {
   );
 }
 
-function TubalEvidenceBadge({ name }: { name: string }) {
+function TubalEvidenceBadge({ name, compact }: { name: string; compact?: boolean }) {
   return (
     <span
       style={{
@@ -75,14 +82,14 @@ function TubalEvidenceBadge({ name }: { name: string }) {
         alignItems: "center",
         gap: 6,
         flexShrink: 0,
-        fontSize: gameFontSize.sm,
+        fontSize: compact ? gameFontSize.xs : gameFontSize.sm,
         color: "#8b6040",
       }}
     >
       <span
         style={{
-          width: 20,
-          height: 20,
+          width: compact ? 18 : 20,
+          height: compact ? 18 : 20,
           borderRadius: "50%",
           background: "rgba(20, 32, 16, 0.98)",
           border: `2px solid ${TUBAL_BORDER}`,
@@ -112,13 +119,14 @@ export function ChoiceList({
   showEvidenceBadge = true,
   disabled,
 }: ChoiceListProps) {
+  const isMobile = useIsMobile();
   const latestTubalRecord = tubalCourtRecords[tubalCourtRecords.length - 1];
 
   return (
     <div
       style={{
-        padding: "12px 14px 14px",
-        marginTop: 10,
+        padding: isMobile ? "10px 12px 12px" : "12px 14px 14px",
+        marginTop: isMobile ? 6 : 10,
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -167,7 +175,7 @@ export function ChoiceList({
         style={{
           margin: "0 0 8px",
           paddingLeft: 4,
-          fontSize: gameFontSize.md,
+          fontSize: isMobile ? gameFontSize.nm : gameFontSize.md,
           lineHeight: 1.6,
           color: "#7a5a6a",
           fontStyle: "italic",
@@ -189,7 +197,7 @@ export function ChoiceList({
               title={isEnhanced ? TUBAL_ENHANCED_TOOLTIP : undefined}
               onClick={() => onSelect(opt)}
               style={{
-                ...choiceButtonStyle(),
+                ...choiceButtonStyle(isMobile),
                 opacity: disabled ? 0.6 : 1,
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
@@ -204,11 +212,21 @@ export function ChoiceList({
                 e.currentTarget.style.borderColor = "#3a1828";
               }}
             >
-              <span>
+              <span style={{ minWidth: 0, flex: "1 1 140px" }}>
                 <span style={{ color: "#5a3a4a" }}>{index + 1}. </span>
                 {choiceText}
               </span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                  flexShrink: 0,
+                  flexWrap: "wrap",
+                  justifyContent: "flex-end",
+                  marginLeft: "auto",
+                }}
+              >
                 {opt.hpCost > 0 && (
                   <span
                     style={{
@@ -234,10 +252,13 @@ export function ChoiceList({
                 {isEnhanced ? (
                   <TubalEvidenceBadge
                     name={latestTubalRecord?.name ?? "투발 아이템"}
+                    compact={isMobile}
                   />
                 ) : (
                   showEvidenceBadge &&
-                  opt.evidence && <EvidenceBadge evidenceId={opt.evidence} />
+                  opt.evidence && (
+                    <EvidenceBadge evidenceId={opt.evidence} compact={isMobile} />
+                  )
                 )}
               </span>
             </button>

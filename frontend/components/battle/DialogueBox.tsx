@@ -2,10 +2,17 @@
 
 import { TextBox } from "@/components/ui/TextBox";
 import { useDialoguePages } from "@/hooks/use-dialogue-pages";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTypingEffect } from "@/hooks/use-typing-effect";
 import { extractPortiaText } from "@/lib/portia-text";
 import { sanitizeDialogueLine } from "@/lib/game-text";
-import { dialogueTextStyle, gameFontFamily, DIALOGUE_BODY_MIN_HEIGHT, DIALOGUE_BODY_PADDING_BOTTOM, gameFontSize } from "@/styles/text-box";
+import {
+  dialogueTextStyle,
+  gameFontFamily,
+  DIALOGUE_BODY_MIN_HEIGHT,
+  DIALOGUE_BODY_PADDING_BOTTOM,
+  gameFontSize,
+} from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 const SPEAKER_LABEL: Record<string, string> = {
@@ -14,17 +21,6 @@ const SPEAKER_LABEL: Record<string, string> = {
   CROWD: "군중",
   JESSICA: "제시카",
   LORENZO: "로렌조",
-};
-
-const portiaReplyStyle = {
-  margin: 0,
-  color: "#e8e0d0",
-  fontSize: gameFontSize.base,
-  lineHeight: 1.75,
-  fontFamily: gameFontFamily,
-  whiteSpace: "pre-wrap" as const,
-  wordBreak: "break-word" as const,
-  minHeight: "5.25em",
 };
 
 interface DialogueBoxProps {
@@ -53,6 +49,7 @@ export function DialogueBox({
   onAdvance,
   onPortiaComplete,
 }: DialogueBoxProps) {
+  const isMobile = useIsMobile();
   const isReply = replyMode != null;
   const cleanReplyText = extractPortiaText(text);
   const {
@@ -100,6 +97,17 @@ export function DialogueBox({
       ? sanitizeDialogueLine(text) || "증거를 찾고 있소…"
       : "포샤가 반응하고 있다...";
 
+  const portiaReplyStyle = {
+    margin: 0,
+    color: "#e8e0d0",
+    fontSize: isMobile ? gameFontSize.md : gameFontSize.base,
+    lineHeight: 1.75,
+    fontFamily: gameFontFamily,
+    whiteSpace: "pre-wrap" as const,
+    wordBreak: "break-word" as const,
+    minHeight: isMobile ? "4.5em" : "5.25em",
+  };
+
   return (
     <TextBox
       speaker={speaker}
@@ -108,7 +116,7 @@ export function DialogueBox({
       onClick={isClickable ? handleClick : undefined}
       showAdvanceArrow={showArrow}
       bodyStyle={{
-        minHeight: DIALOGUE_BODY_MIN_HEIGHT,
+        minHeight: isMobile ? 80 : DIALOGUE_BODY_MIN_HEIGHT,
         paddingBottom: DIALOGUE_BODY_PADDING_BOTTOM,
         cursor: isClickable ? "pointer" : "default",
       }}
@@ -127,7 +135,7 @@ export function DialogueBox({
           </p>
         )
       ) : (
-        <p style={dialogueTextStyle(speaker)}>
+        <p style={dialogueTextStyle(speaker, isMobile)}>
           {content}
           {isTyping && (
             <span style={{ animation: "blink 0.7s infinite", color: theme.gold }}>▌</span>

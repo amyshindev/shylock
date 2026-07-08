@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from "react";
 
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { speakerTabStyle, textBoxPanelStyle, gameFontSize } from "@/styles/text-box";
 
 interface TextBoxProps {
@@ -27,8 +28,11 @@ export function TextBox({
   bodyStyle,
   footer,
 }: TextBoxProps) {
+  const isMobile = useIsMobile();
   const label = speakerLabel ?? speaker;
   const displayTab = showSpeakerTab && Boolean(speaker && label);
+  const sidePad = displayTab ? (isMobile ? 14 : 22) : isMobile ? 16 : 26;
+  const topPad = displayTab ? (isMobile ? 12 : 16) : isMobile ? 16 : 22;
 
   return (
     <div style={{ ...textBoxPanelStyle(), ...style }}>
@@ -42,7 +46,7 @@ export function TextBox({
             paddingBottom: 0,
           }}
         >
-          <div style={{ ...speakerTabStyle(speaker), marginLeft: 12, marginTop: -1 }}>
+          <div style={{ ...speakerTabStyle(speaker), marginLeft: isMobile ? 8 : 12, marginTop: -1 }}>
             {label}
           </div>
         </div>
@@ -51,11 +55,11 @@ export function TextBox({
       <div
         onClick={onClick}
         style={{
-          paddingTop: displayTab ? 16 : 22,
-          paddingRight: displayTab ? 22 : 26,
-          paddingLeft: displayTab ? 22 : 26,
+          paddingTop: topPad,
+          paddingRight: sidePad,
+          paddingLeft: sidePad,
           paddingBottom: 10,
-          minHeight: displayTab ? 84 : undefined,
+          minHeight: displayTab ? (isMobile ? 72 : 84) : undefined,
           cursor: onClick ? "pointer" : "default",
           position: "relative",
           boxSizing: "border-box",

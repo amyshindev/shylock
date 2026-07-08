@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
   SKILLS,
   canUseSkill,
@@ -9,9 +10,10 @@ import {
 } from "@/lib/constants/game-balance";
 import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 
-import { LEFT_METER_COLUMN_WIDTH } from "./MeterDisplay";
-
-const SKILL_PANEL_WIDTH = LEFT_METER_COLUMN_WIDTH / 2;
+import {
+  LEFT_METER_COLUMN_WIDTH,
+  LEFT_METER_COLUMN_WIDTH_MOBILE,
+} from "./MeterDisplay";
 
 const SKILL_ENABLED_COLOR = "#f0d8c8";
 const SKILL_LOCKED_COLOR = "#5c5c5c";
@@ -71,10 +73,14 @@ export function SkillPanel({
   disabled,
   onUseSkill,
 }: SkillPanelProps) {
+  const isMobile = useIsMobile();
+  const skillPanelWidth = isMobile
+    ? LEFT_METER_COLUMN_WIDTH_MOBILE
+    : LEFT_METER_COLUMN_WIDTH / 2;
   const skillCtx = { dp, sceneIdx, veniceParadoxUsed };
 
   return (
-    <div style={{ ...hudPanelStyle("8px 11px"), width: SKILL_PANEL_WIDTH }}>
+    <div style={{ ...hudPanelStyle("8px 11px"), width: skillPanelWidth }}>
       <div
         style={{
           ...hudLabelStyle("#e8dce4"),

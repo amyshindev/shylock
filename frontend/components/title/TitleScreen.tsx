@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 
 import { PrologueScreen } from "@/components/title/PrologueScreen";
 import { TextBox } from "@/components/ui/TextBox";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import { startTrial } from "@/lib/api-client/trial-progression";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 export function TitleScreen() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prologueTrialId, setPrologueTrialId] = useState<string | null>(null);
@@ -38,13 +40,15 @@ export function TitleScreen() {
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: isMobile ? "100dvh" : "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         background: theme.background,
-        padding: 24,
+        padding: isMobile
+          ? "max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))"
+          : 24,
         textAlign: "center",
         fontFamily: "Georgia, serif",
       }}
@@ -52,7 +56,7 @@ export function TitleScreen() {
       <p
         style={{
           color: "#6a2a3a",
-          letterSpacing: 8,
+          letterSpacing: isMobile ? 4 : 8,
           fontSize: gameFontSize.sm,
           marginBottom: 14,
           textTransform: "uppercase",
@@ -63,10 +67,10 @@ export function TitleScreen() {
       <h1
         style={{
           color: theme.gold,
-          fontSize: "clamp(32px, 6vw, 40px)",
+          fontSize: "clamp(28px, 8vw, 40px)",
           fontWeight: 700,
           margin: "0 0 6px",
-          letterSpacing: 3,
+          letterSpacing: isMobile ? 1 : 3,
           textShadow: "0 0 40px rgba(255, 215, 0, 0.4)",
         }}
       >
@@ -79,8 +83,8 @@ export function TitleScreen() {
       <TextBox
         speaker="NARRATOR"
         speakerLabel="NARRATOR"
-        style={{ maxWidth: 380, marginBottom: 32 }}
-        bodyStyle={{ textAlign: "center", padding: "16px 20px" }}
+        style={{ maxWidth: 380, width: "100%", marginBottom: 32 }}
+        bodyStyle={{ textAlign: "center", padding: isMobile ? "14px 16px" : "16px 20px" }}
       >
         <p style={{ color: theme.textBright, fontSize: gameFontSize.md, lineHeight: 2, margin: 0 }}>
           베네치아, 1596년.
@@ -98,10 +102,12 @@ export function TitleScreen() {
         onClick={() => void handleStart()}
         disabled={loading}
         style={{
-          padding: "14px 48px",
+          padding: isMobile ? "14px 28px" : "14px 48px",
+          width: isMobile ? "100%" : undefined,
+          maxWidth: isMobile ? 320 : undefined,
           fontSize: gameFontSize.base,
           fontWeight: 700,
-          letterSpacing: 4,
+          letterSpacing: isMobile ? 2 : 4,
           textTransform: "uppercase",
           background: theme.red,
           color: theme.gold,

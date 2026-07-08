@@ -72,16 +72,16 @@ export function speakerTabStyle(speaker: string): CSSProperties {
   };
 }
 
-export function dialogueTextStyle(speaker: string): CSSProperties {
+export function dialogueTextStyle(speaker: string, compact = false): CSSProperties {
   return {
     margin: 0,
-    fontSize: gameFontSize.base,
+    fontSize: compact ? gameFontSize.md : gameFontSize.base,
     lineHeight: 1.75,
     fontFamily: gameFontFamily,
     color: speaker === "NARRATOR" ? "#9a8aaa" : "#e8e0d0",
     whiteSpace: "pre-wrap",
     wordBreak: "break-word",
-    minHeight: "5.25em",
+    minHeight: compact ? "4.5em" : "5.25em",
   };
 }
 
@@ -104,11 +104,11 @@ export const DIALOGUE_BODY_MIN_HEIGHT = 96;
 /** Bottom padding always reserved for the advance arrow slot. */
 export const DIALOGUE_BODY_PADDING_BOTTOM = 28;
 
-export function textBoxDockStyle(): CSSProperties {
+export function textBoxDockStyle(compact = false): CSSProperties {
   return {
     flexShrink: 0,
     width: "100%",
-    padding: "0 16px 20px",
+    padding: compact ? "0 10px 12px" : "0 16px 20px",
     fontFamily: textBox.fontFamily,
     background: "transparent",
   };
@@ -122,21 +122,22 @@ export function textBoxDockInnerStyle(): CSSProperties {
   };
 }
 
-export function choiceButtonStyle(): CSSProperties {
+export function choiceButtonStyle(compact = false): CSSProperties {
   return {
     display: "flex",
-    alignItems: "center",
+    alignItems: compact ? "flex-start" : "center",
     justifyContent: "space-between",
-    gap: 12,
+    flexWrap: compact ? "wrap" : "nowrap",
+    gap: compact ? 8 : 12,
     width: "100%",
-    padding: "11px 16px",
+    padding: compact ? "10px 12px" : "11px 16px",
     textAlign: "left",
     background: "#100510",
     border: "1px solid #3a1828",
     borderRadius: 2,
     color: "#e0c090",
     cursor: "pointer",
-    fontSize: gameFontSize.md,
+    fontSize: compact ? gameFontSize.nm : gameFontSize.md,
     fontFamily: textBox.fontFamily,
     lineHeight: 1.5,
     transition: "all 0.15s",

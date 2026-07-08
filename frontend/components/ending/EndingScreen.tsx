@@ -1,6 +1,7 @@
 "use client";
 
 import { TextBox } from "@/components/ui/TextBox";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { EndingResponse } from "@/lib/api-client/types";
 import {
   getEndingMetaByType,
@@ -14,28 +15,31 @@ interface EndingScreenProps {
 }
 
 export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
+  const isMobile = useIsMobile();
   const meta = getEndingMetaByType(ending.ending_type as EndingType);
 
   return (
     <div
       style={{
-        minHeight: "100vh",
+        minHeight: isMobile ? "100dvh" : "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         background: theme.background,
-        padding: 32,
+        padding: isMobile
+          ? "max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom))"
+          : 32,
         textAlign: "center",
         fontFamily: "Georgia, serif",
       }}
     >
-      <div style={{ fontSize: 60, marginBottom: 8 }}>{meta.emoji}</div>
+      <div style={{ fontSize: isMobile ? 48 : 60, marginBottom: 8 }}>{meta.emoji}</div>
       <h2
         style={{
-          fontSize: 26,
+          fontSize: isMobile ? 22 : 26,
           fontWeight: "bold",
-          letterSpacing: 4,
+          letterSpacing: isMobile ? 2 : 4,
           color: theme.gold,
           margin: "0 0 8px",
           textShadow: "0 0 20px rgba(255, 215, 0, 0.4)",
@@ -59,7 +63,7 @@ export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
         <div style={{ color: theme.textMuted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>
           DP
         </div>
-        <div style={{ color: theme.gold, fontSize: 28, fontWeight: "bold" }}>
+        <div style={{ color: theme.gold, fontSize: isMobile ? 24 : 28, fontWeight: "bold" }}>
           {ending.dp}
         </div>
       </div>
@@ -67,8 +71,8 @@ export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
       <TextBox
         speaker="NARRATOR"
         speakerLabel="NARRATOR"
-        style={{ maxWidth: 480, marginBottom: 24 }}
-        bodyStyle={{ padding: "20px 24px" }}
+        style={{ maxWidth: 480, width: "100%", marginBottom: 24 }}
+        bodyStyle={{ padding: isMobile ? "16px 18px" : "20px 24px" }}
       >
         <p
           style={{
@@ -89,7 +93,9 @@ export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
         type="button"
         onClick={onRestart}
         style={{
-          padding: "10px 28px",
+          padding: isMobile ? "12px 24px" : "10px 28px",
+          width: isMobile ? "100%" : undefined,
+          maxWidth: isMobile ? 320 : undefined,
           background: "transparent",
           color: theme.textMuted,
           border: "1px solid #3a2a2a",
