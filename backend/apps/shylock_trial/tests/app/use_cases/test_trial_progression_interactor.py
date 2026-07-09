@@ -124,7 +124,7 @@ async def test_submit_choice_deducts_hp_and_applies_dp() -> None:
     )
 
     assert started.hp == SHYLOCK_HP_START
-    assert choice.hp == SHYLOCK_HP_START - 6
+    assert choice.hp == SHYLOCK_HP_START - 9
     assert choice.dp == SHYLOCK_DP_START + 13
     assert started.portia_hp == PORTIA_HP_START
     assert choice.portia_hp == PORTIA_HP_START - 7

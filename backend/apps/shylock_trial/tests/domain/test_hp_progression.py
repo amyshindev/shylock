@@ -78,7 +78,7 @@ def test_apply_choice_resources_deducts_hp_and_portia_hp() -> None:
         effect=effect,
         portia_hp_before=100,
     )
-    assert next_hp == 94
+    assert next_hp == 91
     assert next_dp == 63
     assert next_portia_hp == 93
 
@@ -86,22 +86,22 @@ def test_apply_choice_resources_deducts_hp_and_portia_hp() -> None:
 def test_apply_skill_resources_launcelot_spends_dp_heals_hp() -> None:
     launcelot = get_skill_effect("launcelot")
     next_hp, next_dp = apply_skill_resources(80, 50, launcelot)
-    assert next_hp == 92
-    assert next_dp == 42
+    assert next_hp == 89
+    assert next_dp == 40
 
 
 def test_apply_skill_resources_tubal() -> None:
     tubal = get_skill_effect("tubal")
     next_hp, next_dp = apply_skill_resources(80, 50, tubal)
-    assert next_hp == 88
-    assert next_dp == 44
+    assert next_hp == 86
+    assert next_dp == 42
 
 
 def test_apply_skill_resources_venice_paradox() -> None:
     venice = get_skill_effect("venice_paradox")
     next_hp, next_dp = apply_skill_resources(70, 50, venice)
-    assert next_hp == 90
-    assert next_dp == 36
+    assert next_hp == 85
+    assert next_dp == 32
 
 
 def test_apply_choice_resources_low_hp_halves_gain() -> None:
@@ -112,6 +112,6 @@ def test_apply_choice_resources_low_hp_halves_gain() -> None:
         effect=effect,
         portia_hp_before=100,
     )
-    assert next_hp == 13
+    assert next_hp == 6
     assert next_dp == 59
     assert next_portia_hp == 90
