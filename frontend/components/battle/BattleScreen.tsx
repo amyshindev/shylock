@@ -83,6 +83,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isTubalSearching,
     isLauncelotActive,
     tubalEnhancedChoices,
+    activeTubalItem,
     showChallenge,
     selectedChoiceItem,
     showPressPresent,
@@ -131,9 +132,13 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       ? challengeOptions.filter((opt) => opt.evidence === selectedChoiceItem)
       : challengeOptions;
 
+  // Scope the HUD item panel to this scene's own choices only — evidence and
+  // Tubal finds from earlier scenes must not linger once the scene has passed.
+  const sceneTubalRecords = activeTubalItem ? [activeTubalItem.record] : [];
+
   const showEvidenceBar =
     showBattleHud &&
-    (scene.availableEvidence.length > 0 || tubalCourtRecords.length > 0) &&
+    (itemChoiceIds.length > 0 || sceneTubalRecords.length > 0) &&
     !showChallenge &&
     !showPressPresent &&
     !portiaReply &&
@@ -250,8 +255,13 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         {showItemPhase ? (
           <ItemChoiceList
             itemIds={itemChoiceIds}
+            tubalItem={activeTubalItem}
             prompt={scene.challenge!.text}
             onSelect={selectChoiceItem}
+            onSelectTubal={(choiceId) => {
+              const option = challengeOptions.find((opt) => opt.id === choiceId);
+              if (option) makeChoice(option);
+            }}
             disabled={loadingReply || loadingScene || isLauncelotActive}
           />
         ) : (
@@ -353,8 +363,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                   />
                   {showEvidenceBar && (
                     <EvidenceList
-                      curatedIds={scene.availableEvidence}
-                      tubalRecords={tubalCourtRecords}
+                      curatedIds={itemChoiceIds}
+                      tubalRecords={sceneTubalRecords}
                       onSelectCurated={inspectCuratedEvidence}
                       onSelectTubal={inspectTubalEvidence}
                       iconsOnly
@@ -414,8 +424,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 >
                   {showEvidenceBar && (
                     <EvidenceList
-                      curatedIds={scene.availableEvidence}
-                      tubalRecords={tubalCourtRecords}
+                      curatedIds={itemChoiceIds}
+                      tubalRecords={sceneTubalRecords}
                       onSelectCurated={inspectCuratedEvidence}
                       onSelectTubal={inspectTubalEvidence}
                     />

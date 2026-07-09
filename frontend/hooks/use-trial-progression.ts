@@ -199,6 +199,20 @@ export function useTrialProgression(trialId: string) {
     (scene.challenge ? scene.lines.length - 1 : -1);
   const isLastScene = isLastNarrativeScene(sceneIdx, portiaHp);
 
+  // Tubal's find for *this* scene, if any — surfaced as an extra item-choice card.
+  const activeTubalItem = useMemo(() => {
+    const targetChoiceId = TUBAL_ENHANCEMENT_BY_SCENE[scene.id];
+    if (!targetChoiceId) return null;
+    const ftln = tubalRecordFtlnByChoiceId[targetChoiceId];
+    if (ftln == null) return null;
+    const record = tubalCourtRecords.find((r) => r.ftln === ftln);
+    const evidenceId = scene.challenge?.options.find(
+      (opt) => opt.id === targetChoiceId,
+    )?.evidence;
+    if (!record || !evidenceId) return null;
+    return { evidenceId, choiceId: targetChoiceId, record };
+  }, [scene, tubalRecordFtlnByChoiceId, tubalCourtRecords]);
+
   const isTubalActive = tubalPhase !== "idle";
   const isTubalSearching = tubalPhase === "searching" || loadingTubal;
   const isLauncelotActive = launcelotPhase !== "idle";
@@ -1031,6 +1045,7 @@ export function useTrialProgression(trialId: string) {
     veniceSkillPhase,
     tubalCourtRecords,
     tubalEnhancedChoices,
+    activeTubalItem,
     loadingTubal,
     loadingLauncelot,
     loadingVeniceSkill,

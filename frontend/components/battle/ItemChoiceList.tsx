@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import type { TubalCourtRecord } from "@/lib/tubal-evidence";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -13,11 +14,16 @@ interface ItemChoiceListProps {
   header?: string;
   prompt?: string;
   itemIds: string[];
+  /** Tubal's find for this scene, if any — rendered as an extra card. */
+  tubalItem?: { evidenceId: string; choiceId: string; record: TubalCourtRecord } | null;
   onSelect: (itemId: string) => void;
+  /** Tubal already picked the strongest phrasing — selecting his card submits it directly. */
+  onSelectTubal?: (choiceId: string) => void;
   disabled?: boolean;
 }
 
 const ITEM_BORDER = "#c8a060";
+const TUBAL_BORDER = "#6aaa5a";
 
 function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
   const ev = EVIDENCE_BY_ID[evidenceId];
@@ -62,11 +68,35 @@ function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
   );
 }
 
+function TubalIcon({ size }: { size: number }) {
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        background: "rgba(20, 32, 16, 0.98)",
+        border: `2px solid ${TUBAL_BORDER}`,
+        boxShadow: `0 0 6px ${TUBAL_BORDER}44`,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: size > 40 ? 22 : 18,
+        flexShrink: 0,
+      }}
+    >
+      📜
+    </span>
+  );
+}
+
 export function ItemChoiceList({
   header,
   prompt,
   itemIds,
+  tubalItem,
   onSelect,
+  onSelectTubal,
   disabled,
 }: ItemChoiceListProps) {
   const isMobile = useIsMobile();
@@ -76,7 +106,9 @@ export function ItemChoiceList({
     .map((id) => EVIDENCE_BY_ID[id])
     .filter((ev): ev is NonNullable<typeof ev> => Boolean(ev));
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && !tubalItem) return null;
+
+  const cardCount = items.length + (tubalItem ? 1 : 0);
 
   const noteItem = openNoteId ? EVIDENCE_BY_ID[openNoteId] : undefined;
 
@@ -117,11 +149,11 @@ export function ItemChoiceList({
           {prompt}
         </p>
       )}
-      {/* Side-by-side cards so two items fit without scrolling. */}
+      {/* Side-by-side cards so all items fit without scrolling; Tubal's find adds a third. */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: items.length === 1 ? "1fr" : "1fr 1fr",
+          gridTemplateColumns: cardCount <= 1 ? "1fr" : `repeat(${cardCount}, 1fr)`,
           gap: isMobile ? 6 : 8,
           alignItems: "stretch",
         }}
@@ -231,6 +263,70 @@ export function ItemChoiceList({
             </span>
           </button>
         ))}
+        {tubalItem && (
+          <button
+            key={tubalItem.record.id}
+            type="button"
+            disabled={disabled}
+            onClick={() =>
+              onSelectTubal
+                ? onSelectTubal(tubalItem.choiceId)
+                : onSelect(tubalItem.evidenceId)
+            }
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: isMobile ? 6 : 8,
+              width: "100%",
+              minHeight: isMobile ? 120 : 140,
+              padding: isMobile ? "10px 8px" : "12px 10px",
+              textAlign: "center",
+              background: "#0a1208",
+              border: `1px solid ${TUBAL_BORDER}66`,
+              borderRadius: 4,
+              color: "#e0c090",
+              cursor: disabled ? "not-allowed" : "pointer",
+              opacity: disabled ? 0.6 : 1,
+              fontFamily: "inherit",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled) {
+                e.currentTarget.style.background = "#0f1c0c";
+                e.currentTarget.style.borderColor = TUBAL_BORDER;
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#0a1208";
+              e.currentTarget.style.borderColor = `${TUBAL_BORDER}66`;
+            }}
+          >
+            <TubalIcon size={iconSize} />
+            <span
+              style={{
+                color: "#e0c090",
+                fontSize: isMobile ? gameFontSize.sm : gameFontSize.md,
+                fontWeight: 600,
+                lineHeight: 1.35,
+              }}
+            >
+              {tubalItem.record.name}
+            </span>
+            <span
+              style={{
+                fontSize: isMobile ? 11 : gameFontSize.sm,
+                color: "#8fae7a",
+                lineHeight: 1.4,
+                whiteSpace: "normal",
+                fontStyle: "italic",
+              }}
+            >
+              {tubalItem.record.tubalComment}
+            </span>
+          </button>
+        )}
       </div>
 
       {noteItem?.note &&
