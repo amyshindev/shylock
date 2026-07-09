@@ -5,10 +5,13 @@ env/
 **/*.pyc
 **/.pytest_cache/
 
-# Node
+# Node (frontend build still uses context root)
 frontend/node_modules/
 frontend/.next/
 frontend/out/
+
+# Python venvs anywhere in the tree
+**/.venv/
 
 # Secrets & local env (injected at runtime via compose env_file)
 .env
