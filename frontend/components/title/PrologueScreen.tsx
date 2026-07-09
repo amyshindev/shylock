@@ -7,7 +7,6 @@ import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import { PROLOGUE_LINES } from "@/lib/constants/prologue";
 import {
   gameFontFamily,
-  gameFontSize,
   textBoxDockInnerStyle,
   textBoxDockStyle,
 } from "@/styles/text-box";
@@ -54,28 +53,6 @@ export function PrologueScreen({ onComplete }: PrologueScreenProps) {
           background: "linear-gradient(to bottom, #0a060c 0%, #050308 45%, #08050a 100%)",
         }}
       />
-
-      <button
-        type="button"
-        onClick={onComplete}
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          zIndex: 2,
-          padding: "8px 14px",
-          fontSize: gameFontSize.sm,
-          fontFamily: gameFontFamily,
-          letterSpacing: 1,
-          color: "#6a5a6a",
-          background: "rgba(12, 8, 14, 0.85)",
-          border: "1px solid #3a2830",
-          borderRadius: 4,
-          cursor: "pointer",
-        }}
-      >
-        건너뛰기
-      </button>
 
       <div
         style={{
