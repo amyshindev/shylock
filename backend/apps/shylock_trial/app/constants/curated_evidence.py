@@ -27,14 +27,14 @@ CURATED_EVIDENCE: tuple[Evidence, ...] = (
     Evidence(
         evidence_id="venice_charter",
         quote=(
-            "It is enacted in the laws of Venice... if it be proved against an alien "
-            "that by direct or indirect attempts he seek the life of any citizen, "
-            "the party 'gainst the which he doth contrive shall seize one half his goods."
+            "To have the due and forfeit of my bond. / "
+            "If you deny it, let the danger light / "
+            "Upon your charter and your city's freedom!"
         ),
         act_scene="4.1",
         icon="venice_charter",
         description="이 도시가 상인들의 도시로 설 수 있는 이유. 계약이 계약으로 지켜지기 때문이다.",
-        source_ftln_range=(4001000, 4001040),
+        source_ftln_range=(4001038, 4001040),
     ),
     Evidence(
         evidence_id="bassanio_gold",
@@ -65,11 +65,16 @@ CURATED_EVIDENCE: tuple[Evidence, ...] = (
     ),
     Evidence(
         evidence_id="jessica",
-        quote="I would my daughter were dead at my foot, and the jewels in her ear.",
-        act_scene="3.1",
+        quote=(
+            "I must needs tell thee all. She hath directed / "
+            "How I shall take her from her father's house, / "
+            "What gold and jewels she is furnished with, / "
+            "What page's suit she hath in readiness."
+        ),
+        act_scene="2.4",
         icon="jessica",
-        description="딸이 도망치며 남긴 흔적. 돈과 보석을 훔쳐갔다.",
-        source_ftln_range=(3001400, 3001420),
+        description="로렌조에게 보낸 편지. 아버지 집을 빠져나올 방법과, 챙겨 나올 금과 보석, 준비해 둔 시동 옷차림까지 적어놓았다.",
+        source_ftln_range=(2004033, 2004036),
     ),
     Evidence(
         evidence_id="leah_ring",

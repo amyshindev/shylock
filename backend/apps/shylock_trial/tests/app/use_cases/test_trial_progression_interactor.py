@@ -216,6 +216,33 @@ async def test_venice_paradox_skill_is_one_time() -> None:
 
 
 @pytest.mark.asyncio
+async def test_jessica_duet_scene_uses_fixed_script_without_llm() -> None:
+    from shylock_trial.app.constants.scene_progression import JESSICA_DUET_SCENE_INDEX
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX - 1, 50)
+    result = await interactor.advance_scene(started.trial_id)
+
+    assert result.scene_index == JESSICA_DUET_SCENE_INDEX
+    assert portia.scene_dialogue_calls == 0
+    speeches = [line.text for line in result.scene_dialogue.lines]
+    assert "악사들을 불러 음악을 청하지. 그럼 마음이 좀 놓일 거야." in speeches
+    assert result.scene_dialogue.challenge_text is None
+    assert result.scene_dialogue.choice_text_map() == {}
+    speakers = [line.speaker for line in result.scene_dialogue.lines]
+    assert speakers[0] == "NARRATOR"
+    assert "LORENZO" in speakers
+    assert "JESSICA" in speakers
+
+
+@pytest.mark.asyncio
 async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
     from shylock_trial.app.constants.scene_progression import (
         HATH_NOT_SCENE_INDEX,

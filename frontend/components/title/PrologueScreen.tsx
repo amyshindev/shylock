@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 
 import { DialogueBox } from "@/components/battle/DialogueBox";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import { PROLOGUE_LINES } from "@/lib/constants/prologue";
 import {
   gameFontFamily,
@@ -18,6 +18,7 @@ interface PrologueScreenProps {
 }
 
 export function PrologueScreen({ onComplete }: PrologueScreenProps) {
+  const appShellHeight = useAppShellHeight();
   const isMobile = useIsMobile();
   const [lineIdx, setLineIdx] = useState(0);
   const isLastLine = lineIdx >= PROLOGUE_LINES.length - 1;
@@ -35,7 +36,7 @@ export function PrologueScreen({ onComplete }: PrologueScreenProps) {
     <div
       style={{
         position: "relative",
-        minHeight: isMobile ? "100dvh" : "100vh",
+        minHeight: appShellHeight,
         display: "flex",
         flexDirection: "column",
         background: theme.background,
@@ -88,8 +89,8 @@ export function PrologueScreen({ onComplete }: PrologueScreenProps) {
       >
         <div style={{ flex: 1, minHeight: 0 }} />
 
-        <div style={textBoxDockStyle(true)}>
-          <div style={textBoxDockInnerStyle()}>
+        <div style={textBoxDockStyle(isMobile)}>
+          <div style={textBoxDockInnerStyle(isMobile)}>
             <DialogueBox
               speaker="NARRATOR"
               showSpeakerTab={false}

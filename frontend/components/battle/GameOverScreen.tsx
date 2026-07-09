@@ -1,6 +1,6 @@
 "use client";
 
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
 import { gameOverMeta } from "@/lib/constants/ending-thresholds";
 import { theme } from "@/styles/theme";
@@ -12,13 +12,14 @@ interface GameOverScreenProps {
 
 export function GameOverScreen({ reason, onRestart }: GameOverScreenProps) {
   const isMobile = useIsMobile();
+  const appShellHeight = useAppShellHeight();
   const { title, subtitle } = gameOverMeta(reason);
   const emoji = "🕯️";
 
   return (
     <div
       style={{
-        minHeight: isMobile ? "100dvh" : "100vh",
+        minHeight: appShellHeight,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

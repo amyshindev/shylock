@@ -283,7 +283,7 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
         },
         {
           id: "letter_fold_silent",
-          fallbackText: "(편지를 조용히 접어 품에 넣는다)",
+          fallbackText: "(주먹을 말없이 움켜쥔다)",
           evidence: "jessica",
           dpChange: 6,
           hpCost: 3,
@@ -315,6 +315,8 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     availableEvidence: ["jessica", "leah_ring"],
   },
   {
+    // Fixed cutaway scene — scripted verbatim, no item/choice UI (same pattern as
+    // hath_not_moment). Dialogue is served from canonical copy, not the LLM.
     id: "jessica_duet",
     speaker: "JESSICA",
     speakerLabel: "제시카",
@@ -412,15 +414,33 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
     backgroundImage: "/assets/scene-hath-not.png",
     fallbackLines: [
       {
-        text: "샤일록, 마지막으로 묻겠소. 당신은 자비가 무엇인지 아시오?",
+        text: "샤일록, 정녕 그 살 한 조각이 당신에게 무슨 소용이 있소?",
         kind: S,
         speaker: "PORTIA",
         speakerLabel: "포샤",
       },
-      { text: "...", kind: S, speaker: "SHYLOCK", speakerLabel: "샤일록" },
+      {
+        text: "먹을 수도, 팔 수도 없는 것을.",
+        kind: S,
+        speaker: "PORTIA",
+        speakerLabel: "포샤",
+      },
+      {
+        text: "이 법정도, 나 역시도 — 대체 무엇이 당신을 이토록 몰아붙이는지 이해할 수 없구려.",
+        kind: S,
+        speaker: "PORTIA",
+        speakerLabel: "포샤",
+      },
+      { text: "......", kind: S, speaker: "SHYLOCK", speakerLabel: "샤일록" },
       { text: "유대인은 눈이 없소?", kind: S, speaker: "SHYLOCK", speakerLabel: "샤일록" },
       {
-        text: "손이, 오장육부가, 감정이 없소?",
+        text: "유대인은 손이, 오장육부가, 신체가, 감각이, 감정이, 열정이 없소?",
+        kind: S,
+        speaker: "SHYLOCK",
+        speakerLabel: "샤일록",
+      },
+      {
+        text: "같은 음식을 먹고, 같은 무기에 상처 입고, 같은 병에 걸리고, 같은 약으로 낫고, 같은 겨울에 춥고 같은 여름에 덥지 않소, 당신들 기독교인들처럼?",
         kind: S,
         speaker: "SHYLOCK",
         speakerLabel: "샤일록",
@@ -432,18 +452,53 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
         speakerLabel: "샤일록",
       },
       {
-        text: "당신들이 나머지 모든 점에서 우리와 같다면, 이 점에서도 우리는 같을 것이오.",
+        text: "그런데 해를 끼치면, 어찌 복수하지 않겠소?",
         kind: S,
         speaker: "SHYLOCK",
         speakerLabel: "샤일록",
       },
       {
-        text: "법정 안이 일순 조용해진다. 야유하던 이들조차, 잠시 입을 다문다.",
+        text: "당신들이 나머지 모든 점에서 우리와 같다면, 이 점에서도 우리는 당신들과 같을 것이오.",
+        kind: S,
+        speaker: "SHYLOCK",
+        speakerLabel: "샤일록",
+      },
+      {
+        text: "당신들이 나를 찔러도 나는 죽지 않겠소?",
+        kind: S,
+        speaker: "SHYLOCK",
+        speakerLabel: "샤일록",
+      },
+      {
+        text: "당신들이 내게 잘못을 저질러도 나는 복수하지 않겠소?",
+        kind: S,
+        speaker: "SHYLOCK",
+        speakerLabel: "샤일록",
+      },
+      {
+        text: "만일 우리가 나머지 모든 면에서 당신들과 같다면, 이 점에서도 우리는 당신들을 닮을 것이오.",
+        kind: S,
+        speaker: "SHYLOCK",
+        speakerLabel: "샤일록",
+      },
+      {
+        text: "법정 안이 일순 조용해진다.",
         kind: N,
         speaker: "NARRATOR",
       },
       {
-        text: "...계속하시오, 재판을 진행하겠소.",
+        text: "야유하던 이들조차 잠시 입을 다문다.",
+        kind: N,
+        speaker: "NARRATOR",
+      },
+      {
+        text: "......",
+        kind: S,
+        speaker: "PORTIA",
+        speakerLabel: "포샤",
+      },
+      {
+        text: "...재판을 속개하겠소.",
         kind: S,
         speaker: "PORTIA",
         speakerLabel: "포샤",

@@ -1,7 +1,7 @@
 "use client";
 
 import { TextBox } from "@/components/ui/TextBox";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import type { EndingResponse } from "@/lib/api-client/types";
 import {
   getEndingMetaByType,
@@ -16,12 +16,13 @@ interface EndingScreenProps {
 
 export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
   const isMobile = useIsMobile();
+  const appShellHeight = useAppShellHeight();
   const meta = getEndingMetaByType(ending.ending_type as EndingType);
 
   return (
     <div
       style={{
-        minHeight: isMobile ? "100dvh" : "100vh",
+        minHeight: appShellHeight,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

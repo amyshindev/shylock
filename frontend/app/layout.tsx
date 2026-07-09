@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 
+import { ForceLandscape } from "@/components/ui/ForceLandscape";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,7 +23,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ForceLandscape>{children}</ForceLandscape>
+      </body>
     </html>
   );
 }

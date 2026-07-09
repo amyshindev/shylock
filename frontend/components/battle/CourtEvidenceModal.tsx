@@ -124,20 +124,35 @@ export function CourtEvidenceModal({ detail, onClose }: CourtEvidenceModalProps)
               <h3 style={{ color: theme.gold, margin: "16px 0 12px", fontSize: gameFontSize.lg }}>
                 {detail.name}
               </h3>
-              <p
-                style={{
-                  margin: 0,
-                  color: "#d4b060",
-                  fontSize: 13,
-                  lineHeight: 1.8,
-                  fontStyle: "italic",
-                  borderLeft: "2px solid rgba(255, 215, 0, 0.25)",
-                  paddingLeft: 12,
-                  textAlign: "left",
-                }}
-              >
-                &ldquo;{detail.quote}&rdquo;
-              </p>
+              {meta?.desc && (
+                <p
+                  style={{
+                    margin: detail.quote ? "0 0 12px" : 0,
+                    color: theme.textBright,
+                    fontSize: gameFontSize.md,
+                    lineHeight: 1.7,
+                    textAlign: "center",
+                  }}
+                >
+                  {meta.desc}
+                </p>
+              )}
+              {detail.quote && (
+                <p
+                  style={{
+                    margin: 0,
+                    color: "#d4b060",
+                    fontSize: 13,
+                    lineHeight: 1.8,
+                    fontStyle: "italic",
+                    borderLeft: "2px solid rgba(255, 215, 0, 0.25)",
+                    paddingLeft: 12,
+                    textAlign: "left",
+                  }}
+                >
+                  &ldquo;{detail.quote}&rdquo;
+                </p>
+              )}
               {meta?.note && (
                 <p
                   style={{

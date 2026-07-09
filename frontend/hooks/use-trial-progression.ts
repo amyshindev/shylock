@@ -283,15 +283,25 @@ export function useTrialProgression(trialId: string) {
               ? true
               : currentLineEntry?.kind === "speech");
 
+  const resolveEvidenceQuote = useCallback(
+    (evidenceId: string): string => {
+      const apiQuote = quotesById[evidenceId]?.quote;
+      if (apiQuote?.trim()) return apiQuote;
+      return EVIDENCE_BY_ID[evidenceId]?.desc ?? "";
+    },
+    [quotesById],
+  );
+
   const buildCuratedDetail = useCallback(
     (evidenceId: string): EvidenceDetailView => {
       const meta = EVIDENCE_BY_ID[evidenceId];
-      const apiQuote = quotesById[evidenceId]?.quote;
       return {
         kind: "curated",
         evidenceId,
         name: meta?.name ?? evidenceId,
-        quote: apiQuote ?? meta?.desc ?? "",
+        // Raw Folger quote only (may be empty, e.g. ghetto_gate) — the modal shows
+        // this alongside meta.desc rather than falling back to desc here.
+        quote: quotesById[evidenceId]?.quote?.trim() ?? "",
       };
     },
     [quotesById],
@@ -454,7 +464,7 @@ export function useTrialProgression(trialId: string) {
         [result.scene_index]: result.scene_dialogue,
       }));
       setSceneIdx(result.scene_index);
-      // Fixed scenes (hath_not_moment) apply stat effects server-side on advance.
+      // Fixed scenes (jessica_duet, hath_not_moment) apply stat effects server-side on advance.
       setDp(result.dp);
       setHp(result.hp);
       setPortiaHp(result.portia_hp);
@@ -640,15 +650,6 @@ export function useTrialProgression(trialId: string) {
       setPortiaHp(nextPortiaHp);
       setVeniceDpShield(nextShield);
 
-      const showEvidenceFlow = async () => {
-        if (!option.evidence) return;
-        await presentEvidenceDetail(buildCuratedDetail(option.evidence));
-      };
-
-      if (option.evidence) {
-        await showEvidenceFlow();
-      }
-
       if (triggerGameOverIfNeeded(nextDp, nextHp)) {
         choiceLockRef.current = false;
         return;
@@ -701,7 +702,7 @@ export function useTrialProgression(trialId: string) {
         choiceLockRef.current = false;
       }
     },
-    [trialId, dp, hp, portiaHp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, buildCuratedDetail, presentEvidenceDetail, scene],
+    [trialId, dp, hp, portiaHp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, scene],
   );
 
   const makeChoice = useCallback(
@@ -939,8 +940,7 @@ export function useTrialProgression(trialId: string) {
     if (!scene.pressPresent || loadingPresent) return;
 
     const evidenceId = scene.pressPresent.contradiction.evidenceId;
-    const evidenceText =
-      quotesById[evidenceId]?.quote ?? EVIDENCE_BY_ID[evidenceId]?.desc ?? "";
+    const evidenceText = resolveEvidenceQuote(evidenceId);
     if (!evidenceText) return;
 
     setLoadingPresent(true);
@@ -975,7 +975,7 @@ export function useTrialProgression(trialId: string) {
     scene.pressPresent,
     scene.id,
     loadingPresent,
-    quotesById,
+    resolveEvidenceQuote,
     trialId,
     buildCuratedDetail,
     presentEvidenceDetail,
@@ -1076,5 +1076,6 @@ export function useTrialProgression(trialId: string) {
     inspectTubalEvidence,
     presentTubalEvidence,
     dismissEvidenceDetail,
+    resolveEvidenceQuote,
   };
 }

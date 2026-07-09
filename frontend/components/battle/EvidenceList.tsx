@@ -7,6 +7,8 @@ import type { TubalCourtRecord } from "@/lib/tubal-evidence";
 import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
+import { LANDSCAPE_HUD_RAIL_WIDTH } from "./MeterDisplay";
+
 interface EvidenceListProps {
   curatedIds: string[];
   tubalRecords?: TubalCourtRecord[];
@@ -45,44 +47,8 @@ export function EvidenceList({
   const showSectionLabel = !iconsOnly;
   const isRow = iconsOnly || layout === "horizontal";
 
-  return (
-    <div
-      style={{
-        ...hudPanelStyle(isRow ? "4px 6px" : "8px 11px", isRow || compact),
-        display: "flex",
-        flexDirection: isRow ? "row" : "column-reverse",
-        flexWrap: iconsOnly ? "wrap" : undefined,
-        alignItems: isRow ? "center" : "flex-start",
-        justifyContent: iconsOnly ? "flex-start" : undefined,
-        gap: isRow ? 6 : 8,
-        maxHeight: isRow && !iconsOnly ? undefined : compact && !iconsOnly ? "min(28vh, 200px)" : undefined,
-        width: iconsOnly ? "100%" : undefined,
-        maxWidth: isRow ? "100%" : undefined,
-        overflowX: isRow && !iconsOnly ? "auto" : undefined,
-        overflowY: isRow ? "hidden" : "auto",
-        WebkitOverflowScrolling: "touch",
-        flexShrink: 0,
-        boxSizing: "border-box",
-        border: `1px solid ${presentMode ? theme.gold : "#4a2838"}`,
-        boxShadow: presentMode
-          ? "0 2px 12px rgba(255, 215, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.45)"
-          : "0 1px 6px rgba(0, 0, 0, 0.35)",
-      }}
-    >
-      {showSectionLabel && layout === "horizontal" && (
-        <div
-          style={{
-            ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
-            fontSize: 10,
-            letterSpacing: 0.5,
-            flexShrink: 0,
-            paddingRight: 2,
-          }}
-        >
-          {presentMode ? "제시" : "아이템"}
-        </div>
-      )}
-
+  const icons = (
+    <>
       {tubalRecords.map((record) => {
         const clickable = Boolean(onSelectTubal);
         return (
@@ -214,6 +180,52 @@ export function EvidenceList({
           </button>
         );
       })}
+    </>
+  );
+
+  return (
+    <div
+      style={{
+        ...hudPanelStyle(isRow ? "4px 6px" : "8px 11px", isRow || compact),
+        display: "flex",
+        flexDirection: iconsOnly ? "column" : isRow ? "row" : "column-reverse",
+        alignItems: iconsOnly ? "stretch" : isRow ? "center" : "flex-start",
+        gap: isRow ? 6 : 8,
+        maxHeight: isRow && !iconsOnly ? undefined : compact && !iconsOnly ? "min(28vh, 200px)" : undefined,
+        width: iconsOnly ? LANDSCAPE_HUD_RAIL_WIDTH : undefined,
+        maxWidth: isRow ? "100%" : undefined,
+        overflowX: isRow && !iconsOnly ? "auto" : undefined,
+        overflowY: isRow ? "hidden" : "auto",
+        WebkitOverflowScrolling: "touch",
+        flexShrink: 0,
+        boxSizing: "border-box",
+        border: `1px solid ${presentMode ? theme.gold : "#4a2838"}`,
+        boxShadow: presentMode
+          ? "0 2px 12px rgba(255, 215, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.45)"
+          : "0 1px 6px rgba(0, 0, 0, 0.35)",
+      }}
+    >
+      {((showSectionLabel && layout === "horizontal") || iconsOnly) && (
+        <div
+          style={{
+            ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
+            fontSize: 10,
+            letterSpacing: 0.5,
+            flexShrink: 0,
+            paddingRight: iconsOnly ? 0 : 2,
+          }}
+        >
+          {presentMode ? "제시" : "아이템"}
+        </div>
+      )}
+
+      {iconsOnly ? (
+        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 6, width: "100%" }}>
+          {icons}
+        </div>
+      ) : (
+        icons
+      )}
 
       {showSectionLabel && layout === "vertical" && (
         <div

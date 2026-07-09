@@ -1,6 +1,6 @@
 "use client";
 
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
@@ -16,7 +16,6 @@ import {
   PortiaMeterDisplay,
   CompactShylockMeters,
   CompactPortiaMeter,
-  LANDSCAPE_HUD_RAIL_WIDTH,
   LEFT_HUD_TOP,
   LEFT_METERS_STACK_HEIGHT,
 } from "./MeterDisplay";
@@ -117,6 +116,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   } = trial;
 
   const isMobile = useIsMobile();
+  const appShellHeight = useAppShellHeight();
   const showBattleHud = scene.id !== "opening";
 
   const challengeOptions = scene.challenge?.options ?? [];
@@ -289,8 +289,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     <div
       style={{
         position: "relative",
-        minHeight: isMobile ? "100dvh" : "100vh",
-        height: isMobile ? "100dvh" : undefined,
+        minHeight: appShellHeight,
+        height: isMobile ? appShellHeight : undefined,
         display: "flex",
         flexDirection: "column",
         background: theme.background,
@@ -338,9 +338,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                     zIndex: 12,
                     display: "flex",
                     flexDirection: "column",
-                    alignItems: "stretch",
+                    alignItems: "flex-start",
                     gap: 4,
-                    width: LANDSCAPE_HUD_RAIL_WIDTH,
                     maxHeight: "calc(100% - 96px)",
                     overflowY: "auto",
                     WebkitOverflowScrolling: "touch",

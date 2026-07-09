@@ -119,8 +119,10 @@ export function portiaHpColor(value: number): string {
 
 const METER_COLUMN_WIDTH = 336;
 const METER_COLUMN_WIDTH_MOBILE = 148;
-/** Shared width for landscape left rail + Portia meter so both columns match. */
+/** Width for skill/item panels in mobile landscape HUD. */
 const LANDSCAPE_HUD_RAIL_WIDTH = 132;
+/** Width for DP/HP/Portia gauge panels (~1.3× prior compact meter width). */
+const LANDSCAPE_METER_WIDTH = 192;
 const HUD_INSET = 10;
 const HUD_INSET_MOBILE = 8;
 const HUD_TOP = 8;
@@ -131,6 +133,7 @@ export {
   METER_COLUMN_WIDTH as LEFT_METER_COLUMN_WIDTH,
   METER_COLUMN_WIDTH_MOBILE as LEFT_METER_COLUMN_WIDTH_MOBILE,
   LANDSCAPE_HUD_RAIL_WIDTH,
+  LANDSCAPE_METER_WIDTH,
   HUD_INSET as LEFT_HUD_INSET,
   HUD_INSET_MOBILE as LEFT_HUD_INSET_MOBILE,
   HUD_TOP as LEFT_HUD_TOP,
@@ -154,7 +157,7 @@ export function CompactShylockMeters({
         flexShrink: 0,
         pointerEvents: "none",
         position: "relative",
-        width: LANDSCAPE_HUD_RAIL_WIDTH,
+        width: LANDSCAPE_METER_WIDTH,
         boxSizing: "border-box",
       }}
     >
@@ -218,7 +221,7 @@ export function CompactPortiaMeter({ portiaHp }: PortiaMeterDisplayProps) {
         ...hudPanelStyle("5px 8px", true),
         flexShrink: 0,
         pointerEvents: "none",
-        width: LANDSCAPE_HUD_RAIL_WIDTH,
+        width: LANDSCAPE_METER_WIDTH,
         boxSizing: "border-box",
       }}
     >

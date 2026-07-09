@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import { PrologueScreen } from "@/components/title/PrologueScreen";
 import { TextBox } from "@/components/ui/TextBox";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import { startTrial } from "@/lib/api-client/trial-progression";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
@@ -13,6 +13,7 @@ import { theme } from "@/styles/theme";
 export function TitleScreen() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const appShellHeight = useAppShellHeight();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prologueTrialId, setPrologueTrialId] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export function TitleScreen() {
   return (
     <div
       style={{
-        minHeight: isMobile ? "100dvh" : "100vh",
+        minHeight: appShellHeight,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",

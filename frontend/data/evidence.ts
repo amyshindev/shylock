@@ -60,8 +60,9 @@ export const EVIDENCE_META: EvidenceMeta[] = [
     id: "jessica",
     name: "제시카의 편지",
     icon: "/assets/evidence-jessica.png",
-    desc: "딸이 도망치며 남긴 흔적. 돈과 보석을 훔쳐갔다.",
-    act: "Act III, Scene 1",
+    desc: "로렌조에게 보낸 편지. 아버지 집을 빠져나올 방법과, 챙겨 나올 금과 보석, 준비해 둔 시동 옷차림까지 적어놓았다.",
+    act: "Act II, Scene 4",
+    note: "원작에서 이 편지는 샤일록이 아니라 로렌조에게 전달된 도주 계획서다. 샤일록이 딸의 가출을 알게 되는 장면은 무대에 직접 등장하지 않고, 살라리노와 솔라니오의 대사를 통해서만 간접적으로 전해진다.",
   },
   {
     id: "leah_ring",

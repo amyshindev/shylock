@@ -47,7 +47,7 @@ CHOICE_BRIEFS: dict[str, str] = {
     "ghetto_look_silent": "(Says nothing, only gazes toward the gate to the ghetto.)",
     "defend_jessica": "Jessica is my daughter — the court has no reason to reopen that wound.",
     "letter_irrelevant": "Whatever choice my daughter made, it has nothing to do with this bond.",
-    "letter_fold_silent": "(Quietly folds Jessica's letter and tucks it into his breast.)",
+    "letter_fold_silent": "(Silently clenches his fist.)",
     "ring_leah_gift": (
         "This ring — I had it of Leah when I was a bachelor. "
         "I would not have given it for a wilderness of monkeys. (Leah's turquoise)"

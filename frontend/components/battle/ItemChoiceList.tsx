@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { createPortal } from "react-dom";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import { useIsMobile } from "@/hooks/use-is-mobile";
@@ -76,6 +77,8 @@ export function ItemChoiceList({
     .filter((ev): ev is NonNullable<typeof ev> => Boolean(ev));
 
   if (items.length === 0) return null;
+
+  const noteItem = openNoteId ? EVIDENCE_BY_ID[openNoteId] : undefined;
 
   const iconSize = isMobile ? 44 : 48;
 
@@ -226,26 +229,72 @@ export function ItemChoiceList({
             >
               {ev.desc}
             </span>
-            {ev.note && openNoteId === ev.id && (
-              <span
-                style={{
-                  fontSize: 11,
-                  color: "#8f8ab0",
-                  lineHeight: 1.45,
-                  fontStyle: "italic",
-                  whiteSpace: "normal",
-                  textAlign: "left",
-                  width: "100%",
-                  paddingLeft: 6,
-                  borderLeft: "2px solid rgba(143, 138, 176, 0.4)",
-                }}
-              >
-                {ev.note}
-              </span>
-            )}
           </button>
         ))}
       </div>
+
+      {noteItem?.note &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            onClick={() => setOpenNoteId(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 60,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(0, 0, 0, 0.7)",
+              padding: 24,
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: 320,
+                maxWidth: "90vw",
+                background: "rgba(18, 12, 24, 0.96)",
+                border: `1px solid ${theme.gold}`,
+                borderRadius: 8,
+                boxShadow: "0 0 40px rgba(255, 215, 0, 0.15)",
+                padding: "20px 22px",
+                textAlign: "left",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  color: "#8f8ab0",
+                  fontSize: gameFontSize.sm,
+                  lineHeight: 1.6,
+                  fontStyle: "italic",
+                }}
+              >
+                {noteItem.note}
+              </p>
+              <button
+                type="button"
+                onClick={() => setOpenNoteId(null)}
+                style={{
+                  marginTop: 16,
+                  width: "100%",
+                  padding: "8px 16px",
+                  fontSize: gameFontSize.sm,
+                  letterSpacing: 1,
+                  cursor: "pointer",
+                  background: "rgba(255, 215, 0, 0.12)",
+                  color: theme.gold,
+                  border: `1px solid ${theme.gold}`,
+                  borderRadius: 3,
+                }}
+              >
+                닫기
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

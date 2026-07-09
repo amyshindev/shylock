@@ -4,6 +4,7 @@ from shylock_trial.app.constants.scene_catalog import (
     SCENE_TEMPLATES,
     fallback_scene_dialogue,
     get_scene_template,
+    is_fixed_script_scene,
 )
 from shylock_trial.app.constants.scene_progression import JESSICA_DUET_SCENE_INDEX
 
@@ -25,3 +26,7 @@ def test_scene_template_line_kind_counts_match(scene_index: int) -> None:
 def test_jessica_duet_fallback_dialogue_builds() -> None:
     content = fallback_scene_dialogue(JESSICA_DUET_SCENE_INDEX)
     assert len(content.lines) == 16
+
+
+def test_jessica_duet_is_fixed_script_scene() -> None:
+    assert is_fixed_script_scene(JESSICA_DUET_SCENE_INDEX)

@@ -32,13 +32,13 @@ export function useIsMobile(): boolean {
   return isMobile;
 }
 
-/** True when the viewport is taller than it is wide (portrait). */
+/** True when the viewport is taller than it is wide. */
 export function useIsPortrait(): boolean {
   const [isPortrait, setIsPortrait] = useState(false);
 
   useEffect(() => {
     const sync = () => {
-      setIsPortrait(window.matchMedia("(orientation: portrait)").matches);
+      setIsPortrait(window.innerHeight > window.innerWidth);
     };
     sync();
     window.addEventListener("resize", sync);
@@ -50,4 +50,20 @@ export function useIsPortrait(): boolean {
   }, []);
 
   return isPortrait;
+}
+
+/** Portrait phone: rotate UI to landscape instead of blocking with a prompt. */
+export function useForceLandscape(): boolean {
+  const isMobile = useIsMobile();
+  const isPortrait = useIsPortrait();
+  return isMobile && isPortrait;
+}
+
+/** Full-screen shell height; uses % when the viewport is CSS-rotated. */
+export function useAppShellHeight(): string {
+  const isMobile = useIsMobile();
+  const forceLandscape = useForceLandscape();
+  if (forceLandscape) return "100%";
+  if (isMobile) return "100dvh";
+  return "100vh";
 }

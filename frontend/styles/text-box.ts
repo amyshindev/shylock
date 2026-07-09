@@ -99,9 +99,9 @@ export function textBoxPanelStyle(compact = false): CSSProperties {
   };
 }
 
-export const TEXT_BOX_MAX_WIDTH = 680;
+export const TEXT_BOX_MAX_WIDTH = 780;
 /** Narrower dock on landscape phones so dialogue does not span edge-to-edge. */
-export const TEXT_BOX_MAX_WIDTH_MOBILE = 420;
+export const TEXT_BOX_MAX_WIDTH_MOBILE = 550;
 
 /** Stable body height (~3 lines) so the box does not resize while typing. */
 export const DIALOGUE_BODY_MIN_HEIGHT = 96;

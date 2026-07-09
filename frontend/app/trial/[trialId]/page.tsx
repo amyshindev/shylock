@@ -1,9 +1,9 @@
 "use client";
 
-import { LandscapeGate } from "@/components/ui/LandscapeGate";
 import { BattleScreen } from "@/components/battle/BattleScreen";
 import { GameOverScreen } from "@/components/battle/GameOverScreen";
 import { EndingScreen } from "@/components/ending/EndingScreen";
+import { useAppShellHeight } from "@/hooks/use-is-mobile";
 import { useTrialProgression } from "@/hooks/use-trial-progression";
 import { theme } from "@/styles/theme";
 import { useParams, useRouter } from "next/navigation";
@@ -13,83 +13,72 @@ export default function TrialPage() {
   const router = useRouter();
   const trialId = params.trialId as string;
   const trial = useTrialProgression(trialId);
+  const appShellHeight = useAppShellHeight();
 
   if (!trial.initialized) {
     return (
-      <LandscapeGate>
-        <div
-          style={{
-            minHeight: "100dvh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: theme.background,
-            color: theme.textMuted,
-          }}
-        >
-          재판 기록을 불러오는 중…
-        </div>
-      </LandscapeGate>
+      <div
+        style={{
+          minHeight: appShellHeight,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: theme.background,
+          color: theme.textMuted,
+        }}
+      >
+        재판 기록을 불러오는 중…
+      </div>
     );
   }
 
   if (trial.error && trial.phase === "game" && !trial.portiaReply) {
     return (
-      <LandscapeGate>
-        <div
+      <div
+        style={{
+          minHeight: appShellHeight,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: theme.background,
+          padding: 24,
+          textAlign: "center",
+        }}
+      >
+        <p style={{ color: "#c44" }}>{trial.error}</p>
+        <button
+          type="button"
+          onClick={() => router.push("/")}
           style={{
-            minHeight: "100dvh",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            background: theme.background,
-            padding: 24,
-            textAlign: "center",
+            marginTop: 16,
+            padding: "10px 24px",
+            border: `1px solid ${theme.gold}`,
+            background: "transparent",
+            color: theme.gold,
+            cursor: "pointer",
           }}
         >
-          <p style={{ color: "#c44" }}>{trial.error}</p>
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            style={{
-              marginTop: 16,
-              padding: "10px 24px",
-              border: `1px solid ${theme.gold}`,
-              background: "transparent",
-              color: theme.gold,
-              cursor: "pointer",
-            }}
-          >
-            타이틀로
-          </button>
-        </div>
-      </LandscapeGate>
+          타이틀로
+        </button>
+      </div>
     );
   }
 
   if (trial.phase === "gameover" && trial.gameOverReason) {
     return (
-      <LandscapeGate>
-        <GameOverScreen
-          reason={trial.gameOverReason}
-          onRestart={() => router.push("/")}
-        />
-      </LandscapeGate>
+      <GameOverScreen
+        reason={trial.gameOverReason}
+        onRestart={() => router.push("/")}
+      />
     );
   }
 
   if (trial.phase === "ending" && trial.ending) {
     return (
-      <LandscapeGate>
-        <EndingScreen ending={trial.ending} onRestart={() => router.push("/")} />
-      </LandscapeGate>
+      <EndingScreen ending={trial.ending} onRestart={() => router.push("/")} />
     );
   }
 
-  return (
-    <LandscapeGate>
-      <BattleScreen trial={trial} />
-    </LandscapeGate>
-  );
+  return <BattleScreen trial={trial} />;
 }

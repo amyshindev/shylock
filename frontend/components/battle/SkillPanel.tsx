@@ -1,6 +1,7 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
@@ -111,9 +112,13 @@ export function SkillPanel({
   iconsOnly = false,
 }: SkillPanelProps) {
   const isMobile = useIsMobile();
+  const [confirmSkillId, setConfirmSkillId] = useState<SkillId | null>(null);
+  const confirmSkill = confirmSkillId
+    ? SKILLS.find((skill) => skill.id === confirmSkillId)
+    : undefined;
   const horizontal = iconsOnly || (horizontalProp ?? false);
   const skillPanelWidth = iconsOnly
-    ? "100%"
+    ? LANDSCAPE_HUD_RAIL_WIDTH
     : horizontal
       ? undefined
       : isMobile
@@ -128,14 +133,15 @@ export function SkillPanel({
         width: skillPanelWidth,
         boxSizing: "border-box",
         display: horizontal || iconsOnly ? "flex" : "block",
-        alignItems: horizontal || iconsOnly ? "center" : undefined,
+        flexDirection: iconsOnly ? "column" : undefined,
+        alignItems: iconsOnly ? "stretch" : horizontal ? "center" : undefined,
         justifyContent: iconsOnly ? "space-between" : undefined,
         gap: horizontal || iconsOnly ? 6 : undefined,
         flexShrink: 0,
         maxWidth: "100%",
       }}
     >
-      {!iconsOnly && (
+      {(!horizontal || iconsOnly) && (
         <div
           style={{
             ...hudLabelStyle("#e8dce4"),
@@ -173,7 +179,12 @@ export function SkillPanel({
               title={skill.label}
               aria-label={skill.label}
               onClick={() => {
-                if (canUse) onUseSkill(skill.id);
+                if (!canUse) return;
+                if (iconsOnly) {
+                  setConfirmSkillId((prev) => (prev === skill.id ? null : skill.id));
+                } else {
+                  onUseSkill(skill.id);
+                }
               }}
               style={skillButtonStyle(canUse, lockedOut, iconsOnly)}
               onMouseEnter={(e) => {
@@ -192,6 +203,71 @@ export function SkillPanel({
           );
         })}
       </div>
+
+      {iconsOnly &&
+        confirmSkill &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            onClick={() => setConfirmSkillId(null)}
+            style={{
+              position: "fixed",
+              inset: 0,
+              zIndex: 30,
+              background: "rgba(6, 3, 8, 0.45)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                ...hudPanelStyle("14px 16px", false),
+                width: 240,
+                maxWidth: "80vw",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 10,
+              }}
+            >
+              <div
+                style={{
+                  ...hudLabelStyle(SKILL_ENABLED_COLOR),
+                  fontSize: gameFontSize.sm,
+                  lineHeight: 1.4,
+                  textAlign: "center",
+                }}
+              >
+                {confirmSkill.label}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!disabled && canUseSkill(confirmSkill.id, skillCtx)) {
+                    onUseSkill(confirmSkill.id);
+                  }
+                  setConfirmSkillId(null);
+                }}
+                style={{
+                  padding: "7px 24px",
+                  fontSize: gameFontSize.xs,
+                  fontWeight: 700,
+                  letterSpacing: 1,
+                  cursor: "pointer",
+                  background: "rgba(90, 30, 48, 0.95)",
+                  color: SKILL_ENABLED_COLOR,
+                  border: "1px solid #7a5060",
+                  borderRadius: 3,
+                }}
+              >
+                사용
+              </button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
