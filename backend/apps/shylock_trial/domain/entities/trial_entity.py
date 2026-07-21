@@ -41,6 +41,7 @@ class Trial:
     portia_hp: PortiaHpScore
     choice_history: list[str]
     phase: TrialPhase
+    user_id: UUID | None = None
     narration_text: str | None = None
     scene_dialogues: dict[int, SceneDialogueContent] = field(default_factory=dict)
     tubal_used_scenes: tuple[str, ...] = ()

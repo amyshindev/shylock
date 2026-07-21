@@ -82,6 +82,9 @@ class InMemoryTrialPort:
     async def find_by_id(self, trial_id):
         return self._store.get(trial_id)
 
+    async def list_by_user_id(self, user_id):
+        return [t for t in self._store.values() if t.user_id == user_id]
+
 
 @pytest.mark.asyncio
 async def test_start_trial_returns_scene_dialogue() -> None:

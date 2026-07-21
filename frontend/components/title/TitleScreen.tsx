@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { PrologueScreen } from "@/components/title/PrologueScreen";
 import { TextBox } from "@/components/ui/TextBox";
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
+import { fetchMe, logout } from "@/lib/api-client/auth";
 import { startTrial } from "@/lib/api-client/trial-progression";
-import { gameFontSize } from "@/styles/text-box";
+import type { UserFromApi } from "@/lib/api-client/types";
+import { gameFontFamily, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 export function TitleScreen() {
@@ -17,6 +19,16 @@ export function TitleScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [prologueTrialId, setPrologueTrialId] = useState<string | null>(null);
+  const [user, setUser] = useState<UserFromApi | null>(null);
+
+  useEffect(() => {
+    void fetchMe().then(setUser);
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    setUser(null);
+  };
 
   const handleStart = async () => {
     setLoading(true);
@@ -52,8 +64,76 @@ export function TitleScreen() {
           : 24,
         textAlign: "center",
         fontFamily: "Georgia, serif",
+        position: "relative",
       }}
     >
+      <div
+        style={{
+          position: "absolute",
+          top: isMobile ? "max(12px, env(safe-area-inset-top))" : 16,
+          right: isMobile ? 12 : 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          fontFamily: gameFontFamily,
+          fontSize: gameFontSize.sm,
+        }}
+      >
+        {user ? (
+          <>
+            <span style={{ color: theme.textBright }}>
+              <span style={{ color: theme.gold }}>{user.nickname}</span> 님
+            </span>
+            <button
+              type="button"
+              onClick={() => router.push("/records")}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#7a5a4a",
+                fontSize: gameFontSize.sm,
+                fontFamily: gameFontFamily,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              재판 기록
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#7a5a4a",
+                fontSize: gameFontSize.sm,
+                fontFamily: gameFontFamily,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              로그아웃
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            onClick={() => router.push("/login")}
+            style={{
+              background: "none",
+              border: "1px solid #3a1828",
+              borderRadius: 4,
+              padding: "6px 14px",
+              color: "#c0a060",
+              fontSize: gameFontSize.sm,
+              fontFamily: gameFontFamily,
+              cursor: "pointer",
+            }}
+          >
+            로그인
+          </button>
+        )}
+      </div>
       <p
         style={{
           color: "#6a2a3a",

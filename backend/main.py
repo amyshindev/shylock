@@ -5,7 +5,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from infrastructure.config import get_settings
-from shylock_trial.adapter.inbound.api.router_registry import shylock_trial_router
+from shylock_trial.adapter.inbound.api.router_registry import (
+    docs_admin_auth_router,
+    shylock_trial_router,
+)
 
 
 @asynccontextmanager
@@ -20,6 +23,9 @@ def create_app() -> FastAPI:
         description="Hexagonal backend for Shylock's Court trial game",
         version="0.1.0",
         lifespan=lifespan,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
     )
     app.add_middleware(
         CORSMiddleware,
@@ -29,6 +35,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     app.include_router(shylock_trial_router)
+    app.include_router(docs_admin_auth_router)
     return app
 
 

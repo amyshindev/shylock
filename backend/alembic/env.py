@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "apps"))
 from infrastructure.config import get_settings
 from shylock_trial.adapter.outbound.orm.play_line_orm import EvidenceOrm, PlayLineOrm  # noqa: F401,E402
 from shylock_trial.adapter.outbound.orm.trial_orm import Base, TrialChoiceHistoryOrm, TrialOrm  # noqa: F401,E402
+from shylock_trial.adapter.outbound.orm.user_orm import UserOrm  # noqa: F401,E402
 
 config = context.config
 if config.config_file_name is not None:

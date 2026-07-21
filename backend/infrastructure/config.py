@@ -49,6 +49,30 @@ class Settings(BaseSettings):
         description="Cohere API key for evidence embeddings.",
     )
 
+    # Cookie signing for /docs login gate (admin credential check comes later).
+    docs_session_secret: SecretStr = Field(
+        default=SecretStr("dev-only-change-me-docs-session-secret"),
+        validation_alias="DOCS_SESSION_SECRET",
+        description="HMAC secret for Swagger docs session cookie.",
+    )
+    docs_admin_username: str = Field(
+        default="admin",
+        validation_alias="DOCS_ADMIN_USERNAME",
+        description="Admin username required to open /docs.",
+    )
+    docs_admin_password: SecretStr = Field(
+        default=SecretStr("change-me-docs-admin-password"),
+        validation_alias="DOCS_ADMIN_PASSWORD",
+        description="Admin password required to open /docs.",
+    )
+
+    # Cookie signing for game user login sessions.
+    auth_session_secret: SecretStr = Field(
+        default=SecretStr("dev-only-change-me-auth-session-secret"),
+        validation_alias="AUTH_SESSION_SECRET",
+        description="HMAC secret for game user session cookies.",
+    )
+
     def migration_database_url(self) -> str:
         """Direct DB URL for Alembic (bypasses pooler). Falls back to DATABASE_URL."""
         return self.direct_url or self.database_url

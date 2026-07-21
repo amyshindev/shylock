@@ -12,12 +12,15 @@ from shylock_trial.adapter.inbound.api.schemas.trial_progression_schema import (
     SubmitChoiceRequest,
     SubmitChoiceResponse,
     TrialResponse,
+    TrialSummaryResponse,
     VeniceParadoxSkillResponse,
     scene_dialogue_from_trial,
 )
 from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+from shylock_trial.app.dtos.user_auth_dto import UserDto
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
 from shylock_trial.dependencies.trial_progression_provider import get_trial_progression_use_case
+from shylock_trial.dependencies.user_auth_provider import get_current_user_optional
 
 trial_progression_router = APIRouter(prefix="/trials", tags=["trial-progression"])
 
@@ -41,8 +44,9 @@ def _scene_dialogue_response(content) -> SceneDialogueResponse:
 )
 async def start_trial(
     use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
+    current_user: UserDto | None = Depends(get_current_user_optional),
 ) -> StartTrialResponse:
-    result = await use_case.start()
+    result = await use_case.start(user_id=current_user.user_id if current_user else None)
     return StartTrialResponse(
         trial_id=result.trial_id,
         scene_index=result.scene_index,
@@ -52,6 +56,30 @@ async def start_trial(
         phase=result.phase,
         scene_dialogue=_scene_dialogue_response(result.scene_dialogue),
     )
+
+
+@trial_progression_router.get("/mine", response_model=list[TrialSummaryResponse])
+async def list_my_trials(
+    use_case: TrialProgressionUseCase = Depends(get_trial_progression_use_case),
+    current_user: UserDto | None = Depends(get_current_user_optional),
+) -> list[TrialSummaryResponse]:
+    if current_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="로그인이 필요합니다.",
+        )
+    trials = await use_case.list_trials_by_user(current_user.user_id)
+    return [
+        TrialSummaryResponse(
+            trial_id=t.trial_id,
+            scene_index=t.scene_index,
+            dp=t.dp.value,
+            hp=t.hp.value,
+            portia_hp=t.portia_hp.value,
+            phase=t.phase,
+        )
+        for t in trials
+    ]
 
 
 @trial_progression_router.get("/{trial_id}", response_model=TrialResponse)

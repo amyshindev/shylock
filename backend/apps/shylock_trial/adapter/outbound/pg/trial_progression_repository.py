@@ -63,3 +63,12 @@ class TrialProgressionPgRepository(TrialProgressionPort):
         )
         orm = result.scalar_one_or_none()
         return to_entity(orm) if orm else None
+
+    async def list_by_user_id(self, user_id: UUID) -> list[Trial]:
+        result = await self._session.execute(
+            select(TrialOrm)
+            .where(TrialOrm.user_id == user_id)
+            .order_by(TrialOrm.created_at.desc())
+            .options(selectinload(TrialOrm.choice_history))
+        )
+        return [to_entity(orm) for orm in result.scalars().all()]

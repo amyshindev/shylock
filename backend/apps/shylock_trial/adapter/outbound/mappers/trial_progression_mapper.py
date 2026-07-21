@@ -18,6 +18,7 @@ from shylock_trial.domain.value_objects.portia_hp_score_vo import PortiaHpScore
 def to_entity(orm: TrialOrm) -> Trial:
     return Trial(
         trial_id=orm.trial_id,
+        user_id=orm.user_id,
         scene_index=orm.scene_index,
         dp=DpScore(orm.dp),
         hp=HpScore(orm.hp),
@@ -38,6 +39,7 @@ def to_entity(orm: TrialOrm) -> Trial:
 def to_orm(entity: Trial) -> TrialOrm:
     orm = TrialOrm(
         trial_id=entity.trial_id,
+        user_id=entity.user_id,
         scene_index=entity.scene_index,
         dp=entity.dp.value,
         hp=entity.hp.value,

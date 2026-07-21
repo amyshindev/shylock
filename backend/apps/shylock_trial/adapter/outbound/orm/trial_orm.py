@@ -14,6 +14,12 @@ class TrialOrm(Base):
     __tablename__ = "trials"
 
     trial_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
+    user_id: Mapped[UUID | None] = mapped_column(
+        PGUUID(as_uuid=True),
+        ForeignKey("users.user_id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
     scene_index: Mapped[int] = mapped_column(Integer, default=0)
     dp: Mapped[int] = mapped_column(Integer, default=50)
     hp: Mapped[int] = mapped_column(Integer, default=100)

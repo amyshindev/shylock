@@ -34,6 +34,21 @@ export interface StartTrialResponse extends TrialState {
   scene_dialogue: SceneDialogueFromApi;
 }
 
+export interface UserFromApi {
+  user_id: string;
+  email: string;
+  nickname: string;
+}
+
+export interface TrialSummaryFromApi {
+  trial_id: string;
+  scene_index: number;
+  dp: number;
+  hp: number;
+  portia_hp: number;
+  phase: TrialPhase;
+}
+
 export interface SubmitChoiceResponse {
   trial_id: string;
   scene_index: number;

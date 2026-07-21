@@ -64,6 +64,30 @@ class StartTrialResponse(BaseModel):
     scene_dialogue: SceneDialogueResponse
 
 
+class TrialSummaryResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "trial_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "scene_index": 4,
+                    "dp": 72,
+                    "hp": 60,
+                    "portia_hp": 40,
+                    "phase": "ended",
+                }
+            ]
+        }
+    )
+
+    trial_id: UUID
+    scene_index: int
+    dp: int
+    hp: int
+    portia_hp: int
+    phase: TrialPhase
+
+
 class TrialResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={

@@ -67,7 +67,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         self._evidence = evidence
         self._tubal_enhancement = tubal_enhancement
 
-    async def start(self) -> StartTrialResultDto:
+    async def start(self, user_id: UUID | None = None) -> StartTrialResultDto:
         trial = Trial(
             trial_id=uuid4(),
             scene_index=0,
@@ -76,6 +76,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia_hp=PortiaHpScore(PORTIA_HP_START),
             choice_history=[],
             phase=TrialPhase.IN_PROGRESS,
+            user_id=user_id,
         )
         trial = await self._port.create(trial)
         scene_dialogue = await self._ensure_scene_dialogue(trial, 0)
@@ -90,6 +91,9 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             phase=trial.phase,
             scene_dialogue=scene_dialogue,
         )
+
+    async def list_trials_by_user(self, user_id: UUID) -> list[Trial]:
+        return await self._port.list_by_user_id(user_id)
 
     async def submit_choice(self, input_dto: SubmitChoiceInputDto) -> SubmitChoiceResultDto:
         trial = await self._require_trial(input_dto.trial_id)

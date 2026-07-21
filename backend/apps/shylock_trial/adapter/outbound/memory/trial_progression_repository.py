@@ -26,3 +26,7 @@ class InMemoryTrialProgressionRepository(TrialProgressionPort):
 
     async def find_by_id(self, trial_id: UUID) -> Trial | None:
         return self._store.get(trial_id)
+
+    async def list_by_user_id(self, user_id: UUID) -> list[Trial]:
+        # Insertion order ≈ creation order; newest first.
+        return [t for t in reversed(self._store.values()) if t.user_id == user_id]
