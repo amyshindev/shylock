@@ -5,8 +5,11 @@ from shylock_trial.app.constants.user_auth import (
     NICKNAME_MAX_LENGTH,
     PASSWORD_MIN_LENGTH,
 )
+from dataclasses import replace
+
 from shylock_trial.app.dtos.user_auth_dto import (
     AuthResultDto,
+    GoogleProfileDto,
     LoginInputDto,
     SignupInputDto,
     UserDto,
@@ -65,8 +68,41 @@ class UserAuthInteractor(UserAuthUseCase):
     async def login(self, input_dto: LoginInputDto) -> AuthResultDto:
         email = input_dto.email.strip().lower()
         user = await self._port.find_by_email(email)
-        if user is None or not verify_password(input_dto.password, user.password_hash):
+        if (
+            user is None
+            or user.password_hash is None  # social-only account
+            or not verify_password(input_dto.password, user.password_hash)
+        ):
             return AuthResultDto(success=False, error=_LOGIN_FAILED)
+
+        return AuthResultDto(
+            success=True,
+            user=_to_user_dto(user),
+            session_token=self._session.issue_token(user.user_id),
+        )
+
+    async def login_with_google(self, profile: GoogleProfileDto) -> AuthResultDto:
+        user = await self._port.find_by_google_id(profile.google_id)
+
+        if user is None and profile.email:
+            # Same verified email already registered: link Google to that account.
+            existing = await self._port.find_by_email(profile.email.lower())
+            if existing is not None:
+                user = await self._port.update_user(
+                    replace(existing, google_id=profile.google_id)
+                )
+
+        if user is None:
+            nickname = (profile.nickname or "").strip() or "베네치아의 이방인"
+            user = await self._port.create_user(
+                User(
+                    user_id=uuid4(),
+                    email=profile.email.lower() if profile.email else None,
+                    nickname=nickname[:NICKNAME_MAX_LENGTH],
+                    password_hash=None,
+                    google_id=profile.google_id,
+                )
+            )
 
         return AuthResultDto(
             success=True,

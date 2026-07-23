@@ -5,6 +5,8 @@ from uuid import UUID
 @dataclass(frozen=True, slots=True)
 class User:
     user_id: UUID
-    email: str
+    email: str | None
     nickname: str
-    password_hash: str
+    # None for social-only accounts (e.g. Google) that have no password.
+    password_hash: str | None
+    google_id: str | None = None

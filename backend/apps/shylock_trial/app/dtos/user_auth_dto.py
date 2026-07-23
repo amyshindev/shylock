@@ -18,8 +18,15 @@ class LoginInputDto:
 @dataclass(frozen=True, slots=True)
 class UserDto:
     user_id: UUID
-    email: str
+    email: str | None
     nickname: str
+
+
+@dataclass(frozen=True, slots=True)
+class GoogleProfileDto:
+    google_id: str
+    nickname: str | None = None
+    email: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

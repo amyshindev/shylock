@@ -51,5 +51,5 @@ class UserResponse(BaseModel):
     )
 
     user_id: UUID
-    email: str
+    email: str | None
     nickname: str

@@ -36,7 +36,7 @@ export interface StartTrialResponse extends TrialState {
 
 export interface UserFromApi {
   user_id: string;
-  email: string;
+  email: string | null;
   nickname: string;
 }
 

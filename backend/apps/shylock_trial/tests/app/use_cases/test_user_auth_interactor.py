@@ -2,7 +2,11 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from shylock_trial.app.dtos.user_auth_dto import LoginInputDto, SignupInputDto
+from shylock_trial.app.dtos.user_auth_dto import (
+    GoogleProfileDto,
+    LoginInputDto,
+    SignupInputDto,
+)
 from shylock_trial.app.ports.output.user_auth_port import UserAuthPort
 from shylock_trial.app.ports.output.user_session_port import UserSessionPort
 from shylock_trial.app.use_cases.user_auth_interactor import UserAuthInteractor
@@ -17,11 +21,18 @@ class _FakeUserRepo(UserAuthPort):
         self._by_id[user.user_id] = user
         return user
 
+    async def update_user(self, user: User) -> User:
+        self._by_id[user.user_id] = user
+        return user
+
     async def find_by_email(self, email: str) -> User | None:
         return next((u for u in self._by_id.values() if u.email == email), None)
 
     async def find_by_id(self, user_id: UUID) -> User | None:
         return self._by_id.get(user_id)
+
+    async def find_by_google_id(self, google_id: str) -> User | None:
+        return next((u for u in self._by_id.values() if u.google_id == google_id), None)
 
 
 class _FakeSession(UserSessionPort):
@@ -94,6 +105,55 @@ async def test_login_rejects_wrong_password(interactor: UserAuthInteractor) -> N
     result = await interactor.login(LoginInputDto(email="a@b.co", password="wrong-password"))
     assert result.success is False
     assert result.user is None
+
+
+@pytest.mark.asyncio
+async def test_google_login_creates_new_user(interactor: UserAuthInteractor) -> None:
+    result = await interactor.login_with_google(
+        GoogleProfileDto(google_id="12345", nickname="샤일록", email=None)
+    )
+    assert result.success is True
+    assert result.user is not None
+    assert result.user.nickname == "샤일록"
+    assert result.user.email is None
+    assert result.session_token is not None
+
+
+@pytest.mark.asyncio
+async def test_google_login_reuses_existing_google_user(interactor: UserAuthInteractor) -> None:
+    first = await interactor.login_with_google(GoogleProfileDto(google_id="12345", nickname="a"))
+    second = await interactor.login_with_google(GoogleProfileDto(google_id="12345", nickname="b"))
+    assert first.user is not None and second.user is not None
+    assert first.user.user_id == second.user.user_id
+
+
+@pytest.mark.asyncio
+async def test_google_login_links_existing_email_account(interactor: UserAuthInteractor) -> None:
+    signup = await interactor.signup(
+        SignupInputDto(email="a@b.co", password="password123", nickname="원래닉")
+    )
+    assert signup.user is not None
+
+    google = await interactor.login_with_google(
+        GoogleProfileDto(google_id="777", nickname="구글닉", email="A@B.co")
+    )
+    assert google.user is not None
+    assert google.user.user_id == signup.user.user_id  # linked, not duplicated
+
+    # Existing password login still works after linking.
+    relogin = await interactor.login(LoginInputDto(email="a@b.co", password="password123"))
+    assert relogin.success is True
+
+
+@pytest.mark.asyncio
+async def test_password_login_rejected_for_google_only_account(
+    interactor: UserAuthInteractor,
+) -> None:
+    await interactor.login_with_google(
+        GoogleProfileDto(google_id="12345", nickname="샤일록", email="g@gmail.com")
+    )
+    result = await interactor.login(LoginInputDto(email="g@gmail.com", password="anything"))
+    assert result.success is False
 
 
 @pytest.mark.asyncio

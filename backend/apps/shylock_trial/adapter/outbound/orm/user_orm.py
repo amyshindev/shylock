@@ -12,9 +12,12 @@ class UserOrm(Base):
     __tablename__ = "users"
 
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     nickname: Mapped[str] = mapped_column(String(64))
-    password_hash: Mapped[str] = mapped_column(Text)
+    password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+    google_id: Mapped[str | None] = mapped_column(
+        String(64), unique=True, index=True, nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
