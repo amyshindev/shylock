@@ -68,8 +68,14 @@ def create_access_token(
     roles: list[str],
     aud: str,
     expires_min: int = 10,
+    extra: dict[str, Any] | None = None,
 ) -> str:
-    """Sign an access JWT with the private key (auth container only)."""
+    """Sign an access JWT with the private key (auth container only).
+
+    ``extra`` carries optional profile claims (e.g. nickname, email) captured
+    at login time so downstream services can bootstrap a user record without
+    calling back out to the identity provider.
+    """
     private_pem = _pem_from_env("JWT_PRIVATE_KEY")
     public_pem = _pem_from_env("JWT_PUBLIC_KEY")
     now = datetime.now(timezone.utc)
@@ -82,6 +88,8 @@ def create_access_token(
         "exp": int((now + timedelta(minutes=expires_min)).timestamp()),
         "jti": str(uuid.uuid4()),
     }
+    if extra:
+        payload.update(extra)
     return jwt.encode(
         payload,
         private_pem,

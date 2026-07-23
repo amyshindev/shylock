@@ -37,10 +37,12 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       args:
-        # Browser calls the public API hostname (no host port publish; Cloudflare only).
+        # Browser calls the public hostnames (no host port publish; Cloudflare only).
         NEXT_PUBLIC_API_BASE_URL: https://api.shylock-trial.xyz
+        NEXT_PUBLIC_AUTH_BASE_URL: https://auth.shylock-trial.xyz
     depends_on:
       - backend
+      - auth
     networks: [dreamscape]
     restart: unless-stopped
 

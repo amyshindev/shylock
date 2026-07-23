@@ -1,0 +1,33 @@
+# LOCAL TEST ONLY. Auto-loaded by `docker compose up` alongside docker-compose.yaml.
+# Publishes host ports and swaps in dev-safe env (.env.*.local) so login can be
+# exercised against http://localhost instead of the *.shylock-trial.xyz domains.
+# gitignored — never relied on in production (no cloudflared route uses it).
+
+services:
+  backend:
+    # Skip the prod entrypoint's `alembic upgrade head` — USE_MEMORY_STORE=true
+    # locally, and DATABASE_URL in .env.backend.local is an intentionally
+    # unreachable placeholder so nothing here can touch the real Neon DB.
+    entrypoint: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+    env_file:
+      - .env.backend.local
+    ports:
+      - "8000:8000"
+
+  auth:
+    env_file:
+      - .env.auth.local
+    ports:
+      - "9000:9000"
+
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+        NEXT_PUBLIC_AUTH_BASE_URL: http://localhost:9000
+    ports:
+      - "3000:3000"
+
+  redis:
+    ports:
+      - "6379:6379"

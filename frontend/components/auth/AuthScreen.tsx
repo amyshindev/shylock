@@ -1,52 +1,19 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { login, signup } from "@/lib/api-client/auth";
-import { API_BASE, API_PREFIX } from "@/lib/api-client/config";
+import { loginWithGoogle } from "@/lib/api-client/auth";
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import { gameFontFamily, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
-
-type Mode = "login" | "signup";
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  marginBottom: 14,
-  padding: "11px 16px",
-  color: "#e0c090",
-  background: "#100510",
-  border: "1px solid #3a1828",
-  borderRadius: 2,
-  fontFamily: gameFontFamily,
-  fontSize: gameFontSize.md,
-  outline: "none",
-  boxSizing: "border-box",
-};
-
-const labelStyle: CSSProperties = {
-  display: "block",
-  marginBottom: 6,
-  color: "#7a5a4a",
-  fontSize: gameFontSize.xs,
-  letterSpacing: 2,
-  textTransform: "uppercase",
-  fontFamily: gameFontFamily,
-};
 
 export function AuthScreen() {
   const router = useRouter();
   const isMobile = useIsMobile();
   const appShellHeight = useAppShellHeight();
-  const [mode, setMode] = useState<Mode>("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [nickname, setNickname] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isSignup = mode === "signup";
 
   useEffect(() => {
     // Google callback redirects back with ?error=google on failure.
@@ -56,21 +23,11 @@ export function AuthScreen() {
     }
   }, []);
 
-  const handleGoogleLogin = () => {
-    window.location.href = `${API_BASE}${API_PREFIX}/auth/google/login`;
-  };
-
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
     try {
-      if (isSignup) {
-        await signup(email, password, nickname);
-      } else {
-        await login(email, password);
-      }
-      router.push("/");
+      await loginWithGoogle();
     } catch (err) {
       setError(err instanceof Error ? err.message : "요청을 처리할 수 없습니다.");
       setLoading(false);
@@ -115,11 +72,10 @@ export function AuthScreen() {
         샤일록의 법정
       </h1>
       <p style={{ color: "#7a5a4a", fontSize: gameFontSize.md, fontStyle: "italic", marginBottom: 28 }}>
-        {isSignup ? "법정에 이름을 올려라." : "그대의 이름으로 다시 서라."}
+        그대의 이름으로 다시 서라.
       </p>
 
-      <form
-        onSubmit={(e) => void handleSubmit(e)}
+      <div
         style={{
           width: "min(100%, 380px)",
           padding: "20px 20px 24px",
@@ -129,47 +85,6 @@ export function AuthScreen() {
           textAlign: "left",
         }}
       >
-        <label style={labelStyle} htmlFor="auth-email">
-          Email
-        </label>
-        <input
-          id="auth-email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          autoFocus
-          style={inputStyle}
-        />
-        {isSignup && (
-          <>
-            <label style={labelStyle} htmlFor="auth-nickname">
-              Nickname
-            </label>
-            <input
-              id="auth-nickname"
-              type="text"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              required
-              maxLength={32}
-              style={inputStyle}
-            />
-          </>
-        )}
-        <label style={labelStyle} htmlFor="auth-password">
-          Password
-        </label>
-        <input
-          id="auth-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={isSignup ? 8 : 1}
-          style={inputStyle}
-        />
-
         {error && (
           <p
             style={{
@@ -185,47 +100,9 @@ export function AuthScreen() {
         )}
 
         <button
-          type="submit"
-          disabled={loading}
-          style={{
-            display: "block",
-            width: "100%",
-            padding: "14px 28px",
-            fontFamily: "Georgia, serif",
-            fontSize: gameFontSize.base,
-            fontWeight: 700,
-            letterSpacing: isMobile ? 2 : 4,
-            textTransform: "uppercase",
-            background: theme.red,
-            color: theme.gold,
-            border: "2px solid rgba(255, 215, 0, 0.4)",
-            boxShadow: "0 0 24px rgba(139, 0, 0, 0.5)",
-            cursor: loading ? "wait" : "pointer",
-            opacity: loading ? 0.7 : 1,
-          }}
-        >
-          {loading ? "확인 중…" : isSignup ? "서명하다" : "입장하다"}
-        </button>
-
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            margin: "18px 0 14px",
-            color: "#5a4a3a",
-            fontSize: gameFontSize.xs,
-            fontFamily: gameFontFamily,
-          }}
-        >
-          <span style={{ flex: 1, height: 1, background: "#3a1828" }} />
-          또는
-          <span style={{ flex: 1, height: 1, background: "#3a1828" }} />
-        </div>
-
-        <button
           type="button"
-          onClick={handleGoogleLogin}
+          disabled={loading}
+          onClick={() => void handleGoogleLogin()}
           style={{
             display: "flex",
             alignItems: "center",
@@ -240,7 +117,8 @@ export function AuthScreen() {
             color: "rgba(0, 0, 0, 0.72)",
             border: "1px solid #dadce0",
             borderRadius: 6,
-            cursor: "pointer",
+            cursor: loading ? "wait" : "pointer",
+            opacity: loading ? 0.7 : 1,
           }}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -261,29 +139,9 @@ export function AuthScreen() {
               d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
             />
           </svg>
-          Google로 시작하기
+          {loading ? "이동하는 중…" : "Google로 시작하기"}
         </button>
-      </form>
-
-      <button
-        type="button"
-        onClick={() => {
-          setMode(isSignup ? "login" : "signup");
-          setError(null);
-        }}
-        style={{
-          marginTop: 20,
-          background: "none",
-          border: "none",
-          color: "#7a5a4a",
-          fontSize: gameFontSize.sm,
-          fontFamily: gameFontFamily,
-          cursor: "pointer",
-          textDecoration: "underline",
-        }}
-      >
-        {isSignup ? "이미 계정이 있다면 — 로그인" : "처음 온 자라면 — 회원가입"}
-      </button>
+      </div>
 
       <button
         type="button"

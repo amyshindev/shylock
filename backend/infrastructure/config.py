@@ -66,35 +66,6 @@ class Settings(BaseSettings):
         description="Admin password required to open /docs.",
     )
 
-    # Cookie signing for game user login sessions.
-    auth_session_secret: SecretStr = Field(
-        default=SecretStr("dev-only-change-me-auth-session-secret"),
-        validation_alias="AUTH_SESSION_SECRET",
-        description="HMAC secret for game user session cookies.",
-    )
-
-    # Google OAuth login (empty client id/secret disables the Google login route).
-    google_client_id: str = Field(
-        default="",
-        validation_alias="GOOGLE_CLIENT_ID",
-        description="Google Cloud OAuth 2.0 client ID.",
-    )
-    google_client_secret: SecretStr = Field(
-        default=SecretStr(""),
-        validation_alias="GOOGLE_CLIENT_SECRET",
-        description="Google Cloud OAuth 2.0 client secret.",
-    )
-    google_redirect_uri: str = Field(
-        default="http://localhost:8000/shylock-trial/auth/google/callback",
-        validation_alias="GOOGLE_REDIRECT_URI",
-        description="Registered Google OAuth redirect URI (backend callback).",
-    )
-    frontend_base_url: str = Field(
-        default="http://localhost:3000",
-        validation_alias="FRONTEND_BASE_URL",
-        description="Frontend origin to return to after social login.",
-    )
-
     def migration_database_url(self) -> str:
         """Direct DB URL for Alembic (bypasses pooler). Falls back to DATABASE_URL."""
         return self.direct_url or self.database_url

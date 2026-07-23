@@ -1,5 +1,3 @@
-from uuid import UUID
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -34,27 +32,6 @@ class UserAuthPgRepository(UserAuthPort):
         await self._session.commit()
         await self._session.refresh(orm)
         return _to_entity(orm)
-
-    async def update_user(self, user: User) -> User:
-        orm = await self._session.get(UserOrm, user.user_id)
-        if orm is None:
-            return await self.create_user(user)
-        orm.email = user.email
-        orm.nickname = user.nickname
-        orm.password_hash = user.password_hash
-        orm.google_id = user.google_id
-        await self._session.commit()
-        await self._session.refresh(orm)
-        return _to_entity(orm)
-
-    async def find_by_email(self, email: str) -> User | None:
-        result = await self._session.execute(select(UserOrm).where(UserOrm.email == email))
-        orm = result.scalar_one_or_none()
-        return _to_entity(orm) if orm else None
-
-    async def find_by_id(self, user_id: UUID) -> User | None:
-        orm = await self._session.get(UserOrm, user_id)
-        return _to_entity(orm) if orm else None
 
     async def find_by_google_id(self, google_id: str) -> User | None:
         result = await self._session.execute(

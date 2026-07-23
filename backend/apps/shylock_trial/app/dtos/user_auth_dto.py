@@ -3,19 +3,6 @@ from uuid import UUID
 
 
 @dataclass(frozen=True, slots=True)
-class SignupInputDto:
-    email: str
-    password: str
-    nickname: str
-
-
-@dataclass(frozen=True, slots=True)
-class LoginInputDto:
-    email: str
-    password: str
-
-
-@dataclass(frozen=True, slots=True)
 class UserDto:
     user_id: UUID
     email: str | None
@@ -23,15 +10,9 @@ class UserDto:
 
 
 @dataclass(frozen=True, slots=True)
-class GoogleProfileDto:
-    google_id: str
+class JwtIdentityDto:
+    """Identity resolved from a gateway-issued access token (core.security.TokenPayload)."""
+
+    sub: str
     nickname: str | None = None
     email: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class AuthResultDto:
-    success: bool
-    user: UserDto | None = None
-    session_token: str | None = None
-    error: str | None = None

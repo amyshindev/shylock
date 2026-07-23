@@ -92,9 +92,15 @@ def _subject_from_google(profile: dict[str, Any]) -> str:
     return f"google:{google_id}"
 
 
-async def issue_session(sub: str, roles: list[str] | None = None) -> IssuedTokens:
+async def issue_session(
+    sub: str,
+    roles: list[str] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> IssuedTokens:
     roles = roles or [Role.USER.value]
-    access = create_access_token(sub=sub, roles=roles, aud=SERVICE_AUD, expires_min=ACCESS_TTL_MIN)
+    access = create_access_token(
+        sub=sub, roles=roles, aud=SERVICE_AUD, expires_min=ACCESS_TTL_MIN, extra=extra
+    )
     refresh = create_refresh_token(sub)
     family_id = str(uuid4())
     client = _redis()
@@ -121,7 +127,10 @@ async def issue_session(sub: str, roles: list[str] | None = None) -> IssuedToken
 async def login_with_google_code(code: str) -> IssuedTokens:
     profile = await _google_profile(code)
     sub = _subject_from_google(profile)
-    return await issue_session(sub)
+    nickname = str(profile.get("name") or "").strip()
+    email = profile.get("email") if profile.get("verified_email") else None
+    extra = {k: v for k, v in {"nickname": nickname or None, "email": email}.items() if v}
+    return await issue_session(sub, extra=extra or None)
 
 
 async def revoke_user_sessions(sub: str) -> None:
