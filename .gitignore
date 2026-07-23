@@ -7,23 +7,37 @@ __pycache__/
 # Folger TEI corpus (local seeding only)
 backend/apps/shylock_trial/adapter/outbound/seeding/MV.xml
 
-# 환경변수 (API 키 포함)
+# 환경변수 (시크릿 — 예제만 추적)
 .env
-.env.local
+.env.*
+!.env.example
+!.env.*.example
 backend/.env
-*.env
-!*.env.example
+backend/.env.*
+!backend/.env.example
+!backend/.env.*.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.*.example
 
-# Keys / certificates (SSH, TLS 등)
+# JWT / TLS / SSH key material
+secrets/
 *.pem
 *.key
 *.p12
 *.pfx
+jwt_*.pem
 id_ed25519
 id_rsa
 id_ed25519.pub
 id_rsa.pub
 github-ssh
+shylock-keypair.pem
+
+# Accidental pip install artifacts (e.g. `pip install PyJWT[crypto]>=2.9.0`)
+backend/=*
+/=*
 
 # OS / IDE
 .DS_Store

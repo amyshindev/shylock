@@ -17,6 +17,8 @@ dependencies = [
     "pgvector>=0.3.6",
     "redis>=5.2.0",
     "httpx>=0.28.0",
+    "PyJWT[crypto]>=2.9.0",
+    "bcrypt>=4.2.0",
 ]
 
 [project.optional-dependencies]
@@ -32,7 +34,7 @@ seed-play-lines = "shylock_trial.adapter.outbound.seeding.evidence_search_corpus
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 pythonpath = ["apps", "."]
-testpaths = ["apps/shylock_trial/tests"]
+testpaths = ["apps/shylock_trial/tests", "auth/tests", "core/tests"]
 
 [build-system]
 requires = ["setuptools>=75.0"]
@@ -40,5 +42,5 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = [".", "apps"]
-include = ["infrastructure*", "shylock_trial*"]
+include = ["infrastructure*", "shylock_trial*", "auth*", "core*"]
 namespaces = false
