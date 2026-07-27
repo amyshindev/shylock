@@ -53,11 +53,39 @@ services:
     networks: [dreamscape]
     restart: unless-stopped
 
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    # Reload every 6h so certs renewed by certbot get picked up without a restart.
+    command: '/bin/sh -c ''while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g "daemon off;"'''
+    depends_on:
+      - backend
+      - auth
+      - frontend
+    networks: [dreamscape]
+    restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks: [dreamscape]
+    restart: unless-stopped
+
   cloudflared:
     image: cloudflare/cloudflared:latest
     command: tunnel run --token ${TUNNEL_TOKEN}
     env_file:
       - .env
+    depends_on:
+      - nginx
     networks: [dreamscape]
     restart: unless-stopped
 
