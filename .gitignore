@@ -23,6 +23,7 @@ frontend/.env.*
 
 # JWT / TLS / SSH key material
 secrets/
+/certbot/
 *.pem
 *.key
 *.p12

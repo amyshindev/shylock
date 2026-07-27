@@ -70,11 +70,14 @@ services:
     restart: unless-stopped
 
   certbot:
-    image: certbot/certbot
+    image: certbot/dns-cloudflare
     container_name: certbot
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+      # API token, DNS:Edit scope for the shylock-trial.xyz zone. Not in git —
+      # create manually on each host: `dns_cloudflare_api_token = <token>`.
+      - ./certbot/cloudflare.ini:/etc/letsencrypt/cloudflare.ini:ro
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     networks: [dreamscape]
     restart: unless-stopped
