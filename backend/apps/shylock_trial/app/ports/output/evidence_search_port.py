@@ -28,3 +28,6 @@ class EvidenceSearchPort(ABC):
     async def get_line_context(
         self, ftln_start: int, ftln_end: int, radius: int = 2
     ) -> list[PlayLine]: ...
+
+    @abstractmethod
+    async def get_lines_by_topic(self, topic_id: str) -> list[PlayLine]: ...

@@ -131,3 +131,7 @@ class InMemoryEvidenceSearchRepository(EvidenceSearchPort):
     ) -> list[PlayLine]:
         # No real corpus in memory mode — nothing to expand around.
         return []
+
+    async def get_lines_by_topic(self, topic_id: str) -> list[PlayLine]:
+        # No topic graph in memory mode.
+        return []

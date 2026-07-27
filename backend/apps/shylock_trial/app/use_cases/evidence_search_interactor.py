@@ -36,3 +36,6 @@ class EvidenceSearchInteractor(EvidenceSearchUseCase):
         self, ftln_start: int, ftln_end: int, radius: int = 2
     ) -> list[PlayLine]:
         return await self._port.get_line_context(ftln_start, ftln_end, radius)
+
+    async def get_lines_by_topic(self, topic_id: str) -> list[PlayLine]:
+        return await self._port.get_lines_by_topic(topic_id)

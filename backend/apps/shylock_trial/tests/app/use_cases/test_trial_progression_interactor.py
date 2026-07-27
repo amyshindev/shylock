@@ -58,6 +58,9 @@ class FakeEvidenceUseCase:
     async def get_line_context(self, ftln_start: int, ftln_end: int, radius: int = 2):
         return []
 
+    async def get_lines_by_topic(self, topic_id: str):
+        return []
+
 
 class FakeTubalEnhancementClient:
     async def generate_enhanced_choice(

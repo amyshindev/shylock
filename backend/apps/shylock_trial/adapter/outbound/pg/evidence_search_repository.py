@@ -8,7 +8,11 @@ from shylock_trial.adapter.outbound.mappers.evidence_search_mapper import (
     evidence_to_entity,
     play_line_to_entity,
 )
-from shylock_trial.adapter.outbound.orm.play_line_orm import EvidenceOrm, PlayLineOrm
+from shylock_trial.adapter.outbound.orm.play_line_orm import (
+    EvidenceOrm,
+    LineTopicOrm,
+    PlayLineOrm,
+)
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto, ScoredPlayLine
 from shylock_trial.app.ports.output.evidence_search_port import EvidenceSearchPort
 from shylock_trial.domain.entities.evidence_entity import Evidence
@@ -76,6 +80,15 @@ class EvidenceSearchPgRepository(EvidenceSearchPort):
         result = await self._session.execute(
             select(PlayLineOrm)
             .where(PlayLineOrm.ftln.between(ftln_start - radius, ftln_end + radius))
+            .order_by(PlayLineOrm.ftln)
+        )
+        return [play_line_to_entity(row) for row in result.scalars().all()]
+
+    async def get_lines_by_topic(self, topic_id: str) -> list[PlayLine]:
+        result = await self._session.execute(
+            select(PlayLineOrm)
+            .join(LineTopicOrm, LineTopicOrm.ftln == PlayLineOrm.ftln)
+            .where(LineTopicOrm.topic_id == topic_id)
             .order_by(PlayLineOrm.ftln)
         )
         return [play_line_to_entity(row) for row in result.scalars().all()]

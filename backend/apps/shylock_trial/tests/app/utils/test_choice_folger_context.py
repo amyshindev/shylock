@@ -54,6 +54,9 @@ class FakeEvidenceUseCase:
     ) -> list[PlayLine]:
         return list(self.context_lines)
 
+    async def get_lines_by_topic(self, topic_id: str) -> list[PlayLine]:
+        return []
+
 
 GABERDINE_EVIDENCE = Evidence(
     evidence_id="gaberdine",
