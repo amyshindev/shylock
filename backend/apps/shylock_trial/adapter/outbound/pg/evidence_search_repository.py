@@ -69,3 +69,13 @@ class EvidenceSearchPgRepository(EvidenceSearchPort):
     async def find_evidence_by_id(self, evidence_id: str) -> Evidence | None:
         orm = await self._session.get(EvidenceOrm, evidence_id)
         return evidence_to_entity(orm) if orm else None
+
+    async def get_line_context(
+        self, ftln_start: int, ftln_end: int, radius: int = 2
+    ) -> list[PlayLine]:
+        result = await self._session.execute(
+            select(PlayLineOrm)
+            .where(PlayLineOrm.ftln.between(ftln_start - radius, ftln_end + radius))
+            .order_by(PlayLineOrm.ftln)
+        )
+        return [play_line_to_entity(row) for row in result.scalars().all()]

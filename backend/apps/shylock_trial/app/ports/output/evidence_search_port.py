@@ -23,3 +23,8 @@ class EvidenceSearchPort(ABC):
 
     @abstractmethod
     async def find_evidence_by_id(self, evidence_id: str) -> Evidence | None: ...
+
+    @abstractmethod
+    async def get_line_context(
+        self, ftln_start: int, ftln_end: int, radius: int = 2
+    ) -> list[PlayLine]: ...

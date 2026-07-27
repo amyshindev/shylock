@@ -125,3 +125,9 @@ class InMemoryEvidenceSearchRepository(EvidenceSearchPort):
 
     async def find_evidence_by_id(self, evidence_id: str) -> Evidence | None:
         return next((item for item in CURATED_EVIDENCE if item.evidence_id == evidence_id), None)
+
+    async def get_line_context(
+        self, ftln_start: int, ftln_end: int, radius: int = 2
+    ) -> list[PlayLine]:
+        # No real corpus in memory mode — nothing to expand around.
+        return []

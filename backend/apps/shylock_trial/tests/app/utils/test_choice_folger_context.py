@@ -22,9 +22,11 @@ class FakeEvidenceUseCase:
         *,
         scored_lines: tuple[ScoredPlayLine, ...] = (),
         evidence_by_id: dict[str, Evidence] | None = None,
+        context_lines: tuple[PlayLine, ...] = (),
     ) -> None:
         self.scored_lines = scored_lines
         self.evidence_by_id = evidence_by_id or {}
+        self.context_lines = context_lines
         self.search_calls = 0
 
     async def search(self, input_dto: EvidenceSearchInputDto) -> EvidenceSearchResultDto:
@@ -46,6 +48,11 @@ class FakeEvidenceUseCase:
 
     async def get_evidence(self, evidence_id: str) -> Evidence | None:
         return self.evidence_by_id.get(evidence_id)
+
+    async def get_line_context(
+        self, ftln_start: int, ftln_end: int, radius: int = 2
+    ) -> list[PlayLine]:
+        return list(self.context_lines)
 
 
 GABERDINE_EVIDENCE = Evidence(
@@ -145,3 +152,21 @@ def test_coat_choice_falls_back_to_curated_when_search_empty() -> None:
 
     assert "spit upon my Jewish gaberdine" in context
     assert "curated evidence" in context
+
+
+def test_curated_fallback_includes_adjacent_context_lines() -> None:
+    neighbor = PlayLine(
+        ftln=99,
+        speaker="SHYLOCK",
+        text="Still have I borne it with a patient shrug.",
+        act_scene="1.3",
+    )
+    evidence = FakeEvidenceUseCase(
+        scored_lines=(),
+        evidence_by_id={"gaberdine": GABERDINE_EVIDENCE},
+        context_lines=(neighbor,),
+    )
+
+    context = asyncio.run(get_choice_folger_context("coat_show_spit", evidence))
+
+    assert "patient shrug" in context

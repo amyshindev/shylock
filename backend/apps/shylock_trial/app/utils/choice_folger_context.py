@@ -14,6 +14,7 @@ from shylock_trial.app.dtos.evidence_search_dto import (
 )
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.domain.entities.evidence_entity import Evidence
+from shylock_trial.domain.entities.play_line_entity import PlayLine
 
 # pgvector cosine distance: 0 = identical. Above this → treat as weak / no match.
 MAX_RELEVANT_COSINE_DISTANCE = 0.42
@@ -148,7 +149,8 @@ async def get_choice_folger_context(
     else:
         curated = await _resolve_curated_evidence(evidence, choice_id, evidence_id)
         if curated is not None and curated.quote.strip():
-            context = _format_curated_evidence(choice_id, curated)
+            context_lines = await _get_context_lines(evidence, curated)
+            context = _format_curated_evidence(choice_id, curated, context_lines)
         else:
             context = _weak_match_context(choice_id, choice_label)
 
@@ -188,7 +190,20 @@ async def _resolve_curated_evidence(
     return get_curated_evidence_for_choice(choice_id)
 
 
-def _format_curated_evidence(choice_id: str, curated: Evidence) -> str:
+async def _get_context_lines(
+    evidence: EvidenceSearchUseCase, curated: Evidence
+) -> list[PlayLine]:
+    start, end = curated.source_ftln_range
+    if start == 0 and end == 0:
+        return []  # non-canonical adaptation (e.g. ghetto_gate) — no source lines
+    return await evidence.get_line_context(start, end, radius=2)
+
+
+def _format_curated_evidence(
+    choice_id: str,
+    curated: Evidence,
+    context_lines: list[PlayLine] | None = None,
+) -> str:
     gloss = CHOICE_KOREAN_GLOSS.get(choice_id, curated.description)
     lines = [
         "## 원작 맥락 (curated evidence — ground truth for Shylock's move)",
@@ -198,6 +213,11 @@ def _format_curated_evidence(choice_id: str, curated: Evidence) -> str:
     ]
     if curated.description and curated.description not in gloss:
         lines.append(f"   Korean note: {curated.description}")
+    if context_lines:
+        lines.append("")
+        lines.append("주변 대사 (원작에서 이 근거 앞뒤에 실제로 나오는 대사):")
+        for line in context_lines:
+            lines.append(f'   [{line.act_scene}] {line.speaker}: "{line.text}"')
     lines.extend(_folger_understanding_principles())
     return "\n".join(lines)
 
