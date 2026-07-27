@@ -149,8 +149,14 @@ async def get_choice_folger_context(
     else:
         curated = await _resolve_curated_evidence(evidence, choice_id, evidence_id)
         if curated is not None and curated.quote.strip():
-            context_lines = await _get_context_lines(evidence, curated)
-            context = _format_curated_evidence(choice_id, curated, context_lines)
+            # NOTE: get_line_context() (adjacent ftln lines) was tried here and
+            # reverted — blind LLM-judge eval across the 22 curated-fallback
+            # choices showed it made Portia's reactions worse or unchanged in
+            # 17/19 valid cases (OLD 8 wins vs NEW 2, 9 ties), diluting focus
+            # with tangential surrounding dialogue rather than helping. Keep
+            # the port/repository capability for a future filtered version
+            # (e.g. only same-topic lines), but don't wire it in blindly.
+            context = _format_curated_evidence(choice_id, curated)
         else:
             context = _weak_match_context(choice_id, choice_label)
 
@@ -188,15 +194,6 @@ async def _resolve_curated_evidence(
             return found
         return get_curated_evidence_by_id(evidence_id)
     return get_curated_evidence_for_choice(choice_id)
-
-
-async def _get_context_lines(
-    evidence: EvidenceSearchUseCase, curated: Evidence
-) -> list[PlayLine]:
-    start, end = curated.source_ftln_range
-    if start == 0 and end == 0:
-        return []  # non-canonical adaptation (e.g. ghetto_gate) — no source lines
-    return await evidence.get_line_context(start, end, radius=2)
 
 
 def _format_curated_evidence(
