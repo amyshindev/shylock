@@ -20,7 +20,7 @@ from auth.services import (
     new_oauth_state,
     rotate_refresh_token,
 )
-from core.security import COOKIE_KWARGS, public_jwk, verify_token
+from core.jwt.security import COOKIE_KWARGS, public_jwk, verify_token
 import os
 
 logger = logging.getLogger(__name__)

@@ -3,8 +3,8 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.dependencies import ACCESS_COOKIE, SERVICE_AUD
-from core.security import verify_token
+from core.jwt.dependencies import ACCESS_COOKIE, SERVICE_AUD
+from core.jwt.security import verify_token
 from infrastructure.config import get_settings
 from infrastructure.database import get_optional_db_session
 from shylock_trial.adapter.outbound.memory.user_auth_repository import InMemoryUserAuthRepository

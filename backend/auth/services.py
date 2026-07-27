@@ -15,7 +15,7 @@ import httpx
 from redis.asyncio import Redis
 
 from auth.rbac import Role
-from core.security import create_access_token, create_refresh_token
+from core.jwt.security import create_access_token, create_refresh_token
 
 logger = logging.getLogger(__name__)
 

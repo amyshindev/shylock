@@ -7,8 +7,8 @@ from typing import Annotated
 
 from fastapi import Depends, HTTPException, Request, status
 
-from core.rbac import Role
-from core.security import TokenPayload, verify_token
+from core.jwt.rbac import Role
+from core.jwt.security import TokenPayload, verify_token
 
 ACCESS_COOKIE = "shylock_access_token"
 SERVICE_AUD = os.getenv("SERVICE_AUD", "shylock-api")

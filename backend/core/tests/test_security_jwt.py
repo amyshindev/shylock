@@ -10,7 +10,7 @@ import pytest
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 
-from core.security import create_access_token, verify_token
+from core.jwt.security import create_access_token, verify_token
 
 
 @pytest.fixture
