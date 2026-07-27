@@ -72,7 +72,14 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        configured = [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        # Always allow the public frontend hosts (tunnel / Cloudflare), even if
+        # a host's .env.backend still only lists localhost from a local template.
+        required = (
+            "https://shylock-trial.xyz",
+            "https://www.shylock-trial.xyz",
+        )
+        return list(dict.fromkeys([*configured, *required]))
 
     def anthropic_api_key_plain(self) -> str:
         """Plain Anthropic key for outbound clients. Never log this value."""
