@@ -409,6 +409,17 @@ def get_scene_template(scene_index: int) -> SceneTemplate:
     return SCENE_TEMPLATES[scene_index]
 
 
+_SCENE_ID_BY_CHOICE: dict[str, str] = {
+    choice_id: template.scene_id
+    for template in SCENE_TEMPLATES
+    for choice_id in template.choice_ids
+}
+
+
+def get_scene_id_for_choice(choice_id: str) -> str | None:
+    return _SCENE_ID_BY_CHOICE.get(choice_id)
+
+
 def _line_speaker(
     template: SceneTemplate,
     index: int,

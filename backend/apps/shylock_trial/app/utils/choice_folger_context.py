@@ -7,6 +7,7 @@ from shylock_trial.app.constants.curated_evidence import (
     get_curated_evidence_for_choice,
 )
 from shylock_trial.app.constants.portia_prompt import CHOICE_BRIEFS
+from shylock_trial.app.constants.scene_catalog import get_scene_id_for_choice
 from shylock_trial.app.constants.scene_choices import get_choice_evidence_id
 from shylock_trial.app.dtos.evidence_search_dto import (
     EvidenceSearchInputDto,
@@ -149,14 +150,13 @@ async def get_choice_folger_context(
     else:
         curated = await _resolve_curated_evidence(evidence, choice_id, evidence_id)
         if curated is not None and curated.quote.strip():
-            # NOTE: get_line_context() (adjacent ftln lines) was tried here and
-            # reverted — blind LLM-judge eval across the 22 curated-fallback
-            # choices showed it made Portia's reactions worse or unchanged in
-            # 17/19 valid cases (OLD 8 wins vs NEW 2, 9 ties), diluting focus
-            # with tangential surrounding dialogue rather than helping. Keep
-            # the port/repository capability for a future filtered version
-            # (e.g. only same-topic lines), but don't wire it in blindly.
-            context = _format_curated_evidence(choice_id, curated)
+            # v1 (get_line_context: adjacent ftln ± radius) was tried and
+            # reverted — blind LLM-judge eval showed it diluted focus with
+            # tangential surrounding dialogue more often than it helped.
+            # v2: use the topic graph instead — only lines tagged under this
+            # choice's scene topic (line_topics), not just physically nearby.
+            context_lines = await _get_topic_context_lines(evidence, choice_id)
+            context = _format_curated_evidence(choice_id, curated, context_lines)
         else:
             context = _weak_match_context(choice_id, choice_label)
 
@@ -194,6 +194,15 @@ async def _resolve_curated_evidence(
             return found
         return get_curated_evidence_by_id(evidence_id)
     return get_curated_evidence_for_choice(choice_id)
+
+
+async def _get_topic_context_lines(
+    evidence: EvidenceSearchUseCase, choice_id: str
+) -> list[PlayLine]:
+    scene_id = get_scene_id_for_choice(choice_id)
+    if scene_id is None:
+        return []
+    return await evidence.get_lines_by_topic(scene_id)
 
 
 def _format_curated_evidence(
