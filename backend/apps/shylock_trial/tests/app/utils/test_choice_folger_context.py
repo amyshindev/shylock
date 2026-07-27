@@ -157,21 +157,3 @@ def test_coat_choice_falls_back_to_curated_when_search_empty() -> None:
 
     assert "spit upon my Jewish gaberdine" in context
     assert "curated evidence" in context
-
-
-def test_curated_fallback_includes_topic_graph_lines() -> None:
-    topic_line = PlayLine(
-        ftln=1003123,
-        speaker="SHYLOCK",
-        text="Still have I borne it with a patient shrug.",
-        act_scene="1.3",
-    )
-    evidence = FakeEvidenceUseCase(
-        scored_lines=(),
-        evidence_by_id={"gaberdine": GABERDINE_EVIDENCE},
-        topic_lines={"crowd_jeers": (topic_line,)},
-    )
-
-    context = asyncio.run(get_choice_folger_context("coat_show_spit", evidence))
-
-    assert "patient shrug" in context
