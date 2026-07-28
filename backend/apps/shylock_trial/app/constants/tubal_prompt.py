@@ -19,6 +19,10 @@ Player-facing Korean (tubal_comment) must match other characters in this game:
 
 TUBAL_SEARCH_FAILURE_COMMENT = "이번에는 증거가 될 만한 걸 못 찾았소."
 
+# Climax scenes where Shylock must face Portia alone — Tubal's skill is disabled.
+TUBAL_BLOCKED_SCENES: frozenset[str] = frozenset({"hath_not_moment"})
+TUBAL_BLOCKED_SCENE_COMMENT = "이건... 그대 혼자 감당해야 할 순간이오, 샤일록."
+
 _MASTER_SERVANT_PHRASES: tuple[tuple[str, str], ...] = (
     ("내 주인", "내 친구"),
     ("주인의", "친구의"),

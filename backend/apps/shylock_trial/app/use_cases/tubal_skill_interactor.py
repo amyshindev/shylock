@@ -10,6 +10,10 @@ from shylock_trial.app.constants.scene_choices import (
 )
 from shylock_trial.app.constants.scene_progression import resolve_next_scene_index
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_MAP
+from shylock_trial.app.constants.tubal_prompt import (
+    TUBAL_BLOCKED_SCENE_COMMENT,
+    TUBAL_BLOCKED_SCENES,
+)
 from shylock_trial.app.dtos.scene_dialogue_dto import DialogueLineKind, SceneDialoguePromptDto
 from shylock_trial.app.dtos.tubal_agent_dto import TubalAgentResult
 from shylock_trial.app.dtos.tubal_skill_dto import TubalSkillInputDto, TubalSkillResultDto
@@ -38,6 +42,16 @@ class TubalSkillInteractor(TubalSkillUseCase):
     async def invoke_tubal(self, input_dto: TubalSkillInputDto) -> TubalSkillResultDto:
         trial = await self._require_trial(input_dto.trial_id)
 
+        scene_id, portia_claim = self._resolve_scene_context(trial, input_dto)
+        if scene_id in TUBAL_BLOCKED_SCENES:
+            return TubalSkillResultDto(
+                trial_id=trial.trial_id,
+                dp=trial.dp.value,
+                hp=trial.hp.value,
+                agent=TubalAgentResult(success=False, tubal_comment=TUBAL_BLOCKED_SCENE_COMMENT),
+                tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
+            )
+
         tubal_effect = get_skill_effect("tubal")
         next_hp, next_dp = apply_skill_resources(
             trial.hp.value,
@@ -47,7 +61,6 @@ class TubalSkillInteractor(TubalSkillUseCase):
         trial.hp = HpScore(next_hp)
         trial.dp = DpScore(next_dp)
 
-        scene_id, portia_claim = self._resolve_scene_context(trial, input_dto)
         agent_result = await self._tubal_agent.agentic_loop(
             portia_claim=portia_claim,
             scene_id=scene_id,
