@@ -21,7 +21,7 @@ from shylock_trial.app.dtos.lore_chat_dto import LoreChatTurnDto
 from shylock_trial.app.ports.output.lore_chat_llm_port import LoreChatLlmPort
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
-MODEL_ID = "claude-sonnet-5"
+MODEL_ID = "claude-haiku-4-5-20251001"
 
 
 def _to_lc_messages(history: tuple[LoreChatTurnDto, ...]) -> list[BaseMessage]:
