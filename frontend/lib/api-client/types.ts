@@ -124,3 +124,16 @@ export interface PresentEvidenceResponse {
   contradiction_valid: boolean;
   portia_response: string;
 }
+
+export interface LoreChatSourceFromApi {
+  ftln: number;
+  act_scene: string;
+  speaker: string;
+  excerpt: string;
+}
+
+export interface LoreChatAskResponse {
+  session_id: string;
+  answer: string;
+  sources: LoreChatSourceFromApi[];
+}

@@ -11,6 +11,7 @@ import { CourtEvidenceModal } from "./CourtEvidenceModal";
 import { DialogueBox } from "./DialogueBox";
 import { EvidenceList } from "./EvidenceList";
 import { ItemChoiceList } from "./ItemChoiceList";
+import { LoreChatWidget } from "./LoreChatWidget";
 import {
   MeterDisplay,
   PortiaMeterDisplay,
@@ -480,6 +481,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           detail={evidenceDetailView}
           onClose={evidenceDetailView.dismissible ? dismissEvidenceDetail : undefined}
         />
+      )}
+      {showBattleHud && (
+        <LoreChatWidget hidden={climaxMode || loadingScene || !!evidenceDetailView} />
       )}
     </div>
   );
