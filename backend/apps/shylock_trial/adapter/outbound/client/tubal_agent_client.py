@@ -237,7 +237,6 @@ class TubalAgentClient:
                     portia_claim=portia_claim,
                     portia_logical_flaw=portia_logical_flaw,
                     approved_ftlns=approved_ftlns,
-                    scene_id=scene_id,
                 )
                 tool_results.append({
                     "type": "tool_result",
@@ -261,10 +260,9 @@ class TubalAgentClient:
         portia_claim: str,
         portia_logical_flaw: str,
         approved_ftlns: set[int],
-        scene_id: str,
     ) -> tuple[dict[str, Any], TubalAgentResult | None]:
         if tool_name == "search_folger":
-            return await self._handle_search_folger(tool_input, scene_id), None
+            return await self._handle_search_folger(tool_input), None
 
         if tool_name == "evaluate_contradiction":
             return await self._handle_evaluate_contradiction(
@@ -279,37 +277,28 @@ class TubalAgentClient:
 
         return {"error": f"Unknown tool: {tool_name}"}, None
 
-    async def _handle_search_folger(
-        self, tool_input: dict[str, Any], scene_id: str
-    ) -> dict[str, Any]:
+    async def _handle_search_folger(self, tool_input: dict[str, Any]) -> dict[str, Any]:
+        # NOTE: merging get_lines_by_topic(scene_id) into these results was
+        # tried and reverted. Measured across 3 runs each on real scenes:
+        # hath_not_moment improved (0-2/3 -> 3/3 success), but portia_opens
+        # and crowd_jeers regressed to 0/3 success with 8-10 search_folger
+        # retries. Root cause: topics with more tagged lines than Claude's
+        # requested `limit` (e.g. portia_opens=8, crowd_jeers=16 lines vs a
+        # typical limit=5) filled every slot with the same static topic
+        # lines regardless of query, starving out the actual vector-search
+        # hits — so no matter how Claude rephrased its query it kept getting
+        # identical results back and read that as a search failure, looping.
         query = str(tool_input.get("query", "")).strip()
         limit = int(tool_input.get("limit", 5))
         if not query:
             return {"error": "query is required", "passages": []}
 
-        # topic graph first: lines tagged under this scene's own logical-flaw
-        # topic are guaranteed relevant, unlike vector similarity which can
-        # miss designed-not-textual connections (see PORTIA_LOGICAL_FLAWS).
-        topic_lines = await self._evidence_search.get_lines_by_topic(scene_id)
         result = await self._evidence_search.search(
             EvidenceSearchInputDto(query=query, limit=limit)
         )
-
-        seen_ftln: set[int] = set()
-        merged: list[PlayLine] = []
-        for line in topic_lines:
-            if line.ftln not in seen_ftln:
-                seen_ftln.add(line.ftln)
-                merged.append(line)
-        for line in result.play_lines:
-            if line.ftln not in seen_ftln:
-                seen_ftln.add(line.ftln)
-                merged.append(line)
-        merged = merged[:limit]
-
         return {
-            "passages": json.loads(_play_lines_to_json(tuple(merged))),
-            "count": len(merged),
+            "passages": json.loads(_play_lines_to_json(result.play_lines)),
+            "count": len(result.play_lines),
         }
 
     async def _handle_evaluate_contradiction(
