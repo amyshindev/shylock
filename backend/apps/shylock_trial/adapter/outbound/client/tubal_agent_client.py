@@ -34,6 +34,12 @@ logger = logging.getLogger(__name__)
 MODEL_ID = "claude-sonnet-5"
 MAX_AGENT_ITERATIONS = 5
 
+# evaluate_contradiction is a narrow yes/no classification with brief
+# justification, not creative dialogue — a faster model keeps this
+# per-loop round-trip (measured at several seconds on claude-sonnet-5)
+# from dominating agentic_loop's latency.
+EVAL_MODEL_ID = "claude-haiku-4-5-20251001"
+
 TUBAL_TOOLS: list[dict[str, Any]] = [
     {
         "name": "search_folger",
@@ -332,11 +338,12 @@ class TubalAgentClient:
         agent_counter_argument: str,
     ) -> ContradictionEvaluation:
         response = await self._client.messages.create(
-            model=MODEL_ID,
-            max_tokens=768,
+            model=EVAL_MODEL_ID,
+            max_tokens=350,
             system=(
                 "You are a Shakespeare legal scholar assisting Tubal in court. "
-                "Respond with JSON only."
+                "Respond with JSON only, no markdown fence. Keep every field short — "
+                "reasoning must be one sentence."
             ),
             messages=[
                 {
@@ -349,7 +356,7 @@ class TubalAgentClient:
                         f"Agent's counter-argument:\n{agent_counter_argument}\n\n"
                         "Does this passage expose the logical flaw and support the counter-argument?\n"
                         "Reply with JSON:\n"
-                        '{"contradicts": true|false, "reasoning": "...", '
+                        '{"contradicts": true|false, "reasoning": "one sentence", '
                         '"portia_logical_flaw": "...", "counter_argument": "..."}'
                     ),
                 }
