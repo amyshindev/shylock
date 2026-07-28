@@ -32,7 +32,11 @@ from shylock_trial.domain.entities.play_line_entity import PlayLine
 logger = logging.getLogger(__name__)
 
 MODEL_ID = "claude-sonnet-5"
-MAX_AGENT_ITERATIONS = 5
+# A clean run finishes in 3 turns (search_folger -> evaluate_contradiction ->
+# add_to_court_record). 5 mainly let stuck runs burn extra turns without
+# ever succeeding (observed up to 4 evaluate_contradiction retries on one
+# scene) — 3 bounds that worst case without touching the happy path.
+MAX_AGENT_ITERATIONS = 3
 
 # evaluate_contradiction is a narrow yes/no classification with brief
 # justification, not creative dialogue — a faster model keeps this
@@ -133,6 +137,11 @@ TUBAL_TOOLS: list[dict[str, Any]] = [
             },
             "required": ["ftln", "passage", "speaker", "act_scene", "tubal_comment"],
         },
+        # Cache breakpoint: TUBAL_TOOLS is static across every turn of one
+        # agentic_loop call, so this avoids re-processing the same ~3 tool
+        # schemas (and, since it's the last static block before the
+        # per-call system prompt, everything up to here) on every retry.
+        "cache_control": {"type": "ephemeral"},
     },
 ]
 
@@ -213,11 +222,22 @@ class TubalAgentClient:
             }
         ]
 
+        # system_prompt and TUBAL_TOOLS are identical on every iteration of
+        # this loop — cache_control lets Claude skip reprocessing them on
+        # each of the (often 3-10) sequential calls within one run.
+        cached_system = [
+            {
+                "type": "text",
+                "text": system_prompt,
+                "cache_control": {"type": "ephemeral"},
+            }
+        ]
+
         for _ in range(MAX_AGENT_ITERATIONS):
             response = await self._client.messages.create(
                 model=MODEL_ID,
                 max_tokens=1024,
-                system=system_prompt,
+                system=cached_system,
                 tools=TUBAL_TOOLS,
                 messages=messages,
             )
