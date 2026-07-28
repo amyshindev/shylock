@@ -237,6 +237,7 @@ class TubalAgentClient:
                     portia_claim=portia_claim,
                     portia_logical_flaw=portia_logical_flaw,
                     approved_ftlns=approved_ftlns,
+                    scene_id=scene_id,
                 )
                 tool_results.append({
                     "type": "tool_result",
@@ -260,9 +261,10 @@ class TubalAgentClient:
         portia_claim: str,
         portia_logical_flaw: str,
         approved_ftlns: set[int],
+        scene_id: str,
     ) -> tuple[dict[str, Any], TubalAgentResult | None]:
         if tool_name == "search_folger":
-            return await self._handle_search_folger(tool_input), None
+            return await self._handle_search_folger(tool_input, scene_id), None
 
         if tool_name == "evaluate_contradiction":
             return await self._handle_evaluate_contradiction(
@@ -277,18 +279,37 @@ class TubalAgentClient:
 
         return {"error": f"Unknown tool: {tool_name}"}, None
 
-    async def _handle_search_folger(self, tool_input: dict[str, Any]) -> dict[str, Any]:
+    async def _handle_search_folger(
+        self, tool_input: dict[str, Any], scene_id: str
+    ) -> dict[str, Any]:
         query = str(tool_input.get("query", "")).strip()
         limit = int(tool_input.get("limit", 5))
         if not query:
             return {"error": "query is required", "passages": []}
 
+        # topic graph first: lines tagged under this scene's own logical-flaw
+        # topic are guaranteed relevant, unlike vector similarity which can
+        # miss designed-not-textual connections (see PORTIA_LOGICAL_FLAWS).
+        topic_lines = await self._evidence_search.get_lines_by_topic(scene_id)
         result = await self._evidence_search.search(
             EvidenceSearchInputDto(query=query, limit=limit)
         )
+
+        seen_ftln: set[int] = set()
+        merged: list[PlayLine] = []
+        for line in topic_lines:
+            if line.ftln not in seen_ftln:
+                seen_ftln.add(line.ftln)
+                merged.append(line)
+        for line in result.play_lines:
+            if line.ftln not in seen_ftln:
+                seen_ftln.add(line.ftln)
+                merged.append(line)
+        merged = merged[:limit]
+
         return {
-            "passages": json.loads(_play_lines_to_json(result.play_lines)),
-            "count": len(result.play_lines),
+            "passages": json.loads(_play_lines_to_json(tuple(merged))),
+            "count": len(merged),
         }
 
     async def _handle_evaluate_contradiction(
