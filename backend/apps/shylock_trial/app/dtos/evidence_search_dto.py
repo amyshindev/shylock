@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from shylock_trial.domain.entities.play_chunk_entity import PlayChunk
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
 
@@ -13,6 +14,12 @@ class EvidenceSearchInputDto:
 @dataclass(frozen=True, slots=True)
 class ScoredPlayLine:
     play_line: PlayLine
+    cosine_distance: float
+
+
+@dataclass(frozen=True, slots=True)
+class ScoredPlayChunk:
+    chunk: PlayChunk
     cosine_distance: float
 
 

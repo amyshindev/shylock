@@ -40,3 +40,16 @@ class LineTopicOrm(Base):
 
     ftln: Mapped[int] = mapped_column(ForeignKey("play_lines.ftln"), primary_key=True)
     topic_id: Mapped[str] = mapped_column(ForeignKey("topics.topic_id"), primary_key=True)
+
+
+class PlayChunkOrm(Base):
+    __tablename__ = "play_chunks"
+
+    chunk_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ftln_start: Mapped[int] = mapped_column(Integer)
+    ftln_end: Mapped[int] = mapped_column(Integer)
+    speaker: Mapped[str] = mapped_column(String(128))
+    act_scene: Mapped[str] = mapped_column(String(32))
+    text: Mapped[str] = mapped_column(Text)
+    paraphrase: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(EMBED_DIMENSION), nullable=True)
