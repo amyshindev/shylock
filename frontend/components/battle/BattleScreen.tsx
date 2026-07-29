@@ -119,7 +119,11 @@ export function BattleScreen({ trial }: BattleScreenProps) {
 
   const isMobile = useIsMobile();
   const appShellHeight = useAppShellHeight();
-  const showBattleHud = scene.id !== "opening";
+  // jessica_duet keeps the gauge panel visible (like a normal scene) but, like
+  // opening, blocks skills/evidence/choices — a scripted duet the player only
+  // watches. showGauges/showBattleHud diverge only for these two scene ids.
+  const showGauges = scene.id !== "opening";
+  const showBattleHud = scene.id !== "opening" && scene.id !== "jessica_duet";
 
   const challengeOptions = scene.challenge?.options ?? [];
   const isItemFirst =
@@ -329,7 +333,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         {isMobile ? (
           <>
             {/* Landscape HUD: matching meter widths; icon-only items/skills under Shylock meters. */}
-            {showBattleHud && (
+            {showGauges && (
               <>
                 <div
                   style={{
@@ -371,14 +375,16 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                       iconsOnly
                     />
                   )}
-                  <SkillPanel
-                    dp={dp}
-                    sceneIdx={sceneIdx}
-                    veniceParadoxUsed={veniceParadoxUsed}
-                    disabled={skillPanelDisabled}
-                    onUseSkill={useSkill}
-                    iconsOnly
-                  />
+                  {showBattleHud && (
+                    <SkillPanel
+                      dp={dp}
+                      sceneIdx={sceneIdx}
+                      veniceParadoxUsed={veniceParadoxUsed}
+                      disabled={skillPanelDisabled}
+                      onUseSkill={useSkill}
+                      iconsOnly
+                    />
+                  )}
                 </div>
               </>
             )}
@@ -399,7 +405,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         ) : (
           <>
             <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-              {showBattleHud && (
+              {showGauges && (
                 <>
                   <MeterDisplay
                     dp={dp}
@@ -482,7 +488,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           onClose={evidenceDetailView.dismissible ? dismissEvidenceDetail : undefined}
         />
       )}
-      {showBattleHud && (
+      {/* LoreChatWidget follows showGauges, not showBattleHud — jessica_duet
+          hides skills/evidence/choices but keeps gauges and lore chat up. */}
+      {showGauges && (
         <LoreChatWidget hidden={climaxMode || loadingScene || !!evidenceDetailView} />
       )}
     </div>
