@@ -14,7 +14,7 @@ from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialoguePromptDto
 
 SCENE_BRIEFS: dict[int, str] = {
-    0: "Opening — Venice court 1596. Shylock stands alone against the court.",
+    0: "Opening — Venice court, 16th century. Shylock stands alone against the court.",
     1: "Portia (as Balthazar) asks Shylock to show mercy and take triple the bond.",
     2: "Bassanio offers ten times the bond and begs Shylock for mercy.",
     3: "The crowd jeers at Shylock.",
@@ -220,7 +220,7 @@ request_type:
 """
 
 SCENE_DIALOGUE_SYSTEM_PROMPT = """\
-You write in-game dialogue for *The Merchant of Venice* trial (Venice court, 1596).
+You write in-game dialogue for *The Merchant of Venice* trial (Venice court, 16th century).
 Generate Korean only (한국어). Stay faithful to Shakespeare's trial arc.
 
 The judge is always **포샤** in Korean. Never use 발타자르, 발타사르, 포르샤, or Balthazar.

@@ -34,7 +34,7 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
         scene_id="opening",
         speaker="NARRATOR",
         speaker_label=None,
-        brief="Opening — Venice court 1596. Shylock stands alone against the court.",
+        brief="Opening — Venice court, 16th century. Shylock stands alone against the court.",
         canonical_lines=(
             "베네치아 법정. 해가 지고 있다. 돌벽에는 그림자가 기운다.",
             "샤일록, 당신은 지금 이 법정에 서 있다.",

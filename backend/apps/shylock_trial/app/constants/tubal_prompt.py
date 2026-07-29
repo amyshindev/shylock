@@ -9,7 +9,7 @@ Refer to him as "샤일록", "내 친구", "그", or "동료" as fits the senten
 
 TUBAL_KOREAN_SPEECH_STYLE = """\
 Player-facing Korean (tubal_comment) must match other characters in this game:
-- Elizabethan Venice court register (1596); no modern casual Korean.
+- Elizabethan Venice court register (16th century); no modern casual Korean.
 - Use period endings like ~소, ~하오, ~이오, ~하시오, ~겠소 — same as 샤일록 and 포샤.
 - Tubal speaks in first person as Shylock's friend and equal (e.g. "…하겠소", "…할 수 있소", "…이오").
 - Never subservient phrasing toward Shylock (no 주인/상전/복종). Peer-to-peer courtroom tone.

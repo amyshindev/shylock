@@ -168,7 +168,7 @@ export function TitleScreen() {
         bodyStyle={{ textAlign: "center", padding: isMobile ? "14px 16px" : "16px 20px" }}
       >
         <p style={{ color: theme.textBright, fontSize: gameFontSize.md, lineHeight: 2, margin: 0 }}>
-          베네치아, 1596년.
+          베네치아, 16세기.
           <br />
           당신은 <span style={{ color: theme.gold }}>샤일록</span>이다.
           <br />
