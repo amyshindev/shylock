@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 
 import { ForceLandscape } from "@/components/ui/ForceLandscape";
 import { FullscreenButton } from "@/components/ui/FullscreenButton";
+import { MobileGate } from "@/components/ui/MobileGate";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,10 +29,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Button must live inside ForceLandscape, not beside it — that
             wrapper CSS-rotates the whole shell on portrait phones, and a
             sibling outside it wouldn't rotate along with everything else. */}
-        <ForceLandscape>
-          {children}
-          <FullscreenButton />
-        </ForceLandscape>
+        <MobileGate>
+          <ForceLandscape>
+            {children}
+            <FullscreenButton />
+          </ForceLandscape>
+        </MobileGate>
       </body>
     </html>
   );
