@@ -14,7 +14,7 @@ def test_trial_mapper_roundtrip() -> None:
         scene_index=2,
         dp=DpScore(55),
         hp=HpScore(80),
-        portia_hp=PortiaHpScore(72),
+        portia_hp=PortiaHpScore(52),
         choice_history=["appeal_mercy"],
         phase=TrialPhase.IN_PROGRESS,
         portia_reactions=["법정은 증서 위에 서 있노라."],
@@ -26,7 +26,7 @@ def test_trial_mapper_roundtrip() -> None:
     assert restored.scene_index == 2
     assert restored.dp.value == 55
     assert restored.hp.value == 80
-    assert restored.portia_hp.value == 72
+    assert restored.portia_hp.value == 52
     assert restored.choice_history == ["appeal_mercy"]
     assert restored.portia_reactions == ["법정은 증서 위에 서 있노라."]
 
@@ -37,7 +37,7 @@ def test_trial_orm_entity_fields() -> None:
         scene_index=0,
         dp=50,
         hp=100,
-        portia_hp=100,
+        portia_hp=60,
         phase="in_progress",
     )
     entity = to_entity(orm)

@@ -1,5 +1,6 @@
 import pytest
 
+from shylock_trial.app.constants.game_balance import PORTIA_HP_MAX
 from shylock_trial.app.constants.scene_choices import (
     apply_choice_resources,
     apply_skill_resources,
@@ -58,9 +59,10 @@ def test_compute_portia_damage_scales_with_dp() -> None:
 
 
 def test_blood_reveal_choices_deal_no_portia_damage() -> None:
-    # Reversal scene: Portia lands the blow, so no choice counter-damages her.
+    # Reversal scene: Portia lands the blow, so most choices don't counter-damage
+    # her. blood_impossible is the one exception — Shylock's point is correct
+    # (see scene_choices.py comment), so it's carved out below.
     for choice_id in (
-        "blood_impossible",
         "drop_knife",
         "take_principal_only",
         "wording_letter_turned",
@@ -70,17 +72,24 @@ def test_blood_reveal_choices_deal_no_portia_damage() -> None:
         assert get_choice_effect(choice_id).portia_damage == 0
 
 
+def test_blood_impossible_deals_portia_damage() -> None:
+    # The one blood_reveal choice that lands a real hit — Shylock's objection is
+    # logically sound, and this is the only way the alien-law-reveal reversal
+    # scene doesn't feel entirely like a wash for him.
+    assert get_choice_effect("blood_impossible").portia_damage == 10
+
+
 def test_apply_choice_resources_deducts_hp_and_portia_hp() -> None:
     effect = get_choice_effect("gold_refuse_direct")
     next_hp, next_dp, _, next_portia_hp = apply_choice_resources(
         hp_before=100,
         dp_before=50,
         effect=effect,
-        portia_hp_before=100,
+        portia_hp_before=PORTIA_HP_MAX,
     )
     assert next_hp == 91
     assert next_dp == 63
-    assert next_portia_hp == 93
+    assert next_portia_hp == PORTIA_HP_MAX - effect.portia_damage
 
 
 def test_apply_skill_resources_launcelot_spends_dp_heals_hp() -> None:
@@ -110,8 +119,8 @@ def test_apply_choice_resources_low_hp_halves_gain() -> None:
         hp_before=25,
         dp_before=50,
         effect=effect,
-        portia_hp_before=100,
+        portia_hp_before=PORTIA_HP_MAX,
     )
     assert next_hp == 6
     assert next_dp == 59
-    assert next_portia_hp == 90
+    assert next_portia_hp == PORTIA_HP_MAX - effect.portia_damage

@@ -16,7 +16,8 @@ function coerceSpeaker(raw: string | null | undefined): Speaker | undefined {
     raw === "JESSICA" ||
     raw === "LORENZO" ||
     raw === "SHYLOCK" ||
-    raw === "ANTONIO"
+    raw === "ANTONIO" ||
+    raw === "DUKE"
   ) {
     return raw;
   }

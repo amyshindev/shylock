@@ -70,7 +70,7 @@ def test_composure_break_allowed_gating() -> None:
     assert composure_break_allowed(1, 80) is False
     assert composure_break_allowed(3, 40) is False
     # Low composure allows a crack anywhere.
-    assert composure_break_allowed(1, 20) is True
+    assert composure_break_allowed(1, 15) is True
     # Climax-weight scenes allow a crack regardless of composure.
     assert composure_break_allowed(6, 100) is True
     assert composure_break_allowed(7, 100) is True
@@ -85,7 +85,7 @@ def test_reaction_prompt_restrained_signal_on_ordinary_rebuttal() -> None:
 
 
 def test_reaction_prompt_allows_crack_on_low_portia_hp() -> None:
-    message = build_user_message(_reaction_prompt(scene_index=1, portia_hp=20))
+    message = build_user_message(_reaction_prompt(scene_index=1, portia_hp=15))
 
     assert "절제가 시험받는 예외적 순간" in message
     assert "평범한 반박 수준" not in message
@@ -116,16 +116,16 @@ def test_reaction_prompt_includes_previous_reactions() -> None:
 
 
 def test_reaction_prompt_mid_hp_tone() -> None:
-    message = build_user_message(_reaction_prompt(portia_hp=50))
+    message = build_user_message(_reaction_prompt(portia_hp=30))
 
-    assert "portia_hp=50 (mid" in message
+    assert "portia_hp=30 (mid" in message
     assert "법조문" in message
 
 
 def test_reaction_prompt_low_hp_tone() -> None:
-    message = build_user_message(_reaction_prompt(portia_hp=20))
+    message = build_user_message(_reaction_prompt(portia_hp=15))
 
-    assert "portia_hp=20 (low" in message
+    assert "portia_hp=15 (low" in message
     assert "권위" in message
 
 
@@ -150,6 +150,26 @@ def test_reaction_prompt_provocation_stimulus() -> None:
     )
 
     assert "Stimulus type: provocation" in message
+
+
+def test_rescued_ending_instruction_has_no_legal_defeat() -> None:
+    # jessica_intervention halts the alien-law verdict — the standard "he loses
+    # the trial" note would directly contradict what the player just watched.
+    message = build_user_message(
+        _reaction_prompt(request_type="ending", context="final_ending:rescued_ending")
+    )
+
+    assert "halts the alien-law verdict" in message
+    assert "Shylock loses the trial per the play" not in message
+
+
+def test_other_endings_keep_standard_legal_defeat_note() -> None:
+    message = build_user_message(
+        _reaction_prompt(request_type="ending", context="final_ending:fought_to_end_ending")
+    )
+
+    assert "Shylock loses the trial per the play" in message
+    assert "halts the alien-law verdict" not in message
 
 
 def test_reaction_prompt_includes_folger_context() -> None:

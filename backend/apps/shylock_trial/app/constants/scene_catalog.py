@@ -356,37 +356,131 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
             "wording_reread_silent": "(말없이 계약서의 문구를 다시 들여다본다)",
         },
     ),
+    # Fixed climax scene — scripted verbatim, no choices, no LLM rewrite. The
+    # verdict was already decided (via portia_hp) before this scene runs, so
+    # giving Shylock a choice here would imply a reversal that can't happen.
+    # Branching to jessica_intervention vs. the ending screen happens purely
+    # off scene index + portia_hp (see resolve_next_scene_index) once these
+    # lines finish — no scene-level stat effect is applied here.
     SceneTemplate(
         scene_id="alien_law_reveal",
         speaker="PORTIA",
         speaker_label="포샤",
-        brief="Portia's alien law reversal — life, goods, forced conversion.",
+        brief=(
+            "Portia's alien law reversal — fixed climax scene: life spared, goods "
+            "split, forced conversion, and Shylock's quiet collapse."
+        ),
         canonical_lines=(
-            "당신은 칼을 거둔다.",
-            "포샤가 손을 든다.",
-            '"기다리시오, 유대인."',
-            '"이 법에는 아직 다른 조항이 남아 있소."',
+            "이방인의 법에 따라, 판결은 이미 정해져 있소.",
+            "그대의 목숨은 살려주겠소. 허나 그대의 재산은 절반이 국고로, "
+            "절반이 안토니오에게 돌아갈 것이오.",
+            "한 가지 조건이 더 있소. 그가 기독교로 개종할 것.",
+            "샤일록은 아무 말도 하지 않는다. 오래도록.",
+            "...몸이 좋지 않소.",
+            "판결문은 뒤에 보내주시오. 서명하겠소.",
+            "그는 천천히 몸을 돌린다.",
+        ),
+        canonical_line_kinds=(
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+        ),
+        canonical_line_speakers=(
+            "PORTIA",
+            "DUKE",
+            "ANTONIO",
+            "NARRATOR",
+            "SHYLOCK",
+            "SHYLOCK",
+            "NARRATOR",
+        ),
+        challenge_header=None,
+        canonical_challenge_text=None,
+        choice_ids=(),
+        canonical_choice_texts={},
+    ),
+    # Fixed climax scene — scripted verbatim, no choices, no LLM rewrite. Reached
+    # only when portia_hp <= 0 at the end of alien_law_reveal; rescue arrives at
+    # the exact moment Shylock has already turned to leave. Pure narration —
+    # no scene-level stat effect. See _docs/jessica_intervention_대본_구현.md.
+    SceneTemplate(
+        scene_id="jessica_intervention",
+        speaker="JESSICA",
+        speaker_label="제시카",
+        brief=(
+            "Fixed climax — Jessica bursts into the courtroom as Shylock turns to "
+            "leave; the Duke halts the alien-law verdict before it is carried out."
+        ),
+        canonical_lines=(
+            "법정 문이 열린다.",
+            "돌아서던 샤일록이 멈춘다.",
+            "멈춰주세요— 제발, 판결을 멈춰주세요.",
+            "낯선 옷차림의 젊은 여인이 숨을 몰아쉬며 법정 한가운데로 들어선다.",
+            "누구인가. 이 법정에 무슨 볼일이오?",
+            "제시카라고 합니다.",
+            "제시카가 샤일록을 바라본다.",
+            "저 사람은... 제 아버지입니다.",
+            "법정이 술렁인다. 샤일록은 아무 말도 하지 못한다.",
+            "저는 아버지의 집에서 도망쳤습니다. 돈을 가지고, 반지도 가지고.",
+            "그 반지는... 팔았습니다. 어머니가 남긴 것인 줄 알면서도.",
+            "당신을 사랑하지 않는 법을 배우려고 했어요. 그런데 그럴 수가 없었습니다.",
+            "이 법정이 지금 하려는 것은 정의가 아닙니다.",
+            "우리 모두가 저 사람에게 진 빚을, 저 사람 혼자에게 갚으라 하는 것입니다.",
+            "제가 그 증인입니다. 제가 이 집에서 자랐으니까요.",
+            "포샤는 입을 열지 못한다.",
+            "긴 침묵.",
+            "...이방인의 법은, 오늘 집행하지 않는다.",
+            "샤일록은 딸을 바라본다. 무슨 말을 하려다, 하지 못한다.",
+            "...그래도, 네가 왔구나.",
         ),
         canonical_line_kinds=(
             DialogueLineKind.NARRATION,
             DialogueLineKind.NARRATION,
             DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.NARRATION,
+            DialogueLineKind.SPEECH,
+            DialogueLineKind.NARRATION,
             DialogueLineKind.SPEECH,
         ),
-        challenge_header="▶ 샤일록의 선택",
-        canonical_challenge_text="외국인이라는 이유로, 법이 이번엔 당신의 목숨까지 가져가려 한다.",
-        choice_ids=("plead_for_principal",),
-        canonical_choice_texts={
-            "plead_for_principal": "원금만이라도... 그것만은 받게 해주시오.",
-        },
-    ),
-    SceneTemplate(
-        scene_id="jessica_intervention",
-        speaker="JESSICA",
-        speaker_label="제시카",
-        brief="Jessica bursts into the courtroom to intervene after the alien-law judgment.",
-        canonical_lines=("안녕하세요",),
-        canonical_line_kinds=(DialogueLineKind.SPEECH,),
+        canonical_line_speakers=(
+            "NARRATOR",
+            "NARRATOR",
+            "JESSICA",
+            "NARRATOR",
+            "DUKE",
+            "JESSICA",
+            "NARRATOR",
+            "JESSICA",
+            "NARRATOR",
+            "JESSICA",
+            "JESSICA",
+            "JESSICA",
+            "JESSICA",
+            "JESSICA",
+            "JESSICA",
+            "NARRATOR",
+            "NARRATOR",
+            "DUKE",
+            "NARRATOR",
+            "SHYLOCK",
+        ),
         challenge_header=None,
         canonical_challenge_text=None,
         choice_ids=(),
@@ -396,7 +490,9 @@ SCENE_TEMPLATES: tuple[SceneTemplate, ...] = (
 
 
 # Scenes whose script is authored verbatim — never rewritten by the LLM.
-FIXED_SCRIPT_SCENE_IDS: frozenset[str] = frozenset({"jessica_duet", "hath_not_moment"})
+FIXED_SCRIPT_SCENE_IDS: frozenset[str] = frozenset(
+    {"jessica_duet", "hath_not_moment", "alien_law_reveal", "jessica_intervention"}
+)
 
 
 def is_fixed_script_scene(scene_index: int) -> bool:

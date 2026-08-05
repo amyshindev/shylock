@@ -7,17 +7,17 @@ export const gameFontFamily =
 
 /** Shared in-game typography scale (px). */
 export const gameFontSize = {
-  xs: 11,
-  sm: 13,
-  nm: 14,
-  md: 15,
-  base: 17,
-  lg: 19,
-  xl: 22,
+  xs: 12,
+  sm: 15,
+  nm: 16,
+  md: 18,
+  base: 20,
+  lg: 23,
+  xl: 26,
 } as const;
 
 /** Shared HUD panel chrome (meters, evidence, skills). */
-export function hudPanelStyle(padding = "6px 11px", compact = false): CSSProperties {
+export function hudPanelStyle(padding = "9px 14px", compact = false): CSSProperties {
   return {
     background: compact ? "rgba(12, 6, 16, 0.82)" : "rgba(12, 6, 16, 0.94)",
     borderRadius: compact ? 6 : 4,
@@ -43,7 +43,7 @@ export const textBox = {
   border: "1px solid #3a1028",
   borderTopAccent: "3px solid #3a1028",
   borderRadius: 10,
-  padding: "20px 24px 28px",
+  padding: "26px 30px 34px",
   fontFamily: gameFontFamily,
 } as const;
 
@@ -56,6 +56,7 @@ const SPEAKER_TAB: Record<Speaker, { bg: string; color: string }> = {
   JESSICA: { bg: "#2a1018", color: "#c87888" },
   SHYLOCK: { bg: "#241a08", color: "#c8a868" },
   ANTONIO: { bg: "#101820", color: "#7a8a94" },
+  DUKE: { bg: "#0a1c18", color: "#6aab8e" },
 };
 
 export function speakerTabStyle(speaker: string): CSSProperties {
@@ -65,7 +66,7 @@ export function speakerTabStyle(speaker: string): CSSProperties {
     background: palette.bg,
     color: palette.color,
     border: "1px solid #3a1028",
-    padding: "6px 20px",
+    padding: "8px 24px",
     fontSize: gameFontSize.sm,
     fontWeight: 700,
     letterSpacing: 3,
@@ -99,15 +100,15 @@ export function textBoxPanelStyle(compact = false): CSSProperties {
   };
 }
 
-export const TEXT_BOX_MAX_WIDTH = 780;
+export const TEXT_BOX_MAX_WIDTH = 940;
 /** Narrower dock on landscape phones so dialogue does not span edge-to-edge. */
 export const TEXT_BOX_MAX_WIDTH_MOBILE = 550;
 
 /** Stable body height (~3 lines) so the box does not resize while typing. */
-export const DIALOGUE_BODY_MIN_HEIGHT = 96;
+export const DIALOGUE_BODY_MIN_HEIGHT = 118;
 
 /** Bottom padding always reserved for the advance arrow slot. */
-export const DIALOGUE_BODY_PADDING_BOTTOM = 28;
+export const DIALOGUE_BODY_PADDING_BOTTOM = 32;
 
 export function textBoxDockStyle(compact = false): CSSProperties {
   return {
@@ -135,7 +136,7 @@ export function choiceButtonStyle(compact = false): CSSProperties {
     flexWrap: compact ? "wrap" : "nowrap",
     gap: compact ? 8 : 12,
     width: "100%",
-    padding: compact ? "8px 10px" : "11px 16px",
+    padding: compact ? "8px 10px" : "14px 20px",
     textAlign: "left",
     background: "#100510",
     border: "1px solid #3a1828",
@@ -152,7 +153,7 @@ export function choiceButtonStyle(compact = false): CSSProperties {
 export function nextSceneButtonStyle(): CSSProperties {
   return {
     width: "100%",
-    padding: "12px",
+    padding: "15px",
     background: "#1a0810",
     color: "#c0a060",
     border: "1px solid #4a1828",

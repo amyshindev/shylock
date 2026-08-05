@@ -9,6 +9,7 @@ const SPEAKER_LABELS: Record<Speaker, string | undefined> = {
   LORENZO: "로렌조",
   SHYLOCK: "샤일록",
   ANTONIO: "안토니오",
+  DUKE: "공작",
 };
 
 export function resolveSpeakerLabel(

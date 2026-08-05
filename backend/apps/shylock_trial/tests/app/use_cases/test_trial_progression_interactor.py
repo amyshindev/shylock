@@ -257,6 +257,7 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
         HATH_NOT_SCENE_INDEX,
         JESSICA_DUET_SCENE_INDEX,
     )
+    from shylock_trial.app.constants.game_balance import PORTIA_HP_START
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
 
     portia = FakePortiaUseCase()
@@ -284,7 +285,7 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
     # Entering the scene costs nothing — the effect lands when it finishes.
     assert result.dp == 50
     assert result.hp == 100
-    assert result.portia_hp == 100
+    assert result.portia_hp == PORTIA_HP_START
 
 
 @pytest.mark.asyncio
@@ -293,6 +294,7 @@ async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
         HATH_NOT_SCENE_DP_GAIN,
         HATH_NOT_SCENE_HP_COST,
         HATH_NOT_SCENE_PORTIA_DAMAGE,
+        PORTIA_HP_START,
     )
     from shylock_trial.app.constants.scene_progression import HATH_NOT_SCENE_INDEX
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
@@ -310,7 +312,7 @@ async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
     assert result.scene_index == HATH_NOT_SCENE_INDEX + 1
     assert result.dp == 50 + HATH_NOT_SCENE_DP_GAIN
     assert result.hp == 100 - HATH_NOT_SCENE_HP_COST
-    assert result.portia_hp == 100 - HATH_NOT_SCENE_PORTIA_DAMAGE
+    assert result.portia_hp == PORTIA_HP_START - HATH_NOT_SCENE_PORTIA_DAMAGE
     trial = await port.find_by_id(started.trial_id)
     assert "hath_not" in trial.presented_evidence
 

@@ -22,7 +22,10 @@ SCENE_BRIEFS: dict[int, str] = {
     5: "Jessica duet — Belmont garden cutaway after the courtroom attack on Jessica.",
     6: "Fixed climax — Shylock's 'Hath not a Jew eyes?' speech silences the court.",
     7: "Portia's blood loophole — no drop of blood, exactly one pound of flesh.",
-    8: "Portia's alien law reversal — half Shylock's goods to the state, life at stake, forced conversion.",
+    8: (
+        "Fixed climax — Portia's alien law reversal already decided; life spared, "
+        "goods split, forced conversion; Shylock quietly gives up and leaves."
+    ),
     9: "Jessica intervention — Jessica bursts into the courtroom after the alien-law judgment.",
 }
 
@@ -65,10 +68,6 @@ CHOICE_BRIEFS: dict[str, str] = {
         "So be it. The letter is the letter — I lived by it, and before it I step back."
     ),
     "wording_reread_silent": "(Silently reads the bond's exact wording over again.)",
-    "plead_for_principal": "Please — let me have at least the principal sum.",
-    "reject_conversion": "Death before forced conversion to Christianity.",
-    "bow_accept": "Bows head and accepts conversion.",
-    "mock_mercy": "Is this what Venice calls mercy?",
 }
 
 # Stimulus category for the most recent Shylock choice — drives Portia reaction tone.
@@ -103,10 +102,6 @@ CHOICE_STIMULUS: dict[str, str] = {
     "wording_letter_turned": "logical",
     "wording_accept_letter": "emotional",
     "wording_reread_silent": "silence",
-    "plead_for_principal": "emotional",
-    "reject_conversion": "provocation",
-    "bow_accept": "emotional",
-    "mock_mercy": "provocation",
 }
 
 STIMULUS_REACTION_GUIDE: dict[str, str] = {
@@ -315,9 +310,15 @@ Use exactly {len(template.canonical_lines)} lines with matching kinds per refere
 
 
 ENDING_BRIEFS: dict[str, str] = {
+    # Reached when portia_hp <= 0 at the end of alien_law_reveal — Jessica bursts
+    # into court (jessica_intervention) as Shylock turns to leave, and the Duke
+    # halts the alien-law verdict before it is carried out. This is the one
+    # ending with a genuinely different legal outcome — see _ending_instruction.
     "rescued_ending": (
-        "DP 90+ — '구원받은 자'. Legal loss stands, but Shylock's spirit and dignity "
-        "survived the trial intact — read as the rarest moral triumph."
+        "portia_hp depleted (Jessica's intervention) — '구원받은 자'. Jessica's "
+        "testimony moved the court; the Duke declares the alien-law verdict will "
+        "not be executed. Read as the rarest ending: rescue arrives at the exact "
+        "moment Shylock has given up."
     ),
     "fought_to_end_ending": (
         "DP 80–89 — '끝까지 싸운 자'. Legal loss stands, but Shylock's dignity and voice "
@@ -334,6 +335,23 @@ ENDING_BRIEFS: dict[str, str] = {
     ),
 }
 
+# All endings except rescued_ending: the play's legal defeat stands as written.
+_STANDARD_LEGAL_NOTE = (
+    "Legal outcome is fixed for this ending: Shylock loses the trial per the play "
+    "(alien law, forfeiture, forced conversion). Do NOT imply he wins in court or changes history."
+)
+
+# rescued_ending is the one exception — jessica_intervention's script has the Duke
+# explicitly halt the alien-law verdict, so the standard "he loses" note above
+# would directly contradict what the player just watched happen.
+_RESCUED_LEGAL_NOTE = (
+    "Legal outcome for THIS ending only (it differs from every other ending): "
+    "Jessica's testimony halts the alien-law verdict before it is carried out — "
+    "no forfeiture of goods, no forced conversion, his life and standing intact. "
+    "This is the one ending where the play's usual crushing legal defeat does NOT "
+    "happen. Do not describe him as broken, converted, or stripped of property."
+)
+
 
 def _ending_instruction(context: str) -> str:
     ending_key = context.removeprefix("final_ending:") if context.startswith("final_ending:") else ""
@@ -341,12 +359,8 @@ def _ending_instruction(context: str) -> str:
         ending_key,
         "Final ending narration based on dp and choices.",
     )
-    return (
-        f"{brief} "
-        "Legal outcome is fixed for all endings: Shylock loses the trial per the play "
-        "(alien law, forfeiture, forced conversion). Do NOT imply he wins in court or changes history. "
-        "Write 3–4 sentences of Korean literary closing narration."
-    )
+    legal_note = _RESCUED_LEGAL_NOTE if ending_key == "rescued_ending" else _STANDARD_LEGAL_NOTE
+    return f"{brief} {legal_note} Write 3–4 sentences of Korean literary closing narration."
 
 
 def _portia_hp_tone_instruction(portia_hp: int) -> str:

@@ -7,8 +7,13 @@ export const SHYLOCK_HP_START = 100;
 export const HP_MAX = 100;
 export const LOW_HP_THRESHOLD = 40;
 
-export const PORTIA_HP_START = 100;
-export const PORTIA_HP_MAX = 100;
+// Lowered from 100 — see backend game_balance.py for why (max achievable
+// cumulative portia_damage is 70; at 100 the rescue branch was unreachable,
+// and at 70 it required zero-error perfect play). 65 leaves 5 points of
+// slack: only a small scene slip is recoverable, and the run only zeroes
+// Portia out at the very last choice-scene (blood_reveal).
+export const PORTIA_HP_START = 65;
+export const PORTIA_HP_MAX = 65;
 
 /** Keep in sync with backend scene_choices.compute_portia_damage */
 export const PORTIA_DAMAGE_DP_RATIO = 0.55;

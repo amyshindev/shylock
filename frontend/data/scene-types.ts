@@ -6,7 +6,8 @@ export type Speaker =
   | "JESSICA"
   | "LORENZO"
   | "SHYLOCK"
-  | "ANTONIO";
+  | "ANTONIO"
+  | "DUKE";
 
 export type DialogueLineKind = "speech" | "narration";
 

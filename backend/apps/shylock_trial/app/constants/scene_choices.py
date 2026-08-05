@@ -65,17 +65,18 @@ CHOICE_EFFECTS: dict[str, ChoiceEffect] = {
     "ring_loss_dignity": ChoiceEffect(15, 12),
     "ring_clutch_silent": ChoiceEffect(8, 6),
     # blood_reveal — Shylock is the one being reversed: lower DP gains, higher HP
-    # costs, and no counter-damage to Portia (she holds the floor this scene).
-    "blood_impossible": ChoiceEffect(10, 22, portia_damage_override=0),
+    # costs, and (mostly) no counter-damage to Portia (she holds the floor this
+    # scene). blood_impossible is the one exception: the objection is logically
+    # correct (the ruling really is impossible to satisfy), Portia just steamrolls
+    # it procedurally — so it still lands a real hit. This is also the last lever
+    # that makes the portia_hp <= 0 rescue branch reachable at all (see
+    # _docs/portia-hp-fix.md); the other five choices stay at 0.
+    "blood_impossible": ChoiceEffect(10, 22, portia_damage_override=10),
     "drop_knife": ChoiceEffect(-10, 0, portia_damage_override=0),
     "take_principal_only": ChoiceEffect(6, 16, portia_damage_override=0),
     "wording_letter_turned": ChoiceEffect(10, 23, portia_damage_override=0),
     "wording_accept_letter": ChoiceEffect(7, 17, portia_damage_override=0),
     "wording_reread_silent": ChoiceEffect(4, 12, portia_damage_override=0),
-    "plead_for_principal": ChoiceEffect(5, 5),
-    "reject_conversion": ChoiceEffect(25, 28),
-    "bow_accept": ChoiceEffect(-25, 0),
-    "mock_mercy": ChoiceEffect(15, 19),
 }
 
 
@@ -134,9 +135,6 @@ CHOICE_EVIDENCE: dict[str, str] = {
     "wording_letter_turned": "bond_wording",
     "wording_accept_letter": "bond_wording",
     "wording_reread_silent": "bond_wording",
-    "plead_for_principal": "bond",
-    "reject_conversion": "alien_law",
-    "mock_mercy": "alien_law",
 }
 
 
