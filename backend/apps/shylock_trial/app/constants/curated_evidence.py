@@ -45,7 +45,15 @@ CURATED_EVIDENCE: tuple[Evidence, ...] = (
         act_scene="4.1",
         icon="bassanio_gold",
         description="원금의 열 배. 바사니오가 안토니오를 대신해 내미는 돈이다.",
-        source_ftln_range=(4001085, 4001219),  # composite quote: opening offer (4001085) + court offer (4001218-19)
+        # composite quote: opening offer (4001085) + court offer (4001218-19) +
+        # Portia's own restatement of the same offer (4001235, 4001243 — "thrice
+        # thy money" / "take thrice thy money, bid me tear the bond"). Originally
+        # ended at 4001219, which cut the range off right before Portia repeats
+        # the money-for-bond offer in her own words — same rhetorical beat,
+        # continuous scene, no gap (see eval_set/compare_embedding_models
+        # miss analysis: both Cohere and e5 kept finding 4001235/4001243 as
+        # their top hit for this query and it was being scored as a miss).
+        source_ftln_range=(4001085, 4001245),
     ),
     Evidence(
         evidence_id="scales",

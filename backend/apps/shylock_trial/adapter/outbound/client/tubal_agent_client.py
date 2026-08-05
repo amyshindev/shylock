@@ -21,6 +21,7 @@ from shylock_trial.app.constants.portia_logical_flaws import (
     PORTIA_LOGICAL_FLAWS,
     TUBAL_SEARCH_FAILURE_COMMENT,
 )
+from shylock_trial.app.constants.scene_rag_query_hints import SCENE_RAG_QUERY_HINTS
 from shylock_trial.app.constants.tubal_prompt import (
     TUBAL_CHARACTER,
     TUBAL_KOREAN_SPEECH_STYLE,
@@ -128,7 +129,13 @@ class TubalAgentClient:
     ) -> TubalAgentResult:
         portia_logical_flaw = PORTIA_LOGICAL_FLAWS.get(scene_id, portia_claim)
 
+        # The hint is search-only — it never reaches the LLM prompt below, only
+        # the embedding query. portia_logical_flaw stays exactly as authored so
+        # the "flaw to expose" instruction the model sees is unaffected.
         search_query = f"{portia_claim}\n{portia_logical_flaw}"
+        hint = SCENE_RAG_QUERY_HINTS.get(scene_id)
+        if hint:
+            search_query = f"{search_query}\n{hint}"
         candidates = await self._evidence_search.search_similar_chunks(search_query, limit=SEARCH_LIMIT)
 
         messages: list[dict[str, Any]] = [
