@@ -86,6 +86,16 @@ button {
   }
 }
 
+@keyframes startButtonGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 18px 4px rgba(255, 195, 60, 0.55), 0 0 42px 14px rgba(255, 150, 30, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 26px 8px rgba(255, 210, 100, 0.75), 0 0 58px 20px rgba(255, 160, 40, 0.45);
+  }
+}
+
 @keyframes dpGainFlash {
   0% {
     opacity: 0;
