@@ -49,6 +49,25 @@ class Settings(BaseSettings):
         description="Cohere API key for evidence embeddings.",
     )
 
+    # Portia response generation provider. "claude" (default) uses
+    # PortiaResponseClient only — this is the instant-revert path if "local"
+    # misbehaves, just unset/reset this var. "local" wraps an Ollama client
+    # with a Claude fallback (see dependencies/portia_response_provider.py) —
+    # Ollama can't be relied on to always be up, so "local" never runs
+    # without that fallback.
+    llm_provider: str = Field(default="claude", validation_alias="LLM_PROVIDER")
+    ollama_base_url: str = Field(
+        default="http://localhost:11434",
+        validation_alias="OLLAMA_BASE_URL",
+        description="Ollama server address. localhost in dev; tunnel address once deployed.",
+    )
+    ollama_model: str = Field(default="gemma4:26b-mlx", validation_alias="OLLAMA_MODEL")
+    ollama_timeout_seconds: float = Field(
+        default=15.0,
+        validation_alias="OLLAMA_TIMEOUT_SECONDS",
+        description="Per-request timeout before falling back to Claude.",
+    )
+
     # Cookie signing for /docs login gate (admin credential check comes later).
     docs_session_secret: SecretStr = Field(
         default=SecretStr("dev-only-change-me-docs-session-secret"),
