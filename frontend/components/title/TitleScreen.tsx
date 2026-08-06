@@ -41,10 +41,20 @@ export function TitleScreen() {
   const [startHovered, setStartHovered] = useState(false);
   const [loginHovered, setLoginHovered] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const { setTitleActive } = useTitleActive();
 
   useEffect(() => {
     void fetchMe().then(setUser);
+  }, []);
+
+  // Fades in from black on arrival — doesn't know (and doesn't need to know)
+  // whether that's a fresh visit or a return from EndingScreen's own
+  // blackout; a brief timeout instead of setting true immediately so the
+  // opacity transition actually has a starting frame to animate from.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setRevealed(true), 50);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // FullscreenButton (rendered as a layout sibling, not a descendant) needs
@@ -226,7 +236,7 @@ export function TitleScreen() {
               // only matters for the transition *into* that state.
               filter:
                 !loading && startHovered
-                  ? "brightness(1.18) saturate(1.25) drop-shadow(0 0 10px rgba(255, 195, 60, 0.65)) drop-shadow(0 0 22px rgba(255, 150, 30, 0.4))"
+                  ? "brightness(1.32) saturate(1.45) drop-shadow(0 0 14px rgba(255, 205, 80, 0.85)) drop-shadow(0 0 34px rgba(255, 150, 30, 0.6)) drop-shadow(0 0 60px rgba(255, 120, 20, 0.4))"
                   : "brightness(1) saturate(1) drop-shadow(0 0 0 rgba(255, 195, 60, 0))",
               animation: !loading && startHovered ? "startButtonGlow 1.6s ease-in-out infinite" : "none",
               transition: "filter 0.2s ease",
@@ -271,6 +281,19 @@ export function TitleScreen() {
           </div>
         )}
       </div>
+
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 90,
+          background: "#000",
+          opacity: revealed ? 0 : 1,
+          pointerEvents: revealed ? "none" : "auto",
+          transition: "opacity 3s ease-out",
+        }}
+      />
     </div>
   );
 }

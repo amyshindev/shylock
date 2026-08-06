@@ -1,12 +1,16 @@
 "use client";
 
-import { TextBox } from "@/components/ui/TextBox";
+import { useCallback, useMemo, useState } from "react";
+
+import { DialogueBox } from "@/components/battle/DialogueBox";
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
 import type { EndingResponse } from "@/lib/api-client/types";
+import { splitIntoSentences } from "@/lib/portia-text";
 import {
-  getEndingMetaByType,
-  type EndingType,
-} from "@/lib/constants/ending-thresholds";
+  gameFontFamily,
+  textBoxDockInnerStyle,
+  textBoxDockStyle,
+} from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
 interface EndingScreenProps {
@@ -14,100 +18,104 @@ interface EndingScreenProps {
   onRestart: () => void;
 }
 
+// Blackout hold before navigating away, for the "여운" pause the ending asked
+// for — the fade-in on the other side lives in TitleScreen (it doesn't know
+// whether it's being reached from here or a fresh visit, so it always fades
+// in on mount; that reads fine either way).
+const FADE_OUT_MS = 3000;
+
+/**
+ * Same black-screen + docked-textbox, one-line-at-a-time format as
+ * PrologueScreen — ending_text is backend-generated free narration (not
+ * pre-split like PROLOGUE_LINES), so it's chunked into sentence "lines" with
+ * splitIntoSentences (the same splitter DialogueBox's Portia reply mode
+ * uses). No ending-name/title card (meta.title, e.g. "구원받은 자") — the
+ * ending type is still resolved server-side and drives ending_text itself,
+ * it's just never rendered as a label here.
+ */
 export function EndingScreen({ ending, onRestart }: EndingScreenProps) {
-  const isMobile = useIsMobile();
   const appShellHeight = useAppShellHeight();
-  const meta = getEndingMetaByType(ending.ending_type as EndingType);
+  const isMobile = useIsMobile();
+  const [lineIdx, setLineIdx] = useState(0);
+  const [fadingOut, setFadingOut] = useState(false);
+
+  const lines = useMemo(() => {
+    const sentences = splitIntoSentences(ending.ending_text);
+    return sentences.length > 0 ? sentences : [ending.ending_text];
+  }, [ending.ending_text]);
+
+  const isLastLine = lineIdx >= lines.length - 1;
+  const currentLine = lines[lineIdx] ?? "";
+
+  const advance = useCallback(() => {
+    if (isLastLine) {
+      setFadingOut(true);
+      window.setTimeout(onRestart, FADE_OUT_MS);
+      return;
+    }
+    setLineIdx((index) => index + 1);
+  }, [isLastLine, onRestart]);
 
   return (
     <div
       style={{
+        position: "relative",
         minHeight: appShellHeight,
         display: "flex",
         flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         background: theme.background,
-        padding: isMobile
-          ? "max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom))"
-          : 32,
-        textAlign: "center",
-        fontFamily: "Georgia, serif",
+        color: theme.textBright,
+        overflow: "hidden",
+        fontFamily: gameFontFamily,
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
       }}
     >
-      <div style={{ fontSize: isMobile ? 48 : 60, marginBottom: 8 }}>{meta.emoji}</div>
-      <h2
+      <div
         style={{
-          fontSize: isMobile ? 22 : 26,
-          fontWeight: "bold",
-          letterSpacing: isMobile ? 2 : 4,
-          color: theme.gold,
-          margin: "0 0 8px",
-          textShadow: "0 0 20px rgba(255, 215, 0, 0.4)",
+          position: "absolute",
+          inset: 0,
+          background: "linear-gradient(to bottom, #0a060c 0%, #050308 45%, #08050a 100%)",
         }}
-      >
-        {meta.title}
-      </h2>
-      <p
-        style={{
-          margin: "0 0 24px",
-          color: theme.textMuted,
-          fontSize: 13,
-          letterSpacing: 1,
-          fontStyle: "italic",
-        }}
-      >
-        {meta.subtitle}
-      </p>
+      />
 
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ color: theme.textMuted, fontSize: 10, letterSpacing: 2, marginBottom: 4 }}>
-          DP
-        </div>
-        <div style={{ color: theme.gold, fontSize: isMobile ? 24 : 28, fontWeight: "bold" }}>
-          {ending.dp}
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+          flex: 1,
+          minHeight: 0,
+        }}
+      >
+        <div style={{ flex: 1, minHeight: 0 }} />
+
+        <div style={textBoxDockStyle(isMobile)}>
+          <div style={textBoxDockInnerStyle(isMobile)}>
+            <DialogueBox
+              speaker="NARRATOR"
+              showSpeakerTab={false}
+              text={currentLine}
+              showAdvanceArrow={!fadingOut}
+              onAdvance={advance}
+            />
+          </div>
         </div>
       </div>
 
-      <TextBox
-        speaker="NARRATOR"
-        speakerLabel="NARRATOR"
-        style={{ maxWidth: 480, width: "100%", marginBottom: 24 }}
-        bodyStyle={{ padding: isMobile ? "16px 18px" : "20px 24px" }}
-      >
-        <p
-          style={{
-            margin: 0,
-            color: theme.textBright,
-            fontSize: 14,
-            lineHeight: 2,
-            fontStyle: "italic",
-            whiteSpace: "pre-wrap",
-            textAlign: "center",
-          }}
-        >
-          {ending.ending_text}
-        </p>
-      </TextBox>
-
-      <button
-        type="button"
-        onClick={onRestart}
+      <div
+        aria-hidden
         style={{
-          padding: isMobile ? "12px 24px" : "10px 28px",
-          width: isMobile ? "100%" : undefined,
-          maxWidth: isMobile ? 320 : undefined,
-          background: "transparent",
-          color: theme.textMuted,
-          border: "1px solid #3a2a2a",
-          borderRadius: 2,
-          cursor: "pointer",
-          fontSize: 12,
-          letterSpacing: 3,
+          position: "fixed",
+          inset: 0,
+          zIndex: 100,
+          background: "#000",
+          opacity: fadingOut ? 1 : 0,
+          pointerEvents: fadingOut ? "auto" : "none",
+          transition: "opacity 1.5s ease-in",
         }}
-      >
-        다시 법정에 서다
-      </button>
+      />
     </div>
   );
 }

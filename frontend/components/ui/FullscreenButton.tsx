@@ -15,8 +15,8 @@ const HINT_DURATION_MS = 2600;
 /**
  * Global fullscreen toggle, rendered once in the root layout so it's
  * available on every screen (title, battle, ending, records). Sits at
- * bottom-right — LoreChatWidget's launcher button lives at bottom-left, so
- * the two don't compete for the same corner on battle screens.
+ * bottom-right (bottom:16, right:16) — the mirror image of LoreChatWidget's
+ * launcher button at bottom-left (bottom:16, left:16).
  *
  * Enter-only: once in fullscreen there's no on-screen button to leave it
  * (browsers already bind Esc to exit fullscreen; a top-center toast reminds
@@ -68,15 +68,14 @@ export function FullscreenButton() {
 
       {!isFullscreen && (
         <div
-          // Centered around the button's own resting spot (bottom:62, right:52)
-          // so the hover-catch area grows in every direction without shifting
-          // where the icon itself actually sits — nothing else lives in this
-          // corner now that LoreChatWidget moved to bottom-left, so it's safe
-          // to make this generous.
+          // Centered around bottom:16, right:16 — the mirror image of
+          // LoreChatWidget's bottom:16, left:16 — so the hover-catch area
+          // grows in every direction without shifting where the icon itself
+          // actually sits.
           style={{
             position: "fixed",
-            bottom: 62 - 86,
-            right: 52 - 86,
+            bottom: 16 - 86,
+            right: 16 - 86,
             zIndex: 38,
             width: 44 + 172,
             height: 44 + 172,

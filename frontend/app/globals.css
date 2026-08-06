@@ -118,12 +118,12 @@ button {
 @keyframes startButtonGlow {
   0%,
   100% {
-    filter: brightness(1.18) saturate(1.25) drop-shadow(0 0 10px rgba(255, 195, 60, 0.65))
-      drop-shadow(0 0 22px rgba(255, 150, 30, 0.4));
+    filter: brightness(1.32) saturate(1.45) drop-shadow(0 0 14px rgba(255, 205, 80, 0.85))
+      drop-shadow(0 0 34px rgba(255, 150, 30, 0.6)) drop-shadow(0 0 60px rgba(255, 120, 20, 0.4));
   }
   50% {
-    filter: brightness(1.18) saturate(1.25) drop-shadow(0 0 15px rgba(255, 210, 100, 0.85))
-      drop-shadow(0 0 30px rgba(255, 160, 40, 0.5));
+    filter: brightness(1.45) saturate(1.6) drop-shadow(0 0 22px rgba(255, 220, 110, 1))
+      drop-shadow(0 0 48px rgba(255, 165, 40, 0.75)) drop-shadow(0 0 80px rgba(255, 120, 20, 0.55));
   }
 }
 
