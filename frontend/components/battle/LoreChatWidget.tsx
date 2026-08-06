@@ -74,7 +74,7 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
           style={{
             position: "fixed",
             bottom: 16,
-            right: 16,
+            left: 16,
             zIndex: 38,
             width: 40,
             height: 40,

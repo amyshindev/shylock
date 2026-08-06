@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { ForceLandscape } from "@/components/ui/ForceLandscape";
 import { FullscreenButton } from "@/components/ui/FullscreenButton";
 import { MobileGate } from "@/components/ui/MobileGate";
+import { TitleActiveProvider } from "@/hooks/use-title-active";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -31,8 +32,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             sibling outside it wouldn't rotate along with everything else. */}
         <MobileGate>
           <ForceLandscape>
-            {children}
-            <FullscreenButton />
+            <TitleActiveProvider>
+              {children}
+              <FullscreenButton />
+            </TitleActiveProvider>
           </ForceLandscape>
         </MobileGate>
       </body>

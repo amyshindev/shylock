@@ -76,6 +76,31 @@ button {
   }
 }
 
+/* FullscreenButton's "press Esc to exit" toast: fades in, holds, fades out —
+   total duration must match HINT_DURATION_MS in that component, since the
+   timeout there just unmounts the element once this finishes. */
+@keyframes fullscreenHintFade {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -40px) scale(0.8);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, 8px) scale(1.08);
+  }
+  22% {
+    transform: translate(-50%, 0) scale(1);
+  }
+  82% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(0.94);
+  }
+}
+
 @keyframes blink {
   0%,
   100% {
@@ -86,13 +111,19 @@ button {
   }
 }
 
+/* drop-shadow (not box-shadow) so the glow hugs the plaque's own ragged
+   silhouette — button-start-plaque.png's transparent background means a
+   box-shadow would just glow around its rectangular bounding box instead
+   of the actual ornate shape. */
 @keyframes startButtonGlow {
   0%,
   100% {
-    box-shadow: 0 0 18px 4px rgba(255, 195, 60, 0.55), 0 0 42px 14px rgba(255, 150, 30, 0.35);
+    filter: brightness(1.18) saturate(1.25) drop-shadow(0 0 10px rgba(255, 195, 60, 0.65))
+      drop-shadow(0 0 22px rgba(255, 150, 30, 0.4));
   }
   50% {
-    box-shadow: 0 0 26px 8px rgba(255, 210, 100, 0.75), 0 0 58px 20px rgba(255, 160, 40, 0.45);
+    filter: brightness(1.18) saturate(1.25) drop-shadow(0 0 15px rgba(255, 210, 100, 0.85))
+      drop-shadow(0 0 30px rgba(255, 160, 40, 0.5));
   }
 }
 
