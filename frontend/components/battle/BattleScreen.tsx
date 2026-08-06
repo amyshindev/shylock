@@ -421,7 +421,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                   style={{
                     position: "absolute",
                     left: 16,
-                    top: LEFT_HUD_TOP + LEFT_METERS_STACK_HEIGHT + 8,
+                    // LEFT_HUD_TOP/LEFT_METERS_STACK_HEIGHT are now clamp()
+                    // strings (MeterDisplay.tsx scales with viewport width),
+                    // so this has to be composed with CSS calc(), not JS math.
+                    top: `calc(${LEFT_HUD_TOP} + ${LEFT_METERS_STACK_HEIGHT} + 8px)`,
                     zIndex: 11,
                     display: "flex",
                     flexDirection: "column",

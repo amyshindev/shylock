@@ -2,6 +2,7 @@
 
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import { DP_MAX, HP_MAX, PORTIA_HP_MAX } from "@/lib/constants/game-balance";
+import { vwSize } from "@/styles/responsive";
 import { gameFontSize, hudPanelStyle, hudLabelStyle } from "@/styles/text-box";
 
 interface ShylockMeterDisplayProps {
@@ -44,10 +45,10 @@ function MeterBar({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          fontSize: compact ? 10 : gameFontSize.xs,
+          fontSize: compact ? vwSize(10) : gameFontSize.xs,
           letterSpacing: compact ? 0.2 : 0.8,
           marginBottom: compact ? 2 : 5,
-          gap: 4,
+          gap: vwSize(4),
         }}
       >
         <span
@@ -64,7 +65,7 @@ function MeterBar({
           style={{
             color,
             fontWeight: 700,
-            fontSize: compact ? 10 : gameFontSize.xs,
+            fontSize: compact ? vwSize(10) : gameFontSize.xs,
             textShadow: `0 0 6px ${color}66`,
             flexShrink: 0,
           }}
@@ -75,7 +76,7 @@ function MeterBar({
       <div
         style={{
           background: "#120810",
-          height: compact ? 3 : 5,
+          height: compact ? vwSize(3) : vwSize(5),
           borderRadius: 2,
           overflow: "hidden",
           border: "1px solid #2a1828",
@@ -117,17 +118,22 @@ export function portiaHpColor(value: number): string {
   return "#cc2233";
 }
 
-const METER_COLUMN_WIDTH = 336;
-const METER_COLUMN_WIDTH_MOBILE = 148;
+// Design-reference px values, scaled with the viewport via vwSize() (see
+// styles/responsive.ts) — 1512px-wide is where each renders at exactly its
+// original px, i.e. unchanged from how this was tuned before. Callers that
+// need to do arithmetic on these (BattleScreen, SkillPanel) must compose it
+// with CSS calc(), not JS math — these are clamp() strings, not numbers.
+const METER_COLUMN_WIDTH = vwSize(336);
+const METER_COLUMN_WIDTH_MOBILE = vwSize(148);
 /** Width for skill/item panels in mobile landscape HUD. */
-const LANDSCAPE_HUD_RAIL_WIDTH = 132;
+const LANDSCAPE_HUD_RAIL_WIDTH = vwSize(132);
 /** Width for DP/HP/Portia gauge panels (~1.3× prior compact meter width). */
-const LANDSCAPE_METER_WIDTH = 192;
-const HUD_INSET = 10;
-const HUD_INSET_MOBILE = 8;
-const HUD_TOP = 8;
+const LANDSCAPE_METER_WIDTH = vwSize(192);
+const HUD_INSET = vwSize(10);
+const HUD_INSET_MOBILE = vwSize(8);
+const HUD_TOP = vwSize(8);
 /** Approx. height of DP + HP bars (used to stack skill panel below). */
-const LEFT_METERS_STACK_HEIGHT = 72;
+const LEFT_METERS_STACK_HEIGHT = vwSize(72);
 
 export {
   METER_COLUMN_WIDTH as LEFT_METER_COLUMN_WIDTH,
@@ -153,7 +159,7 @@ export function CompactShylockMeters({
         ...hudPanelStyle("5px 8px", true),
         display: "flex",
         flexDirection: "column",
-        gap: 4,
+        gap: vwSize(4),
         flexShrink: 0,
         pointerEvents: "none",
         position: "relative",
@@ -168,7 +174,7 @@ export function CompactShylockMeters({
             top: -2,
             right: 6,
             color: "#88ccff",
-            fontSize: 10,
+            fontSize: vwSize(10),
             fontWeight: 700,
             textShadow: "0 0 8px rgba(102, 187, 255, 0.8)",
             animation: "dpGainFlash 1.4s ease-out forwards",
@@ -200,7 +206,7 @@ export function CompactShylockMeters({
             top: 22,
             right: 6,
             color: "#ff9980",
-            fontSize: 10,
+            fontSize: vwSize(10),
             fontWeight: 700,
             textShadow: "0 0 8px rgba(255, 136, 102, 0.8)",
             animation: "dpGainFlash 1.4s ease-out forwards",
@@ -250,7 +256,7 @@ export function CompactMeterStrip({
       style={{
         ...hudPanelStyle("5px 8px", true),
         display: "flex",
-        gap: 8,
+        gap: vwSize(8),
         flexShrink: 0,
         pointerEvents: "none",
         position: "relative",
@@ -263,7 +269,7 @@ export function CompactMeterStrip({
             top: -2,
             right: 8,
             color: "#88ccff",
-            fontSize: 10,
+            fontSize: vwSize(10),
             fontWeight: 700,
             textShadow: "0 0 8px rgba(102, 187, 255, 0.8)",
             animation: "dpGainFlash 1.4s ease-out forwards",
@@ -303,7 +309,7 @@ export function CompactMeterStrip({
             top: -2,
             left: "38%",
             color: "#ff9980",
-            fontSize: 10,
+            fontSize: vwSize(10),
             fontWeight: 700,
             textShadow: "0 0 8px rgba(255, 136, 102, 0.8)",
             animation: "dpGainFlash 1.4s ease-out forwards",
@@ -333,7 +339,7 @@ export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: ShylockMeterD
         maxWidth: isMobile ? "calc(50vw - 12px)" : undefined,
         display: "flex",
         flexDirection: "column",
-        gap: 6,
+        gap: vwSize(6),
       }}
     >
       {dpGainFlash != null && (

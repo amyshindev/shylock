@@ -123,7 +123,9 @@ export function SkillPanel({
       ? undefined
       : isMobile
         ? LANDSCAPE_HUD_RAIL_WIDTH
-        : LEFT_METER_COLUMN_WIDTH / 2;
+        // LEFT_METER_COLUMN_WIDTH is now a clamp() string (MeterDisplay.tsx
+        // scales with viewport width) — divide via CSS calc(), not JS math.
+        : `calc(${LEFT_METER_COLUMN_WIDTH} / 2)`;
   const skillCtx = { dp, sceneIdx, veniceParadoxUsed };
 
   return (
