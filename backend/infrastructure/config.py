@@ -67,6 +67,12 @@ class Settings(BaseSettings):
         validation_alias="OLLAMA_TIMEOUT_SECONDS",
         description="Per-request timeout before falling back to Claude.",
     )
+    # Cloudflare Access Service Token — only needed once OLLAMA_BASE_URL points
+    # at a public Cloudflare Tunnel hostname (e.g. the home Mac) gated by an
+    # Access policy. Empty/unset in local dev, where Ollama is plain
+    # localhost with no tunnel in front of it.
+    cf_access_client_id: str = Field(default="", validation_alias="CF_ACCESS_CLIENT_ID")
+    cf_access_client_secret: str = Field(default="", validation_alias="CF_ACCESS_CLIENT_SECRET")
 
     # Cookie signing for /docs login gate (admin credential check comes later).
     docs_session_secret: SecretStr = Field(

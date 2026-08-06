@@ -111,9 +111,21 @@ class OllamaPortiaResponseClient(PortiaResponsePort):
     def __init__(self, http_client: httpx.AsyncClient | None = None) -> None:
         settings = get_settings()
         self._model = settings.ollama_model
+        # Cloudflare Access Service Token headers — no-ops (empty dict) in
+        # local dev where OLLAMA_BASE_URL is plain localhost with no Access
+        # policy in front of it. See CF_ACCESS_CLIENT_ID/SECRET in config.py.
+        access_headers = (
+            {
+                "CF-Access-Client-Id": settings.cf_access_client_id,
+                "CF-Access-Client-Secret": settings.cf_access_client_secret,
+            }
+            if settings.cf_access_client_id and settings.cf_access_client_secret
+            else {}
+        )
         self._client = http_client or httpx.AsyncClient(
             base_url=settings.ollama_base_url,
             timeout=settings.ollama_timeout_seconds,
+            headers=access_headers,
         )
 
     async def _chat(self, system: str, user: str) -> str:
