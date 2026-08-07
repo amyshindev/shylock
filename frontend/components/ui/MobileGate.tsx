@@ -54,9 +54,7 @@ export function MobileGate({ children }: MobileGateProps) {
             샤일록의 법정
           </p>
           <p style={{ color: theme.textBright, fontSize: 16, lineHeight: 1.7, margin: 0 }}>
-            모바일에서는 플레이하실 수 없어요.
-            <br />
-            앱으로 플레이해주세요.
+            모바일에서는 아직 플레이하실 수 없어요.
           </p>
         </div>
       </div>

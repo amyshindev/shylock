@@ -24,11 +24,12 @@ const TITLE_IMAGE_RATIO = "(2752 / 1536)";
 // login-button.png — see that asset's history). 900x394 (ratio ~2.28),
 // transparent background, ragged ornate edge — not a hard rectangle like the
 // old button-start-frame.png/button-loading-frame.png (1927x608, ratio
-// ~3.17) it replaces. The rect below is sized to that ratio (same on-screen
-// area as the original rect, recentered on its center) so
-// backgroundSize:100% 100% doesn't stretch it; button-loading-frame.png
-// still uses its own old ratio, so it renders via backgroundSize:"contain"
-// instead — see the loading-frame layer below.
+// ~3.17) both replace. button-loading-plaque.png: cropped from
+// Gemini_Generated_Image_rtdmebrtdmebrtdm.png the same way (green screen
+// chroma-keyed + despilled), then downscaled to 1000x446 (ratio ~2.24,
+// original crop was 2240x999) to keep filesize sane — close enough to the
+// start plaque's ratio that it shares the same box below without a
+// "contain" fallback.
 const START_BUTTON_RECT = { left: "40.69%", top: "70.5%", width: "18.62%", height: "14.61%" };
 
 export function TitleScreen() {
@@ -218,13 +219,11 @@ export function TitleScreen() {
               position: "absolute",
               inset: 0,
               backgroundImage: `url(${
-                loading ? "/assets/button-loading-frame.png" : "/assets/button-start-plaque.png"
+                loading ? "/assets/button-loading-plaque.png" : "/assets/button-start-plaque.png"
               })`,
-              // button-start-plaque.png matches this box's ratio exactly, so
-              // it fills edge-to-edge; button-loading-frame.png is still the
-              // old wider ratio, so it's letterboxed via "contain" instead
-              // of stretched.
-              backgroundSize: loading ? "contain" : "100% 100%",
+              // Both plaques are cropped close enough to this box's ratio to
+              // fill edge-to-edge without letterboxing or visible stretch.
+              backgroundSize: "100% 100%",
               backgroundRepeat: "no-repeat",
               backgroundPosition: "center",
               borderRadius: 6,
