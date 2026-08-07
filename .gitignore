@@ -1,6 +1,7 @@
 # Python
 /env/
 .venv/
+.venv.*.bak/
 __pycache__/
 *.pyc
 
