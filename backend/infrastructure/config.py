@@ -79,6 +79,39 @@ class Settings(BaseSettings):
             "no-op swap."
         ),
     )
+    local_embedding_model: str = Field(
+        default="intfloat/multilingual-e5-large-instruct",
+        validation_alias="LOCAL_EMBEDDING_MODEL",
+        description=(
+            "sentence-transformers model — read by local_embedding_server.py "
+            "(the home-Mac process that actually loads it) and by "
+            "backfill_local_embeddings.py; NOT read by local_embedding_client.py, "
+            "which is just an HTTP client and doesn't need to know the model "
+            "the server on the other end is running. Same caveat as "
+            "cohere_embed_model: the play_lines/play_chunks.embedding_e5_1024 "
+            "column name, LOCAL_EMBED_DIMENSION (play_line_orm.py), and the "
+            "data written by backfill_local_embeddings.py all assume this "
+            "exact model — swapping it needs a new migration + full "
+            "re-backfill, not just an env var change."
+        ),
+    )
+    local_embedding_base_url: str = Field(
+        default="https://embed.shylock-trial.xyz",
+        validation_alias="LOCAL_EMBEDDING_BASE_URL",
+        description=(
+            "local_embedding_server.py address (home Mac, via Cloudflare "
+            "Tunnel) — same pattern as ollama_base_url. This hostname is a "
+            "suggestion, not yet a real route; the tunnel has to actually be "
+            "created before EMBEDDING_PROVIDER=local can work in production. "
+            "Override to e.g. http://localhost:8001 for local dev against a "
+            "directly-run server on the same machine as the backend."
+        ),
+    )
+    local_embedding_timeout_seconds: float = Field(
+        default=10.0,
+        validation_alias="LOCAL_EMBEDDING_TIMEOUT_SECONDS",
+        description="Per-request timeout before falling back to Cohere.",
+    )
 
     # Portia response generation provider. "claude" (default) uses
     # PortiaResponseClient only — this is the instant-revert path if "local"
@@ -87,6 +120,16 @@ class Settings(BaseSettings):
     # Ollama can't be relied on to always be up, so "local" never runs
     # without that fallback.
     llm_provider: str = Field(default="claude", validation_alias="LLM_PROVIDER")
+    # Which backend turns text into an evidence-search query vector. "cohere"
+    # (default) uses EvidenceSearchPgRepository only — the instant-revert
+    # path if "local" misbehaves, just unset/reset this var. "local" wraps a
+    # local sentence-transformers embedder with a Cohere fallback (see
+    # dependencies/evidence_search_provider.py) — the local model isn't
+    # guaranteed to always behave, so "local" never runs without that
+    # fallback (which itself still falls back further, to curated evidence).
+    # Named after the swapped technology (embedding), not the consuming
+    # stem (evidence_search) — same convention as LLM_PROVIDER above.
+    embedding_provider: str = Field(default="cohere", validation_alias="EMBEDDING_PROVIDER")
     ollama_base_url: str = Field(
         default="https://ollama.shylock-trial.xyz",
         validation_alias="OLLAMA_BASE_URL",
@@ -109,6 +152,17 @@ class Settings(BaseSettings):
     # localhost with no tunnel in front of it.
     cf_access_client_id: str = Field(default="", validation_alias="CF_ACCESS_CLIENT_ID")
     cf_access_client_secret: str = Field(default="", validation_alias="CF_ACCESS_CLIENT_SECRET")
+    # Separate Service Token for LOCAL_EMBEDDING_BASE_URL's Access Application
+    # (deliberately not shared with cf_access_client_id/secret above, even
+    # though it's the same home Mac + same tunnel process — a leaked/rotated
+    # token then only affects one of the two tunneled services, not both).
+    # Same empty-in-local-dev default as the Ollama pair.
+    local_embedding_cf_access_client_id: str = Field(
+        default="", validation_alias="LOCAL_EMBEDDING_CF_ACCESS_CLIENT_ID"
+    )
+    local_embedding_cf_access_client_secret: str = Field(
+        default="", validation_alias="LOCAL_EMBEDDING_CF_ACCESS_CLIENT_SECRET"
+    )
 
     # Cookie signing for /docs login gate (admin credential check comes later).
     docs_session_secret: SecretStr = Field(
