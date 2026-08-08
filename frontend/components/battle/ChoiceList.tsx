@@ -6,6 +6,7 @@ import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { ChoiceOption } from "@/data/scenes";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { TubalCourtRecord } from "@/lib/tubal-evidence";
+import { vwSize } from "@/styles/responsive";
 import { choiceButtonStyle, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -34,12 +35,14 @@ function EvidenceBadge({
   const ev = EVIDENCE_BY_ID[evidenceId];
   if (!ev) return null;
 
+  const iconSize = compact ? 18 : 20;
+
   return (
     <span
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
+        gap: vwSize(6),
         flexShrink: 0,
         fontSize: compact ? gameFontSize.xs : gameFontSize.sm,
         color: "#8b6040",
@@ -49,15 +52,20 @@ function EvidenceBadge({
         <Image
           src={ev.icon}
           alt=""
-          width={compact ? 18 : 20}
-          height={compact ? 18 : 20}
-          style={{ borderRadius: "50%", objectFit: "cover" }}
+          width={iconSize}
+          height={iconSize}
+          style={{
+            width: vwSize(iconSize),
+            height: vwSize(iconSize),
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
         />
       ) : (
         <span
           style={{
-            width: compact ? 18 : 20,
-            height: compact ? 18 : 20,
+            width: vwSize(iconSize),
+            height: vwSize(iconSize),
             borderRadius: "50%",
             background: theme.border,
             display: "inline-flex",
@@ -80,7 +88,7 @@ function TubalEvidenceBadge({ name, compact }: { name: string; compact?: boolean
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 6,
+        gap: vwSize(6),
         flexShrink: 0,
         fontSize: compact ? gameFontSize.xs : gameFontSize.sm,
         color: "#8b6040",
@@ -88,8 +96,8 @@ function TubalEvidenceBadge({ name, compact }: { name: string; compact?: boolean
     >
       <span
         style={{
-          width: compact ? 18 : 20,
-          height: compact ? 18 : 20,
+          width: vwSize(compact ? 18 : 20),
+          height: vwSize(compact ? 18 : 20),
           borderRadius: "50%",
           background: "rgba(20, 32, 16, 0.98)",
           border: `2px solid ${TUBAL_BORDER}`,
@@ -97,7 +105,7 @@ function TubalEvidenceBadge({ name, compact }: { name: string; compact?: boolean
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 11,
+          fontSize: vwSize(11),
           flexShrink: 0,
         }}
       >
@@ -126,7 +134,7 @@ export function ChoiceList({
     <div
       style={{
         padding: isMobile ? "8px 10px 10px" : "12px 14px 14px",
-        marginTop: isMobile ? 4 : 10,
+        marginTop: vwSize(isMobile ? 4 : 10),
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -137,8 +145,8 @@ export function ChoiceList({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 8,
-          marginBottom: 10,
+          gap: vwSize(8),
+          marginBottom: vwSize(10),
         }}
       >
         <div
@@ -146,7 +154,7 @@ export function ChoiceList({
             fontSize: gameFontSize.nm,
             color: "#5a3a4a",
             letterSpacing: 2,
-            paddingLeft: 4,
+            paddingLeft: vwSize(4),
           }}
         >
           {header ?? "▶ 샤일록의 선택"}
@@ -174,7 +182,7 @@ export function ChoiceList({
       <p
         style={{
           margin: "0 0 8px",
-          paddingLeft: 4,
+          paddingLeft: vwSize(4),
           fontSize: isMobile ? gameFontSize.nm : gameFontSize.md,
           lineHeight: 1.6,
           color: "#7a5a6a",
@@ -183,7 +191,7 @@ export function ChoiceList({
       >
         {prompt}
       </p>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: vwSize(6) }}>
         {options.map((opt, index) => {
           const enhancedText = tubalEnhancedChoices?.[opt.id];
           const isEnhanced = Boolean(enhancedText);
@@ -212,7 +220,7 @@ export function ChoiceList({
                 e.currentTarget.style.borderColor = "#3a1828";
               }}
             >
-              <span style={{ minWidth: 0, flex: "1 1 140px" }}>
+              <span style={{ minWidth: 0, flex: `1 1 ${vwSize(140)}` }}>
                 <span style={{ color: "#5a3a4a" }}>{index + 1}. </span>
                 {choiceText}
               </span>
@@ -220,7 +228,7 @@ export function ChoiceList({
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: 8,
+                  gap: vwSize(8),
                   flexShrink: 0,
                   flexWrap: "wrap",
                   justifyContent: "flex-end",

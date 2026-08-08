@@ -1,23 +1,31 @@
 import type { CSSProperties } from "react";
 
 import type { Speaker } from "@/data/scenes";
+import { vwSize } from "@/styles/responsive";
 
 export const gameFontFamily =
   '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Segoe UI", sans-serif';
 
-/** Shared in-game typography scale (px). */
+/**
+ * Shared in-game typography scale — clamp() strings via vwSize() (see
+ * styles/responsive.ts), each still rendering at exactly its old raw px at
+ * the 1512px reference width. Every screen that imports this (battle HUD,
+ * title/auth/records, etc.) now scales with it — that's a deliberate,
+ * low-risk side effect of centralizing the token, not scope creep per
+ * component.
+ */
 export const gameFontSize = {
-  xs: 12,
-  sm: 15,
-  nm: 16,
-  md: 18,
-  base: 20,
-  lg: 23,
-  xl: 26,
+  xs: vwSize(12),
+  sm: vwSize(15),
+  nm: vwSize(16),
+  md: vwSize(18),
+  base: vwSize(20),
+  lg: vwSize(23),
+  xl: vwSize(26),
 } as const;
 
 /** Shared HUD panel chrome (meters, evidence, skills). */
-export function hudPanelStyle(padding = "9px 14px", compact = false): CSSProperties {
+export function hudPanelStyle(padding = `${vwSize(9)} ${vwSize(14)}`, compact = false): CSSProperties {
   return {
     background: compact ? "rgba(12, 6, 16, 0.82)" : "rgba(12, 6, 16, 0.94)",
     borderRadius: compact ? 6 : 4,
@@ -43,7 +51,7 @@ export const textBox = {
   border: "1px solid #3a1028",
   borderTopAccent: "3px solid #3a1028",
   borderRadius: 10,
-  padding: "26px 30px 34px",
+  padding: `${vwSize(26)} ${vwSize(30)} ${vwSize(34)}`,
   fontFamily: gameFontFamily,
 } as const;
 
@@ -66,7 +74,7 @@ export function speakerTabStyle(speaker: string): CSSProperties {
     background: palette.bg,
     color: palette.color,
     border: "1px solid #3a1028",
-    padding: "8px 24px",
+    padding: `${vwSize(8)} ${vwSize(24)}`,
     fontSize: gameFontSize.sm,
     fontWeight: 700,
     letterSpacing: 3,
@@ -100,21 +108,21 @@ export function textBoxPanelStyle(compact = false): CSSProperties {
   };
 }
 
-export const TEXT_BOX_MAX_WIDTH = 940;
+export const TEXT_BOX_MAX_WIDTH = vwSize(940);
 /** Narrower dock on landscape phones so dialogue does not span edge-to-edge. */
-export const TEXT_BOX_MAX_WIDTH_MOBILE = 550;
+export const TEXT_BOX_MAX_WIDTH_MOBILE = vwSize(550);
 
 /** Stable body height (~3 lines) so the box does not resize while typing. */
-export const DIALOGUE_BODY_MIN_HEIGHT = 118;
+export const DIALOGUE_BODY_MIN_HEIGHT = vwSize(118);
 
 /** Bottom padding always reserved for the advance arrow slot. */
-export const DIALOGUE_BODY_PADDING_BOTTOM = 32;
+export const DIALOGUE_BODY_PADDING_BOTTOM = vwSize(32);
 
 export function textBoxDockStyle(compact = false): CSSProperties {
   return {
     flexShrink: 0,
     width: "100%",
-    padding: compact ? "0 14vw 8px" : "0 16px 20px",
+    padding: compact ? `0 14vw ${vwSize(8)}` : `0 ${vwSize(16)} ${vwSize(20)}`,
     fontFamily: textBox.fontFamily,
     background: "transparent",
   };
@@ -134,9 +142,9 @@ export function choiceButtonStyle(compact = false): CSSProperties {
     alignItems: compact ? "flex-start" : "center",
     justifyContent: "space-between",
     flexWrap: compact ? "wrap" : "nowrap",
-    gap: compact ? 8 : 12,
+    gap: compact ? vwSize(8) : vwSize(12),
     width: "100%",
-    padding: compact ? "8px 10px" : "14px 20px",
+    padding: compact ? `${vwSize(8)} ${vwSize(10)}` : `${vwSize(14)} ${vwSize(20)}`,
     textAlign: "left",
     background: "#100510",
     border: "1px solid #3a1828",
@@ -153,7 +161,7 @@ export function choiceButtonStyle(compact = false): CSSProperties {
 export function nextSceneButtonStyle(): CSSProperties {
   return {
     width: "100%",
-    padding: "15px",
+    padding: vwSize(15),
     background: "#1a0810",
     color: "#c0a060",
     border: "1px solid #4a1828",
@@ -166,7 +174,7 @@ export function nextSceneButtonStyle(): CSSProperties {
   };
 }
 
-export function staticTextBoxStyle(padding = "20px 24px"): CSSProperties {
+export function staticTextBoxStyle(padding = `${vwSize(20)} ${vwSize(24)}`): CSSProperties {
   return {
     ...textBoxPanelStyle(),
     padding,

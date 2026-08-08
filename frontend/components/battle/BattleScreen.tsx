@@ -1,6 +1,7 @@
 "use client";
 
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
+import { vwSize } from "@/styles/responsive";
 import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
@@ -18,7 +19,7 @@ import {
   CompactShylockMeters,
   CompactPortiaMeter,
   LEFT_HUD_TOP,
-  LEFT_METERS_STACK_HEIGHT,
+  LEFT_HUD_INSET,
 } from "./MeterDisplay";
 import { PressPresentPanel } from "./PressPresentPanel";
 import { SkillPanel } from "./SkillPanel";
@@ -248,9 +249,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             }
           : {
               position: "absolute",
-              left: 16,
-              right: 16,
-              bottom: 172,
+              left: vwSize(16),
+              right: vwSize(16),
+              bottom: vwSize(172),
               zIndex: 12,
               pointerEvents: "none",
             }
@@ -338,8 +339,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 <div
                   style={{
                     position: "absolute",
-                    top: 4,
-                    right: 8,
+                    top: vwSize(4),
+                    right: vwSize(8),
                     zIndex: 12,
                   }}
                 >
@@ -348,13 +349,13 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                 <div
                   style={{
                     position: "absolute",
-                    top: 4,
-                    left: 8,
+                    top: vwSize(4),
+                    left: vwSize(8),
                     zIndex: 12,
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "flex-start",
-                    gap: 4,
+                    gap: vwSize(4),
                     maxHeight: "calc(100% - 96px)",
                     overflowY: "auto",
                     WebkitOverflowScrolling: "touch",
@@ -405,34 +406,33 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         ) : (
           <>
             <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
-              {showGauges && (
-                <>
-                  <MeterDisplay
-                    dp={dp}
-                    hp={hp}
-                    dpGainFlash={dpGainFlash}
-                    hpGainFlash={hpGainFlash}
-                  />
-                  <PortiaMeterDisplay portiaHp={portiaHp} />
-                </>
-              )}
-              {showBattleHud && (
+              {showGauges && <PortiaMeterDisplay portiaHp={portiaHp} />}
+              {(showGauges || showBattleHud) && (
+                // Meter + evidence + skill panel share one normal-flow flex
+                // column (instead of each guessing the others' rendered
+                // height for its own `top` offset) so they can never overlap
+                // regardless of viewport width or content size.
                 <div
                   style={{
                     position: "absolute",
-                    left: 16,
-                    // LEFT_HUD_TOP/LEFT_METERS_STACK_HEIGHT are now clamp()
-                    // strings (MeterDisplay.tsx scales with viewport width),
-                    // so this has to be composed with CSS calc(), not JS math.
-                    top: `calc(${LEFT_HUD_TOP} + ${LEFT_METERS_STACK_HEIGHT} + 8px)`,
+                    top: LEFT_HUD_TOP,
+                    left: LEFT_HUD_INSET,
                     zIndex: 11,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 8,
+                    gap: vwSize(8),
                     alignItems: "flex-start",
                   }}
                 >
-                  {showEvidenceBar && (
+                  {showGauges && (
+                    <MeterDisplay
+                      dp={dp}
+                      hp={hp}
+                      dpGainFlash={dpGainFlash}
+                      hpGainFlash={hpGainFlash}
+                    />
+                  )}
+                  {showBattleHud && showEvidenceBar && (
                     <EvidenceList
                       curatedIds={itemChoiceIds}
                       tubalRecords={sceneTubalRecords}
@@ -440,14 +440,16 @@ export function BattleScreen({ trial }: BattleScreenProps) {
                       onSelectTubal={inspectTubalEvidence}
                     />
                   )}
-                  <SkillPanel
-                    dp={dp}
-                    sceneIdx={sceneIdx}
-                    veniceParadoxUsed={veniceParadoxUsed}
-                    disabled={skillPanelDisabled}
-                    onUseSkill={useSkill}
-                    horizontal={false}
-                  />
+                  {showBattleHud && (
+                    <SkillPanel
+                      dp={dp}
+                      sceneIdx={sceneIdx}
+                      veniceParadoxUsed={veniceParadoxUsed}
+                      disabled={skillPanelDisabled}
+                      onUseSkill={useSkill}
+                      horizontal={false}
+                    />
+                  )}
                 </div>
               )}
             </div>

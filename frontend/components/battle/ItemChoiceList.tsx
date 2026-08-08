@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import type { TubalCourtRecord } from "@/lib/tubal-evidence";
+import { vwSize } from "@/styles/responsive";
 import { gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -36,6 +37,8 @@ function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
         width={size}
         height={size}
         style={{
+          width: vwSize(size),
+          height: vwSize(size),
           borderRadius: "50%",
           objectFit: "cover",
           border: `2px solid ${ITEM_BORDER}`,
@@ -49,8 +52,8 @@ function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
   return (
     <span
       style={{
-        width: size,
-        height: size,
+        width: vwSize(size),
+        height: vwSize(size),
         borderRadius: "50%",
         background: "#2a1828",
         border: `2px solid ${ITEM_BORDER}`,
@@ -58,7 +61,7 @@ function ItemIcon({ evidenceId, size }: { evidenceId: string; size: number }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: size > 40 ? 22 : 18,
+        fontSize: vwSize(size > 40 ? 22 : 18),
         color: theme.gold,
         flexShrink: 0,
       }}
@@ -72,8 +75,8 @@ function TubalIcon({ size }: { size: number }) {
   return (
     <span
       style={{
-        width: size,
-        height: size,
+        width: vwSize(size),
+        height: vwSize(size),
         borderRadius: "50%",
         background: "rgba(20, 32, 16, 0.98)",
         border: `2px solid ${TUBAL_BORDER}`,
@@ -81,7 +84,7 @@ function TubalIcon({ size }: { size: number }) {
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        fontSize: size > 40 ? 22 : 18,
+        fontSize: vwSize(size > 40 ? 22 : 18),
         flexShrink: 0,
       }}
     >
@@ -118,7 +121,7 @@ export function ItemChoiceList({
     <div
       style={{
         padding: isMobile ? "8px 10px 10px" : "12px 14px 14px",
-        marginTop: isMobile ? 0 : 10,
+        marginTop: vwSize(isMobile ? 0 : 10),
         background: "rgba(18, 12, 24, 0.85)",
         border: "1px solid #3a1028",
         borderRadius: 10,
@@ -129,8 +132,8 @@ export function ItemChoiceList({
           fontSize: isMobile ? gameFontSize.sm : gameFontSize.nm,
           color: "#5a3a4a",
           letterSpacing: 2,
-          marginBottom: isMobile ? 6 : 10,
-          paddingLeft: 4,
+          marginBottom: vwSize(isMobile ? 6 : 10),
+          paddingLeft: vwSize(4),
         }}
       >
         {header ?? "▶ 제시할 아이템을 선택하시오"}
@@ -139,7 +142,7 @@ export function ItemChoiceList({
         <p
           style={{
             margin: "0 0 8px",
-            paddingLeft: 4,
+            paddingLeft: vwSize(4),
             fontSize: isMobile ? gameFontSize.sm : gameFontSize.md,
             lineHeight: 1.5,
             color: "#7a5a6a",
@@ -154,7 +157,7 @@ export function ItemChoiceList({
         style={{
           display: "grid",
           gridTemplateColumns: cardCount <= 1 ? "1fr" : `repeat(${cardCount}, 1fr)`,
-          gap: isMobile ? 6 : 8,
+          gap: vwSize(isMobile ? 6 : 8),
           alignItems: "stretch",
         }}
       >
@@ -169,9 +172,9 @@ export function ItemChoiceList({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "flex-start",
-              gap: isMobile ? 6 : 8,
+              gap: vwSize(isMobile ? 6 : 8),
               width: "100%",
-              minHeight: isMobile ? 120 : 140,
+              minHeight: vwSize(isMobile ? 120 : 140),
               padding: isMobile ? "10px 8px" : "12px 10px",
               textAlign: "center",
               background: "#100510",
@@ -204,7 +207,7 @@ export function ItemChoiceList({
                 display: "inline-flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: 6,
+                gap: vwSize(6),
                 flexWrap: "wrap",
               }}
             >
@@ -230,14 +233,14 @@ export function ItemChoiceList({
                     display: "inline-flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: 18,
-                    height: 18,
+                    width: vwSize(18),
+                    height: vwSize(18),
                     borderRadius: "50%",
                     border: `1.5px solid ${theme.gold}`,
                     background:
                       openNoteId === ev.id ? theme.gold : "rgba(255, 215, 0, 0.14)",
                     color: openNoteId === ev.id ? "#1a0810" : theme.gold,
-                    fontSize: 12,
+                    fontSize: vwSize(12),
                     fontStyle: "italic",
                     fontWeight: 800,
                     lineHeight: 1,
@@ -253,7 +256,7 @@ export function ItemChoiceList({
             </span>
             <span
               style={{
-                fontSize: isMobile ? 11 : gameFontSize.sm,
+                fontSize: isMobile ? vwSize(11) : gameFontSize.sm,
                 color: "#7a5a6a",
                 lineHeight: 1.4,
                 whiteSpace: "normal",
@@ -278,9 +281,9 @@ export function ItemChoiceList({
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "flex-start",
-              gap: isMobile ? 6 : 8,
+              gap: vwSize(isMobile ? 6 : 8),
               width: "100%",
-              minHeight: isMobile ? 120 : 140,
+              minHeight: vwSize(isMobile ? 120 : 140),
               padding: isMobile ? "10px 8px" : "12px 10px",
               textAlign: "center",
               background: "#0a1208",
@@ -316,7 +319,7 @@ export function ItemChoiceList({
             </span>
             <span
               style={{
-                fontSize: isMobile ? 11 : gameFontSize.sm,
+                fontSize: isMobile ? vwSize(11) : gameFontSize.sm,
                 color: "#8fae7a",
                 lineHeight: 1.4,
                 whiteSpace: "normal",
@@ -342,13 +345,13 @@ export function ItemChoiceList({
               alignItems: "center",
               justifyContent: "center",
               background: "rgba(0, 0, 0, 0.7)",
-              padding: 24,
+              padding: vwSize(24),
             }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                width: 320,
+                width: vwSize(320),
                 maxWidth: "90vw",
                 background: "rgba(18, 12, 24, 0.96)",
                 border: `1px solid ${theme.gold}`,
@@ -373,7 +376,7 @@ export function ItemChoiceList({
                 type="button"
                 onClick={() => setOpenNoteId(null)}
                 style={{
-                  marginTop: 16,
+                  marginTop: vwSize(16),
                   width: "100%",
                   padding: "8px 16px",
                   fontSize: gameFontSize.sm,

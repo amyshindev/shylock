@@ -6,6 +6,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 import { useTypingEffect } from "@/hooks/use-typing-effect";
 import { extractPortiaText } from "@/lib/portia-text";
 import { sanitizeDialogueLine } from "@/lib/game-text";
+import { vwSize } from "@/styles/responsive";
 import {
   dialogueTextStyle,
   gameFontFamily,
@@ -116,8 +117,8 @@ export function DialogueBox({
       onClick={isClickable ? handleClick : undefined}
       showAdvanceArrow={showArrow}
       bodyStyle={{
-        minHeight: isMobile ? 64 : DIALOGUE_BODY_MIN_HEIGHT,
-        paddingBottom: isMobile ? 22 : DIALOGUE_BODY_PADDING_BOTTOM,
+        minHeight: isMobile ? vwSize(64) : DIALOGUE_BODY_MIN_HEIGHT,
+        paddingBottom: isMobile ? vwSize(22) : DIALOGUE_BODY_PADDING_BOTTOM,
         cursor: isClickable ? "pointer" : "default",
       }}
     >

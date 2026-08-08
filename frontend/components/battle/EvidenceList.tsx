@@ -4,6 +4,7 @@ import Image from "next/image";
 
 import { EVIDENCE_BY_ID } from "@/data/evidence";
 import type { TubalCourtRecord } from "@/lib/tubal-evidence";
+import { vwSize } from "@/styles/responsive";
 import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -61,7 +62,7 @@ export function EvidenceList({
             style={{
               flexShrink: 0,
               textAlign: "center",
-              width: itemWidth,
+              width: vwSize(itemWidth),
               padding: 0,
               border: "none",
               background: "transparent",
@@ -70,8 +71,8 @@ export function EvidenceList({
           >
             <div
               style={{
-                width: iconSize,
-                height: iconSize,
+                width: vwSize(iconSize),
+                height: vwSize(iconSize),
                 margin: "0 auto",
                 borderRadius: "50%",
                 background: "rgba(20, 32, 16, 0.98)",
@@ -80,7 +81,7 @@ export function EvidenceList({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: iconsOnly ? 14 : compact ? 18 : 22,
+                fontSize: vwSize(iconsOnly ? 14 : compact ? 18 : 22),
               }}
             >
               📜
@@ -90,11 +91,11 @@ export function EvidenceList({
                 style={{
                   ...hudLabelStyle(TUBAL_LABEL),
                   fontSize: gameFontSize.xs,
-                  marginTop: 5,
+                  marginTop: vwSize(5),
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  maxWidth: itemWidth + 8,
+                  maxWidth: vwSize(itemWidth + 8),
                 }}
               >
                 {record.name}
@@ -116,7 +117,7 @@ export function EvidenceList({
             style={{
               flexShrink: 0,
               textAlign: "center",
-              width: itemWidth,
+              width: vwSize(itemWidth),
               padding: 0,
               border: "none",
               background: "transparent",
@@ -130,6 +131,8 @@ export function EvidenceList({
                 width={iconSize}
                 height={iconSize}
                 style={{
+                  width: vwSize(iconSize),
+                  height: vwSize(iconSize),
                   borderRadius: "50%",
                   objectFit: "cover",
                   border: `2px solid ${CURATED_BORDER}`,
@@ -145,8 +148,8 @@ export function EvidenceList({
             ) : (
               <div
                 style={{
-                  width: iconSize,
-                  height: iconSize,
+                  width: vwSize(iconSize),
+                  height: vwSize(iconSize),
                   margin: "0 auto",
                   borderRadius: "50%",
                   background: "#2a1828",
@@ -155,7 +158,7 @@ export function EvidenceList({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: iconsOnly ? 14 : compact ? 18 : 22,
+                  fontSize: vwSize(iconsOnly ? 14 : compact ? 18 : 22),
                   color: theme.gold,
                 }}
               >
@@ -167,11 +170,11 @@ export function EvidenceList({
                 style={{
                   ...hudLabelStyle(CURATED_LABEL),
                   fontSize: gameFontSize.xs,
-                  marginTop: 5,
+                  marginTop: vwSize(5),
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
-                  maxWidth: itemWidth + 8,
+                  maxWidth: vwSize(itemWidth + 8),
                 }}
               >
                 {ev.name}
@@ -186,11 +189,14 @@ export function EvidenceList({
   return (
     <div
       style={{
-        ...hudPanelStyle(isRow ? "4px 6px" : "8px 11px", isRow || compact),
+        ...hudPanelStyle(
+          isRow ? `${vwSize(4)} ${vwSize(6)}` : `${vwSize(8)} ${vwSize(11)}`,
+          isRow || compact,
+        ),
         display: "flex",
         flexDirection: iconsOnly ? "column" : isRow ? "row" : "column-reverse",
         alignItems: iconsOnly ? "stretch" : isRow ? "center" : "flex-start",
-        gap: isRow ? 6 : 8,
+        gap: isRow ? vwSize(6) : vwSize(8),
         maxHeight: isRow && !iconsOnly ? undefined : compact && !iconsOnly ? "min(28vh, 200px)" : undefined,
         width: iconsOnly ? LANDSCAPE_HUD_RAIL_WIDTH : undefined,
         maxWidth: isRow ? "100%" : undefined,
@@ -209,10 +215,10 @@ export function EvidenceList({
         <div
           style={{
             ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
-            fontSize: 10,
+            fontSize: vwSize(10),
             letterSpacing: 0.5,
             flexShrink: 0,
-            paddingRight: iconsOnly ? 0 : 2,
+            paddingRight: iconsOnly ? 0 : vwSize(2),
           }}
         >
           {presentMode ? "제시" : "아이템"}
@@ -220,7 +226,7 @@ export function EvidenceList({
       )}
 
       {iconsOnly ? (
-        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 6, width: "100%" }}>
+        <div style={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: vwSize(6), width: "100%" }}>
           {icons}
         </div>
       ) : (
@@ -233,7 +239,7 @@ export function EvidenceList({
             ...hudLabelStyle(presentMode ? theme.gold : "#e8dce4"),
             fontSize: gameFontSize.xs,
             letterSpacing: presentMode ? 1 : 0.8,
-            marginBottom: 2,
+            marginBottom: vwSize(2),
             flexShrink: 0,
           }}
         >

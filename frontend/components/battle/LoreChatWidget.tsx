@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 
 import { askLoreChat } from "@/lib/api-client/lore-chat";
 import type { LoreChatSourceFromApi } from "@/lib/api-client/types";
+import { vwSize } from "@/styles/responsive";
 import { gameFontSize, hudPanelStyle } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -73,16 +74,16 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
           onClick={() => setIsOpen(true)}
           style={{
             position: "fixed",
-            bottom: 16,
-            left: 16,
+            bottom: vwSize(16),
+            left: vwSize(16),
             zIndex: 38,
-            width: 40,
-            height: 40,
+            width: vwSize(40),
+            height: vwSize(40),
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: 18,
+            fontSize: vwSize(18),
             background: "rgba(20, 10, 18, 0.95)",
             color: "#f0d8c8",
             border: "1px solid #5a3848",
@@ -107,14 +108,14 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
               alignItems: "center",
               justifyContent: "center",
               background: "rgba(0, 0, 0, 0.7)",
-              padding: 16,
+              padding: vwSize(16),
             }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
                 ...hudPanelStyle("0", false),
-                width: 420,
+                width: vwSize(420),
                 maxWidth: "100%",
                 maxHeight: "88vh",
                 display: "flex",
@@ -152,7 +153,7 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
                     color: theme.textMuted,
                     fontSize: gameFontSize.md,
                     cursor: "pointer",
-                    padding: 4,
+                    padding: vwSize(4),
                   }}
                 >
                   ✕
@@ -163,12 +164,12 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
                 ref={scrollRef}
                 style={{
                   flex: 1,
-                  minHeight: 160,
+                  minHeight: vwSize(160),
                   overflowY: "auto",
                   padding: "12px 14px",
                   display: "flex",
                   flexDirection: "column",
-                  gap: 10,
+                  gap: vwSize(10),
                 }}
               >
                 {turns.length === 0 && (
@@ -210,7 +211,7 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
                     {turn.sources && turn.sources.length > 0 && (
                       <div
                         style={{
-                          marginTop: 4,
+                          marginTop: vwSize(4),
                           color: theme.textMuted,
                           fontSize: gameFontSize.xs,
                           lineHeight: 1.5,
@@ -241,7 +242,7 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
                 onSubmit={handleSubmit}
                 style={{
                   display: "flex",
-                  gap: 8,
+                  gap: vwSize(8),
                   padding: "10px 14px",
                   borderTop: "1px solid #4a2838",
                   flexShrink: 0,

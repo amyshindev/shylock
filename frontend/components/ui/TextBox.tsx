@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { vwSize } from "@/styles/responsive";
 import { speakerTabStyle, textBoxPanelStyle, gameFontSize } from "@/styles/text-box";
 
 interface TextBoxProps {
@@ -31,8 +32,8 @@ export function TextBox({
   const isMobile = useIsMobile();
   const label = speakerLabel ?? speaker;
   const displayTab = showSpeakerTab && Boolean(speaker && label);
-  const sidePad = displayTab ? (isMobile ? 14 : 22) : isMobile ? 16 : 26;
-  const topPad = displayTab ? (isMobile ? 12 : 16) : isMobile ? 16 : 22;
+  const sidePad = vwSize(displayTab ? (isMobile ? 14 : 22) : isMobile ? 16 : 26);
+  const topPad = vwSize(displayTab ? (isMobile ? 12 : 16) : isMobile ? 16 : 22);
 
   return (
     <div style={{ ...textBoxPanelStyle(isMobile), ...style }}>
@@ -46,7 +47,7 @@ export function TextBox({
             paddingBottom: 0,
           }}
         >
-          <div style={{ ...speakerTabStyle(speaker), marginLeft: isMobile ? 8 : 12, marginTop: -1 }}>
+          <div style={{ ...speakerTabStyle(speaker), marginLeft: vwSize(isMobile ? 8 : 12), marginTop: -1 }}>
             {label}
           </div>
         </div>
@@ -58,8 +59,8 @@ export function TextBox({
           paddingTop: topPad,
           paddingRight: sidePad,
           paddingLeft: sidePad,
-          paddingBottom: 10,
-          minHeight: displayTab ? (isMobile ? 72 : 84) : undefined,
+          paddingBottom: vwSize(10),
+          minHeight: displayTab ? vwSize(isMobile ? 72 : 84) : undefined,
           cursor: onClick ? "pointer" : "default",
           position: "relative",
           boxSizing: "border-box",
@@ -74,8 +75,8 @@ export function TextBox({
             className="dialogue-advance-arrow"
             style={{
               position: "absolute",
-              right: 16,
-              bottom: 8,
+              right: vwSize(16),
+              bottom: vwSize(8),
               color: "#ffd700",
               fontSize: gameFontSize.nm,
               lineHeight: 1,

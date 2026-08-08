@@ -132,8 +132,6 @@ const LANDSCAPE_METER_WIDTH = vwSize(192);
 const HUD_INSET = vwSize(10);
 const HUD_INSET_MOBILE = vwSize(8);
 const HUD_TOP = vwSize(8);
-/** Approx. height of DP + HP bars (used to stack skill panel below). */
-const LEFT_METERS_STACK_HEIGHT = vwSize(72);
 
 export {
   METER_COLUMN_WIDTH as LEFT_METER_COLUMN_WIDTH,
@@ -143,7 +141,6 @@ export {
   HUD_INSET as LEFT_HUD_INSET,
   HUD_INSET_MOBILE as LEFT_HUD_INSET_MOBILE,
   HUD_TOP as LEFT_HUD_TOP,
-  LEFT_METERS_STACK_HEIGHT,
 };
 
 /** Landscape left rail: Shylock DP + HP only (Portia sits separately on the top-right). */
@@ -156,7 +153,7 @@ export function CompactShylockMeters({
   return (
     <div
       style={{
-        ...hudPanelStyle("5px 8px", true),
+        ...hudPanelStyle(`${vwSize(5)} ${vwSize(8)}`, true),
         display: "flex",
         flexDirection: "column",
         gap: vwSize(4),
@@ -224,7 +221,7 @@ export function CompactPortiaMeter({ portiaHp }: PortiaMeterDisplayProps) {
   return (
     <div
       style={{
-        ...hudPanelStyle("5px 8px", true),
+        ...hudPanelStyle(`${vwSize(5)} ${vwSize(8)}`, true),
         flexShrink: 0,
         pointerEvents: "none",
         width: LANDSCAPE_METER_WIDTH,
@@ -254,7 +251,7 @@ export function CompactMeterStrip({
   return (
     <div
       style={{
-        ...hudPanelStyle("5px 8px", true),
+        ...hudPanelStyle(`${vwSize(5)} ${vwSize(8)}`, true),
         display: "flex",
         gap: vwSize(8),
         flexShrink: 0,
@@ -325,15 +322,17 @@ export function CompactMeterStrip({
 export function MeterDisplay({ dp, hp, dpGainFlash, hpGainFlash }: ShylockMeterDisplayProps) {
   const isMobile = useIsMobile();
   const width = isMobile ? METER_COLUMN_WIDTH_MOBILE : METER_COLUMN_WIDTH;
-  const inset = isMobile ? HUD_INSET_MOBILE : HUD_INSET;
 
+  // Deliberately NOT position:absolute — this sits as a normal-flow child
+  // inside BattleScreen's left HUD rail (alongside EvidenceList/SkillPanel)
+  // so the browser computes real stacked heights instead of the rail having
+  // to guess this component's height and risk overlapping it. `relative`
+  // (not `static`) so the dpGainFlash/hpGainFlash badges below still anchor
+  // to this box.
   return (
     <div
       style={{
-        position: "absolute",
-        top: HUD_TOP,
-        left: inset,
-        zIndex: 10,
+        position: "relative",
         pointerEvents: "none",
         width,
         maxWidth: isMobile ? "calc(50vw - 12px)" : undefined,

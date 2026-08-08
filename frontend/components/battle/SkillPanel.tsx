@@ -9,6 +9,7 @@ import {
   canUseSkill,
   type SkillId,
 } from "@/lib/constants/game-balance";
+import { vwSize } from "@/styles/responsive";
 import { gameFontSize, hudLabelStyle, hudPanelStyle } from "@/styles/text-box";
 
 import {
@@ -43,10 +44,10 @@ function skillButtonStyle(
 ): CSSProperties {
   if (iconsOnly) {
     return {
-      width: 34,
-      height: 34,
+      width: vwSize(34),
+      height: vwSize(34),
       padding: 0,
-      fontSize: 15,
+      fontSize: vwSize(15),
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
@@ -131,14 +132,17 @@ export function SkillPanel({
   return (
     <div
       style={{
-        ...hudPanelStyle(iconsOnly || horizontal ? "4px 6px" : "8px 11px", iconsOnly || horizontal),
+        ...hudPanelStyle(
+          iconsOnly || horizontal ? `${vwSize(4)} ${vwSize(6)}` : `${vwSize(8)} ${vwSize(11)}`,
+          iconsOnly || horizontal,
+        ),
         width: skillPanelWidth,
         boxSizing: "border-box",
         display: horizontal || iconsOnly ? "flex" : "block",
         flexDirection: iconsOnly ? "column" : undefined,
         alignItems: iconsOnly ? "stretch" : horizontal ? "center" : undefined,
         justifyContent: iconsOnly ? "space-between" : undefined,
-        gap: horizontal || iconsOnly ? 6 : undefined,
+        gap: horizontal || iconsOnly ? vwSize(6) : undefined,
         flexShrink: 0,
         maxWidth: "100%",
       }}
@@ -147,9 +151,9 @@ export function SkillPanel({
         <div
           style={{
             ...hudLabelStyle("#e8dce4"),
-            fontSize: horizontal ? 10 : gameFontSize.xs,
+            fontSize: horizontal ? vwSize(10) : gameFontSize.xs,
             letterSpacing: 0.8,
-            marginBottom: horizontal ? 0 : 6,
+            marginBottom: horizontal ? 0 : vwSize(6),
             flexShrink: 0,
           }}
         >
@@ -160,7 +164,7 @@ export function SkillPanel({
         style={{
           display: "flex",
           flexDirection: iconsOnly || horizontal ? "row" : "column",
-          gap: iconsOnly ? 4 : horizontal ? 4 : 5,
+          gap: iconsOnly ? vwSize(4) : horizontal ? vwSize(4) : vwSize(5),
           flex: iconsOnly ? 1 : undefined,
           justifyContent: iconsOnly ? "space-between" : undefined,
           width: iconsOnly ? "100%" : undefined,
@@ -225,13 +229,13 @@ export function SkillPanel({
             <div
               onClick={(e) => e.stopPropagation()}
               style={{
-                ...hudPanelStyle("14px 16px", false),
-                width: 240,
+                ...hudPanelStyle(`${vwSize(14)} ${vwSize(16)}`, false),
+                width: vwSize(240),
                 maxWidth: "80vw",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 10,
+                gap: vwSize(10),
               }}
             >
               <div
