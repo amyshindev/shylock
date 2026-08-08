@@ -7,8 +7,6 @@ import anthropic
 from infrastructure.config import get_settings
 from shylock_trial.app.utils.dialogue_text import sanitize_game_text
 
-MODEL_ID = "claude-sonnet-5"
-
 SYSTEM_PROMPT = """\
 You are helping Shylock speak in court.
 Given a passage from Shakespeare and Shylock's original line,
@@ -42,6 +40,7 @@ class TubalEnhancementClient:
     def __init__(self) -> None:
         settings = get_settings()
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key_plain())
+        self._model = settings.claude_model_id
 
     async def generate_enhanced_choice(
         self,
@@ -56,7 +55,7 @@ class TubalEnhancementClient:
 
         try:
             response = await self._client.messages.create(
-                model=MODEL_ID,
+                model=self._model,
                 max_tokens=200,
                 system=SYSTEM_PROMPT,
                 messages=[

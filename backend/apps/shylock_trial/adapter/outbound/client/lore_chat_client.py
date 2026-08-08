@@ -21,8 +21,6 @@ from shylock_trial.app.dtos.lore_chat_dto import LoreChatTurnDto
 from shylock_trial.app.ports.output.lore_chat_llm_port import LoreChatLlmPort
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
-MODEL_ID = "claude-haiku-4-5-20251001"
-
 
 def _to_lc_messages(history: tuple[LoreChatTurnDto, ...]) -> list[BaseMessage]:
     return [
@@ -39,7 +37,7 @@ class LoreChatClient(LoreChatLlmPort):
     def __init__(self) -> None:
         settings = get_settings()
         llm = ChatAnthropic(
-            model=MODEL_ID,
+            model=settings.lore_chat_model_id,
             api_key=settings.anthropic_api_key_plain(),
             max_tokens=1024,
         )

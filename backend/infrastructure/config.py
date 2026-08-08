@@ -49,6 +49,37 @@ class Settings(BaseSettings):
         description="Cohere API key for evidence embeddings.",
     )
 
+    # Model IDs — the single place to look up (or bump) which model each
+    # Claude/Cohere adapter/outbound/client/*.py calls, instead of a
+    # `MODEL_ID = "..."` constant buried inside each file.
+    claude_model_id: str = Field(
+        default="claude-sonnet-5",
+        validation_alias="CLAUDE_MODEL_ID",
+        description=(
+            "Narrative/agentic Claude calls: portia_response_client, "
+            "portia_agent_client, tubal_agent_client, tubal_enhancement_client."
+        ),
+    )
+    lore_chat_model_id: str = Field(
+        default="claude-haiku-4-5-20251001",
+        validation_alias="LORE_CHAT_MODEL_ID",
+        description=(
+            "Deliberately a lighter/cheaper model than claude_model_id — "
+            "lore_chat is a high-volume player-facing Q&A widget, not a "
+            "trial-critical narrative beat."
+        ),
+    )
+    cohere_embed_model: str = Field(
+        default="embed-v4.0",
+        validation_alias="COHERE_EMBED_MODEL",
+        description=(
+            "Cohere embedding model for evidence_embedding_client. Changing "
+            "this must stay in sync with the pgvector column width "
+            "(EMBED_DIMENSION) and existing corpus embeddings — not a "
+            "no-op swap."
+        ),
+    )
+
     # Portia response generation provider. "claude" (default) uses
     # PortiaResponseClient only — this is the instant-revert path if "local"
     # misbehaves, just unset/reset this var. "local" wraps an Ollama client
@@ -57,9 +88,14 @@ class Settings(BaseSettings):
     # without that fallback.
     llm_provider: str = Field(default="claude", validation_alias="LLM_PROVIDER")
     ollama_base_url: str = Field(
-        default="http://localhost:11434",
+        default="https://ollama.shylock-trial.xyz",
         validation_alias="OLLAMA_BASE_URL",
-        description="Ollama server address. localhost in dev; tunnel address once deployed.",
+        description=(
+            "Ollama server address — defaults to the home-Mac Cloudflare "
+            "Tunnel so deploys work out of the box without an OLLAMA_BASE_URL "
+            "override (no .env.backend* file in this repo sets one). Override "
+            "to http://localhost:11434 for local dev against a local Ollama."
+        ),
     )
     ollama_model: str = Field(default="gemma4:26b-mlx", validation_alias="OLLAMA_MODEL")
     ollama_timeout_seconds: float = Field(

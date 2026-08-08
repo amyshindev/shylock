@@ -38,7 +38,6 @@ from shylock_trial.domain.entities.play_chunk_entity import PlayChunk
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "claude-sonnet-5"
 SEARCH_LIMIT = 8
 # A clean run finishes in 1 turn (present_rebuttal). The extra headroom here
 # only covers the model citing an ftln range that doesn't match any of the
@@ -120,6 +119,7 @@ class TubalAgentClient:
     def __init__(self, evidence_search: EvidenceSearchUseCase) -> None:
         settings = get_settings()
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key_plain())
+        self._model = settings.claude_model_id
         self._evidence_search = evidence_search
 
     async def agentic_loop(
@@ -155,7 +155,7 @@ class TubalAgentClient:
         # cacheable-prefix minimum, so a breakpoint would just be dead weight.
         for _ in range(MAX_AGENT_ITERATIONS):
             response = await self._client.messages.create(
-                model=MODEL_ID,
+                model=self._model,
                 max_tokens=2048,
                 system=TUBAL_SYSTEM_PROMPT,
                 tools=TUBAL_TOOLS,

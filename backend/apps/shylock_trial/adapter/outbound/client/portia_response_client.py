@@ -31,8 +31,6 @@ from shylock_trial.app.utils.dialogue_text import (
 )
 from shylock_trial.app.utils.portia_text import extract_portia_text
 
-MODEL_ID = "claude-sonnet-5"
-
 # Last-resort line when the model returns empty text — keeps the trial advancing.
 REACTION_FALLBACK_TEXT = "법정은 그대의 말을 기록에 남기겠소. 다음 절차로 나아가시오."
 
@@ -123,10 +121,11 @@ class PortiaResponseClient(PortiaResponsePort):
     def __init__(self) -> None:
         settings = get_settings()
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key_plain())
+        self._model = settings.claude_model_id
 
     async def generate(self, prompt: PortiaResponsePromptDto) -> PortiaResponseResultDto:
         response = await self._client.messages.create(
-            model=MODEL_ID,
+            model=self._model,
             max_tokens=1024,
             system=SYSTEM_PROMPT,
             messages=[
@@ -169,7 +168,7 @@ class PortiaResponseClient(PortiaResponsePort):
         prompt: SceneDialoguePromptDto,
     ) -> SceneDialogueResultDto:
         response = await self._client.messages.create(
-            model=MODEL_ID,
+            model=self._model,
             max_tokens=1536,
             system=SCENE_DIALOGUE_SYSTEM_PROMPT,
             messages=[

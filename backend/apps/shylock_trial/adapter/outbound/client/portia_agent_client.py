@@ -17,7 +17,6 @@ from shylock_trial.app.utils.dialogue_text import sanitize_character_direct_spee
 
 logger = logging.getLogger(__name__)
 
-MODEL_ID = "claude-sonnet-5"
 MAX_AGENT_ITERATIONS = 3
 
 PORTIA_AGENT_SYSTEM = """\
@@ -90,6 +89,7 @@ class PortiaAgentClient:
     def __init__(self) -> None:
         settings = get_settings()
         self._client = anthropic.AsyncAnthropic(api_key=settings.anthropic_api_key_plain())
+        self._model = settings.claude_model_id
 
     async def agentic_loop(
         self,
@@ -124,7 +124,7 @@ class PortiaAgentClient:
 
         for _ in range(MAX_AGENT_ITERATIONS):
             response = await self._client.messages.create(
-                model=MODEL_ID,
+                model=self._model,
                 max_tokens=1024,
                 system=PORTIA_AGENT_SYSTEM,
                 tools=PORTIA_AGENT_TOOLS,
@@ -217,7 +217,7 @@ class PortiaAgentClient:
         evidence_text: str,
     ) -> ContradictionEvaluation:
         response = await self._client.messages.create(
-            model=MODEL_ID,
+            model=self._model,
             max_tokens=512,
             system=(
                 "You are a Shakespeare legal scholar assisting Portia's court. "
