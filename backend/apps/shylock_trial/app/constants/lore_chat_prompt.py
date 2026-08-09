@@ -7,6 +7,10 @@ TrialProgressionPort is wired into this slice), so it structurally cannot
 leak scene/hint information even if a player tries to prompt-inject it.
 """
 
+from shylock_trial.domain.entities.character_relation_entity import (
+    CharacterNode,
+    CharacterRelation,
+)
 from shylock_trial.domain.entities.play_line_entity import PlayLine
 
 LORE_CHAT_SYSTEM_PROMPT = """\
@@ -15,9 +19,12 @@ LORE_CHAT_SYSTEM_PROMPT = """\
 플레이어에게 직접 말하는 3인칭 해설자입니다.
 
 규칙:
-1. 아래 제공되는 "관련 원문 발췌"에 근거해서만 답하십시오. 발췌에 없는
-   내용은 당신의 배경지식으로 보충하되, 확실하지 않으면 모른다고
-   솔직히 말하십시오. 추측을 사실처럼 말하지 마십시오.
+1. 아래 제공되는 "인물 관계 정보"와 "관련 원문 발췌"에 근거해서 답하십시오.
+   인물이 누구인지, 인물 간 관계가 어떤지를 묻는 질문에는 "인물 관계
+   정보"를 우선 근거로 삼으십시오 — 원문 발췌는 그 인물이 실제로 그렇게
+   말하거나 언급된 대사를 보여주는 보조 근거로만 사용하십시오. 두 정보
+   모두에 없는 내용은 당신의 배경지식으로 보충하되, 확실하지 않으면
+   모른다고 솔직히 말하십시오. 추측을 사실처럼 말하지 마십시오.
 2. 답변은 한국어, 정중하고 간결한 해설체(합니다/입니다체)로 작성하십시오.
    게임 속 인물들의 고어체(~소/~하오)를 흉내 내지 마십시오 — 당신은
    등장인물이 아닙니다.
@@ -42,3 +49,23 @@ def format_passage(line: PlayLine) -> str:
     (Claude) and ollama_lore_chat_client.py (local) so both providers build
     context the same way."""
     return f"FTLN {line.ftln} ({line.speaker}, {line.act_scene}): {line.text}"
+
+
+def format_character(node: CharacterNode, relations: list[CharacterRelation]) -> str:
+    """Formats one character's node description plus every relation touching
+    it, for players asking "who is X" / "how are X and Y connected". This is
+    the structured counterpart to format_passage()/build_context_block() —
+    pgvector search over play lines is a poor fit for broad character
+    questions (nearest-neighbor line retrieval surfaces vocative/name-mention
+    lines, not biography), so this pulls from the curated character_relation
+    graph instead. See LoreChatInteractor._build_character_context."""
+    lines = [f"[{node.name_ko} ({node.name_en})] {node.description}"]
+    lines.extend(f"- {relation.description} ({relation.relation_type})" for relation in relations)
+    return "\n".join(lines)
+
+
+def build_character_context_block(character_blocks: list[str]) -> str:
+    if not character_blocks:
+        return ""
+    joined = "\n\n".join(character_blocks)
+    return f"인물 관계 정보:\n{joined}"

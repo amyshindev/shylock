@@ -53,6 +53,21 @@ async def test_answer_includes_system_prompt_history_and_context() -> None:
 
 
 @pytest.mark.asyncio
+async def test_answer_includes_character_context_when_provided() -> None:
+    capture: dict = {}
+    client = _client_returning("답변입니다.", capture)
+
+    await client.answer(
+        "샤일록은 누구인가요?",
+        (),
+        (),
+        character_context="인물 관계 정보:\n[샤일록 (Shylock)] 베니스의 유대인 대금업자.",
+    )
+
+    assert "인물 관계 정보" in capture["body"]["messages"][-1]["content"]
+
+
+@pytest.mark.asyncio
 async def test_answer_raises_on_server_error() -> None:
     def handler(_request: httpx.Request) -> httpx.Response:
         return httpx.Response(500, json={"error": "model not loaded"})

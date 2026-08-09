@@ -15,11 +15,12 @@ from shylock_trial.app.use_cases.character_relation_interactor import CharacterR
 def get_character_relation_repository(
     session: Annotated[AsyncSession | None, Depends(get_corpus_db_session)],
 ) -> CharacterRelationPort:
-    # No memory/-store fallback (unlike evidence_search_provider) — nothing
-    # consumes this yet (no router; see character_relation_repository.py's
-    # module docstring for why the pathfinding piece needs a real Postgres
-    # session), so there's no live path that would need one. Add
-    # InMemoryCharacterRelationRepository if/when that changes.
+    # No memory-store fallback (unlike evidence_search_provider) — there's no
+    # router for this stem, it's only ever consumed via constructor injection
+    # by other interactors (currently lore_chat_provider.py), and those
+    # already require the corpus DB (evidence_search's pgvector lookup), so
+    # there's no live path that reaches this without a real session anyway.
+    # Add InMemoryCharacterRelationRepository if that stops being true.
     if session is None:
         raise RuntimeError("DB session required for CharacterRelationPort")
     return CharacterRelationPgRepository(session=session)

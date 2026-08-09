@@ -13,7 +13,7 @@ class FakeLoreChatLlmPort(LoreChatLlmPort):
         self._raises = raises
         self.answer_calls = 0
 
-    async def answer(self, question, history, passages) -> str:
+    async def answer(self, question, history, passages, character_context="") -> str:
         self.answer_calls += 1
         if self._raises is not None:
             raise self._raises

@@ -11,4 +11,10 @@ class LoreChatLlmPort(ABC):
         question: str,
         history: tuple[LoreChatTurnDto, ...],
         passages: tuple[PlayLine, ...],
-    ) -> str: ...
+        character_context: str = "",
+    ) -> str:
+        """character_context is the pre-formatted "인물 관계 정보" block built
+        from the character_relation graph (see lore_chat_prompt.build_character_context_block)
+        — empty string when the question didn't mention a known character.
+        """
+        ...

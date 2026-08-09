@@ -55,6 +55,7 @@ class OllamaLoreChatClient(LoreChatLlmPort):
         question: str,
         history: tuple[LoreChatTurnDto, ...],
         passages: tuple[PlayLine, ...],
+        character_context: str = "",
     ) -> str:
         context = build_context_block([format_passage(line) for line in passages])
         messages = [{"role": "system", "content": LORE_CHAT_SYSTEM_PROMPT}]
@@ -62,7 +63,9 @@ class OllamaLoreChatClient(LoreChatLlmPort):
             {"role": "user" if turn.role == "human" else "assistant", "content": turn.content}
             for turn in history
         )
-        messages.append({"role": "user", "content": f"{context}\n\n질문: {question}"})
+        messages.append(
+            {"role": "user", "content": f"{character_context}\n\n{context}\n\n질문: {question}"}
+        )
 
         response = await self._client.post(
             "/api/chat",

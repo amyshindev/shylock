@@ -1,4 +1,4 @@
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shylock_trial.adapter.outbound.mappers.character_relation_mapper import (
@@ -10,7 +10,10 @@ from shylock_trial.adapter.outbound.orm.character_relation_orm import (
     CharacterRelationOrm,
 )
 from shylock_trial.app.ports.output.character_relation_port import CharacterRelationPort
-from shylock_trial.domain.entities.character_relation_entity import CharacterRelation
+from shylock_trial.domain.entities.character_relation_entity import (
+    CharacterNode,
+    CharacterRelation,
+)
 
 # Walks character_relations as a graph via a recursive CTE, tracking the
 # relation_ids traversed (for the final fetch) and the character_ids visited
@@ -57,9 +60,24 @@ class CharacterRelationPgRepository(CharacterRelationPort):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def get_node(self, character_id: str):
+    async def get_node(self, character_id: str) -> CharacterNode | None:
         orm = await self._session.get(CharacterNodeOrm, character_id)
         return character_node_to_entity(orm) if orm else None
+
+    async def list_nodes(self) -> list[CharacterNode]:
+        result = await self._session.execute(select(CharacterNodeOrm))
+        return [character_node_to_entity(orm) for orm in result.scalars().all()]
+
+    async def list_relations_for(self, character_id: str) -> list[CharacterRelation]:
+        result = await self._session.execute(
+            select(CharacterRelationOrm).where(
+                or_(
+                    CharacterRelationOrm.from_character_id == character_id,
+                    CharacterRelationOrm.to_character_id == character_id,
+                )
+            )
+        )
+        return [character_relation_to_entity(orm) for orm in result.scalars().all()]
 
     async def find_path(
         self,

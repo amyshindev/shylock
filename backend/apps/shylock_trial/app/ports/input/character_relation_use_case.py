@@ -11,6 +11,12 @@ class CharacterRelationUseCase(ABC):
     async def get_character(self, character_id: str) -> CharacterNode | None: ...
 
     @abstractmethod
+    async def list_characters(self) -> list[CharacterNode]: ...
+
+    @abstractmethod
+    async def get_relations_for(self, character_id: str) -> list[CharacterRelation]: ...
+
+    @abstractmethod
     async def trace_relationship(
         self,
         from_character_id: str,

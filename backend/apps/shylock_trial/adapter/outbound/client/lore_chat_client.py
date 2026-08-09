@@ -42,7 +42,7 @@ class LoreChatClient(LoreChatLlmPort):
             [
                 ("system", LORE_CHAT_SYSTEM_PROMPT),
                 MessagesPlaceholder("history"),
-                ("human", "{context}\n\n질문: {question}"),
+                ("human", "{character_context}\n\n{context}\n\n질문: {question}"),
             ]
         )
         self._chain = prompt | llm | StrOutputParser()
@@ -52,12 +52,14 @@ class LoreChatClient(LoreChatLlmPort):
         question: str,
         history: tuple[LoreChatTurnDto, ...],
         passages: tuple[PlayLine, ...],
+        character_context: str = "",
     ) -> str:
         context = build_context_block([format_passage(line) for line in passages])
         result = await self._chain.ainvoke(
             {
                 "history": _to_lc_messages(history),
                 "context": context,
+                "character_context": character_context,
                 "question": question,
             }
         )

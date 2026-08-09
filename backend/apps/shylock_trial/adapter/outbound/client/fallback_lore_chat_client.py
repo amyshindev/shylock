@@ -30,9 +30,10 @@ class FallbackLoreChatClient(LoreChatLlmPort):
         question: str,
         history: tuple[LoreChatTurnDto, ...],
         passages: tuple[PlayLine, ...],
+        character_context: str = "",
     ) -> str:
         try:
-            return await self._primary.answer(question, history, passages)
+            return await self._primary.answer(question, history, passages, character_context)
         except Exception:
             logger.exception(
                 "Primary lore chat provider failed — falling back to Claude (question=%r)",
@@ -40,7 +41,7 @@ class FallbackLoreChatClient(LoreChatLlmPort):
             )
 
         try:
-            return await self._fallback.answer(question, history, passages)
+            return await self._fallback.answer(question, history, passages, character_context)
         except Exception:
             logger.critical(
                 "Fallback lore chat provider ALSO failed — both providers down, "

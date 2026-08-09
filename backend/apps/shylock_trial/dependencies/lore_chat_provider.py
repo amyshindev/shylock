@@ -6,11 +6,13 @@ from shylock_trial.adapter.outbound.cache.lore_chat_redis_history import LoreCha
 from shylock_trial.adapter.outbound.client.fallback_lore_chat_client import FallbackLoreChatClient
 from shylock_trial.adapter.outbound.client.lore_chat_client import LoreChatClient
 from shylock_trial.adapter.outbound.client.ollama_lore_chat_client import OllamaLoreChatClient
+from shylock_trial.app.ports.input.character_relation_use_case import CharacterRelationUseCase
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.lore_chat_use_case import LoreChatUseCase
 from shylock_trial.app.ports.output.lore_chat_history_port import LoreChatHistoryPort
 from shylock_trial.app.ports.output.lore_chat_llm_port import LoreChatLlmPort
 from shylock_trial.app.use_cases.lore_chat_interactor import LoreChatInteractor
+from shylock_trial.dependencies.character_relation_provider import get_character_relation_use_case
 from shylock_trial.dependencies.evidence_search_provider import get_evidence_search_use_case
 
 
@@ -34,5 +36,6 @@ def get_lore_chat_use_case(
     evidence: EvidenceSearchUseCase = Depends(get_evidence_search_use_case),
     llm: LoreChatLlmPort = Depends(get_lore_chat_llm_port),
     history: LoreChatHistoryPort = Depends(get_lore_chat_history_port),
+    characters: CharacterRelationUseCase = Depends(get_character_relation_use_case),
 ) -> LoreChatUseCase:
-    return LoreChatInteractor(evidence=evidence, llm=llm, history=history)
+    return LoreChatInteractor(evidence=evidence, llm=llm, history=history, characters=characters)

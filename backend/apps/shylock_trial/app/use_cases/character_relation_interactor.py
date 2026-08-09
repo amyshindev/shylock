@@ -13,6 +13,12 @@ class CharacterRelationInteractor(CharacterRelationUseCase):
     async def get_character(self, character_id: str) -> CharacterNode | None:
         return await self._port.get_node(character_id)
 
+    async def list_characters(self) -> list[CharacterNode]:
+        return await self._port.list_nodes()
+
+    async def get_relations_for(self, character_id: str) -> list[CharacterRelation]:
+        return await self._port.list_relations_for(character_id)
+
     async def trace_relationship(
         self,
         from_character_id: str,
