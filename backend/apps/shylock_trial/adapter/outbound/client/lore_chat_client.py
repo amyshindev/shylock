@@ -16,6 +16,7 @@ from infrastructure.config import get_settings
 from shylock_trial.app.constants.lore_chat_prompt import (
     LORE_CHAT_SYSTEM_PROMPT,
     build_context_block,
+    format_passage,
 )
 from shylock_trial.app.dtos.lore_chat_dto import LoreChatTurnDto
 from shylock_trial.app.ports.output.lore_chat_llm_port import LoreChatLlmPort
@@ -27,10 +28,6 @@ def _to_lc_messages(history: tuple[LoreChatTurnDto, ...]) -> list[BaseMessage]:
         HumanMessage(content=turn.content) if turn.role == "human" else AIMessage(content=turn.content)
         for turn in history
     ]
-
-
-def _format_passage(line: PlayLine) -> str:
-    return f"FTLN {line.ftln} ({line.speaker}, {line.act_scene}): {line.text}"
 
 
 class LoreChatClient(LoreChatLlmPort):
@@ -56,7 +53,7 @@ class LoreChatClient(LoreChatLlmPort):
         history: tuple[LoreChatTurnDto, ...],
         passages: tuple[PlayLine, ...],
     ) -> str:
-        context = build_context_block([_format_passage(line) for line in passages])
+        context = build_context_block([format_passage(line) for line in passages])
         result = await self._chain.ainvoke(
             {
                 "history": _to_lc_messages(history),

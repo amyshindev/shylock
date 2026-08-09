@@ -7,6 +7,8 @@ TrialProgressionPort is wired into this slice), so it structurally cannot
 leak scene/hint information even if a player tries to prompt-inject it.
 """
 
+from shylock_trial.domain.entities.play_line_entity import PlayLine
+
 LORE_CHAT_SYSTEM_PROMPT = """\
 당신은 "샤일록의 법정" 게임에 등장하는 셰익스피어 『베니스의 상인』과
 그 시대적 배경을 설명하는 안내인입니다. 게임 속 등장인물이 아니라,
@@ -33,3 +35,10 @@ def build_context_block(passages: list[str]) -> str:
         return "(관련 원문 발췌를 찾지 못했습니다. 일반 배경지식으로만 답하거나, 모른다고 답하십시오.)"
     joined = "\n".join(passages)
     return f"관련 원문 발췌:\n{joined}"
+
+
+def format_passage(line: PlayLine) -> str:
+    """Formats one PlayLine for the context block. Shared by lore_chat_client.py
+    (Claude) and ollama_lore_chat_client.py (local) so both providers build
+    context the same way."""
+    return f"FTLN {line.ftln} ({line.speaker}, {line.act_scene}): {line.text}"

@@ -130,6 +130,16 @@ class Settings(BaseSettings):
     # Named after the swapped technology (embedding), not the consuming
     # stem (evidence_search) — same convention as LLM_PROVIDER above.
     embedding_provider: str = Field(default="cohere", validation_alias="EMBEDDING_PROVIDER")
+    # Separate from LLM_PROVIDER on purpose, even though both switch the same
+    # underlying Ollama server on/off — lore_chat is a high-volume
+    # player-facing Q&A widget, not trial-critical (see lore_chat_model_id's
+    # description above), so it should be revertible independently of
+    # portia_response without one bad rollout taking the other down with it.
+    # "claude" (default) uses LoreChatClient only. "local" wraps
+    # OllamaLoreChatClient with a Claude fallback (see
+    # dependencies/lore_chat_provider.py), same never-runs-bare reasoning as
+    # LLM_PROVIDER/EMBEDDING_PROVIDER.
+    lore_chat_provider: str = Field(default="claude", validation_alias="LORE_CHAT_PROVIDER")
     ollama_base_url: str = Field(
         default="https://ollama.shylock-trial.xyz",
         validation_alias="OLLAMA_BASE_URL",
