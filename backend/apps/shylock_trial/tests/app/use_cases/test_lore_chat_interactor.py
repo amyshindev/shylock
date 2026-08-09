@@ -71,9 +71,11 @@ class FakeCharacterRelationUseCase:
         self,
         nodes: tuple[CharacterNode, ...] = (),
         relations_by_character: dict[str, tuple[CharacterRelation, ...]] | None = None,
+        paths: dict[tuple[str, str], tuple[CharacterRelation, ...]] | None = None,
     ) -> None:
         self._nodes = nodes
         self._relations_by_character = relations_by_character or {}
+        self._paths = paths or {}
 
     async def get_character(self, character_id):
         return next((n for n in self._nodes if n.character_id == character_id), None)
@@ -85,7 +87,7 @@ class FakeCharacterRelationUseCase:
         return list(self._relations_by_character.get(character_id, ()))
 
     async def trace_relationship(self, from_character_id, to_character_id, max_hops=4):
-        raise AssertionError("not used by lore_chat")
+        return list(self._paths.get((from_character_id, to_character_id), ()))
 
 
 def _make_play_line(ftln: int = 1, text: str = "quote") -> PlayLine:
@@ -210,6 +212,54 @@ async def test_ask_builds_character_context_when_question_mentions_known_charact
     assert "안토니오가 샤일록에게" in llm.received_character_context
     # Antonio wasn't mentioned in the question, so only shylock's block appears.
     assert "[안토니오" not in llm.received_character_context
+
+
+@pytest.mark.asyncio
+async def test_ask_includes_relationship_path_when_two_characters_mentioned() -> None:
+    portia = CharacterNode(
+        character_id="portia", name_ko="포샤", name_en="Portia", description="벨몬트의 상속녀."
+    )
+    antonio = CharacterNode(
+        character_id="antonio", name_ko="안토니오", name_en="Antonio", description="베니스의 상인."
+    )
+    bassanio = CharacterNode(
+        character_id="bassanio", name_ko="바사니오", name_en="Bassanio", description="포샤의 구혼자."
+    )
+    married_to = CharacterRelation(
+        from_character_id="portia",
+        relation_type="married_to",
+        to_character_id="bassanio",
+        description="포샤가 바사니오에게 반지를 주며 아내가 되기로 서약한다.",
+        evidence_ftln_start=1,
+        evidence_ftln_end=2,
+    )
+    financed_by = CharacterRelation(
+        from_character_id="bassanio",
+        relation_type="financed_by",
+        to_character_id="antonio",
+        description="바사니오가 안토니오에게 갚아야 할 빚이 있음을 인정한다.",
+        evidence_ftln_start=3,
+        evidence_ftln_end=4,
+    )
+    llm = FakeLoreChatLlm()
+    interactor = LoreChatInteractor(
+        evidence=FakeEvidenceSearchUseCase(),
+        llm=llm,
+        history=FakeLoreChatHistory(),
+        characters=FakeCharacterRelationUseCase(
+            nodes=(portia, antonio, bassanio),
+            paths={("portia", "antonio"): (married_to, financed_by)},
+        ),
+    )
+
+    await interactor.ask(LoreChatAskInputDto(message="포샤와 안토니오는 무슨 관계인가요?"))
+
+    context = llm.received_character_context
+    assert context is not None
+    assert "인물 간 연결 관계" in context
+    assert "포샤 → 바사니오 → 안토니오" in context
+    assert "포샤가 바사니오에게 반지를 주며" in context
+    assert "바사니오가 안토니오에게 갚아야 할 빚이 있음을 인정한다" in context
 
 
 @pytest.mark.asyncio

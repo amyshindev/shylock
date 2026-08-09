@@ -19,13 +19,17 @@ LORE_CHAT_SYSTEM_PROMPT = """\
 플레이어에게 직접 말하는 3인칭 해설자입니다.
 
 규칙:
-1. 아래 제공되는 "인물 관계 정보"와 "관련 원문 발췌"에 근거해서 답하십시오.
-   인물이 누구인지, 인물 간 관계가 어떤지를 묻는 질문에는 "인물 관계
-   정보"를 우선 근거로 삼으십시오 — 원문 발췌는 그 인물이 실제로 그렇게
-   말하거나 언급된 대사를 보여주는 보조 근거로만 사용하십시오. 두 정보
-   모두에 없는 내용은 당신의 배경지식으로 보충하되, 확실하지 않으면
-   모른다고 솔직히 말하십시오. 추측을 사실처럼 말하지 마십시오.
-2. 답변은 한국어, 정중하고 간결한 해설체(합니다/입니다체)로 작성하십시오.
+1. 아래 제공되는 "인물 관계 정보", "인물 간 연결 관계", "관련 원문 발췌"에
+   근거해서 답하십시오. 인물이 누구인지, 인물 간 관계가 어떤지를 묻는
+   질문에는 "인물 관계 정보"와 "인물 간 연결 관계"를 우선 근거로 삼으십시오
+   — 두 인물 사이에 직접적인 관계가 안 보이더라도 "인물 간 연결 관계"에
+   경유 인물을 거친 연결(예: A가 B와 결혼했고 B가 C의 돈을 빌렸다면 A는
+   C와 간접적으로 얽혀 있음)이 제시되어 있으면 그 연결을 그대로 답변에
+   반영하십시오. 원문 발췌는 그 인물이 실제로 그렇게 말하거나 언급된 대사를
+   보여주는 보조 근거로만 사용하십시오. 이 정보들에 없는 내용은 당신의
+   배경지식으로 보충하되, 확실하지 않으면 모른다고 솔직히 말하십시오.
+   추측을 사실처럼 말하지 마십시오.
+2. 답변은 한국어, 정중하고 간결한 해요체(~해요/~예요/~돼요)로 작성하십시오.
    게임 속 인물들의 고어체(~소/~하오)를 흉내 내지 마십시오 — 당신은
    등장인물이 아닙니다.
 3. 플레이어가 "지금 이 장면에서 어떤 증거를 내야 하나요", "다음에 뭘
@@ -69,3 +73,29 @@ def build_character_context_block(character_blocks: list[str]) -> str:
         return ""
     joined = "\n\n".join(character_blocks)
     return f"인물 관계 정보:\n{joined}"
+
+
+def format_relationship_path(path: list[CharacterRelation], name_by_id: dict[str, str]) -> str:
+    """Formats a multi-hop chain (see CharacterRelationUseCase.trace_relationship)
+    as an explicit "A → B → C" line plus the fact behind each hop. Two
+    characters mentioned in the same question rarely have a *direct* relation
+    row between them (e.g. Portia/Antonio never interact directly) — the
+    actual connection (Portia married_to Bassanio, Bassanio financed_by
+    Antonio) only exists as separate rows on each of their individual
+    format_character() blocks, and a smaller local model won't reliably
+    chain those itself. Spelling the path out here is what makes the
+    conflict-of-interest example (the original motivation for this graph)
+    actually show up in answers instead of relying on the LLM to notice it."""
+    if not path:
+        return ""
+    node_chain = [name_by_id.get(path[0].from_character_id, path[0].from_character_id)]
+    node_chain.extend(name_by_id.get(relation.to_character_id, relation.to_character_id) for relation in path)
+    facts = " → ".join(relation.description for relation in path)
+    return f"{' → '.join(node_chain)}: {facts}"
+
+
+def build_relationship_path_block(path_lines: list[str]) -> str:
+    if not path_lines:
+        return ""
+    joined = "\n".join(f"- {line}" for line in path_lines)
+    return f"인물 간 연결 관계:\n{joined}"

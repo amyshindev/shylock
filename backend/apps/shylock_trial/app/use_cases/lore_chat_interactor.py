@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from itertools import combinations
 from uuid import uuid4
 
 from shylock_trial.app.constants.lore_chat_prompt import (
     build_character_context_block,
+    build_relationship_path_block,
     format_character,
+    format_relationship_path,
 )
 from shylock_trial.app.dtos.evidence_search_dto import EvidenceSearchInputDto
 from shylock_trial.app.dtos.lore_chat_dto import (
@@ -85,7 +88,19 @@ class LoreChatInteractor(LoreChatUseCase):
         CharacterRelationUseCase), which is what actually fixes lore_chat's
         weak answers to "who is X" / "how are X and Y related" questions —
         pgvector search over play lines can't do that kind of structured,
-        guaranteed-relevant lookup (see format_character's docstring)."""
+        guaranteed-relevant lookup (see format_character's docstring).
+
+        When 2+ characters are mentioned, this also traces the shortest
+        relation path between every pair (see trace_relationship) and adds
+        it as its own explicit block. Verified live against the local
+        Ollama model that per-character blocks alone aren't enough — asked
+        "포샤와 안토니오는 무슨 관계인가요?" (they never interact directly;
+        the real link is Portia married_to Bassanio, Bassanio financed_by
+        Antonio) and the model answered "직접적인 연결 고리가 확인되지
+        않습니다", i.e. it didn't chain the two separate blocks itself. This
+        is exactly the conflict-of-interest case the graph was built for,
+        so the connection needs to be spelled out rather than left implicit.
+        """
         nodes = await self._characters.list_characters()
         lowered = message.lower()
         mentioned = [
@@ -98,4 +113,19 @@ class LoreChatInteractor(LoreChatUseCase):
         for node in mentioned:
             relations = await self._characters.get_relations_for(node.character_id)
             blocks.append(format_character(node, relations))
-        return build_character_context_block(blocks)
+        context = build_character_context_block(blocks)
+
+        if len(mentioned) >= 2:
+            name_by_id = {node.character_id: node.name_ko for node in nodes}
+            path_lines = []
+            for a, b in combinations(mentioned, 2):
+                path = await self._characters.trace_relationship(a.character_id, b.character_id)
+                if not path:
+                    path = await self._characters.trace_relationship(b.character_id, a.character_id)
+                if path:
+                    path_lines.append(format_relationship_path(path, name_by_id))
+            path_block = build_relationship_path_block(path_lines)
+            if path_block:
+                context = f"{context}\n\n{path_block}"
+
+        return context
