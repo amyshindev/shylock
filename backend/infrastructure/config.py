@@ -83,7 +83,7 @@ class Settings(BaseSettings):
         default="intfloat/multilingual-e5-large-instruct",
         validation_alias="LOCAL_EMBEDDING_MODEL",
         description=(
-            "sentence-transformers model — read by local_embedding_server.py "
+            "sentence-transformers model — read by embed_main.py "
             "(the home-Mac process that actually loads it) and by "
             "backfill_local_embeddings.py; NOT read by local_embedding_client.py, "
             "which is just an HTTP client and doesn't need to know the model "
@@ -99,7 +99,7 @@ class Settings(BaseSettings):
         default="https://embed.shylock-trial.xyz",
         validation_alias="LOCAL_EMBEDDING_BASE_URL",
         description=(
-            "local_embedding_server.py address (home Mac, via Cloudflare "
+            "embed_main.py address (home Mac, via Cloudflare "
             "Tunnel) — same pattern as ollama_base_url. This hostname is a "
             "suggestion, not yet a real route; the tunnel has to actually be "
             "created before EMBEDDING_PROVIDER=local can work in production. "

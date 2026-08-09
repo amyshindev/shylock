@@ -14,9 +14,12 @@ EC2 CPU number, so this server exists to put the actual inference back on
 Apple Silicon and only cross the network for the (small, ~1024-float) result.
 
 Run on the Mac (uses this repo's backend/.venv — sentence-transformers is
-already in requirements.prod.txt, no separate install needed):
+already in requirements.prod.txt, no separate install needed). Named
+embed_main.py to match the main.py/auth_main.py "one entrypoint file per
+running service" convention (see CLAUDE.md), even though — unlike those
+two — this one never runs inside Docker/EC2:
     cd backend
-    .venv/bin/uvicorn local_embedding_server:app --host 0.0.0.0 --port 8001
+    .venv/bin/uvicorn embed_main:app --host 0.0.0.0 --port 8001
 
 Then route a Cloudflare Tunnel to http://localhost:8001, same pattern as the
 existing Ollama tunnel (ollama.shylock-trial.xyz) — see how that one's

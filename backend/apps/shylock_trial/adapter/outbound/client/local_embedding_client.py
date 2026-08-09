@@ -1,5 +1,5 @@
 """Local embedding client — HTTP client for the e5 embedding server that runs
-on the home Mac (backend/local_embedding_server.py), exposed through the same
+on the home Mac (backend/embed_main.py), exposed through the same
 Cloudflare Tunnel + Access pattern already used for Ollama — see
 ollama_portia_response_client.py, which this mirrors almost exactly (base_url
 + CF Access headers + timeout, all from Settings).
@@ -26,7 +26,7 @@ same simplification compare_embedding_models.py already made ("one
 instruction is good enough for a qualitative compare — tune per-query if
 chasing precision later").
 
-The server on the other end owns the model choice (local_embedding_server.py
+The server on the other end owns the model choice (embed_main.py
 reads Settings.local_embedding_model) — this client doesn't need to know
 which model is actually running, same as PortiaResponseClient not needing to
 know Ollama's model beyond what it sends in the request.
