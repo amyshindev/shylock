@@ -141,6 +141,11 @@ class OllamaPortiaResponseClient(PortiaResponsePort):
                 # See module docstring — thinking mode is ~12.5x slower here
                 # for no quality gain on short in-game lines.
                 "think": False,
+                # Never unload the model between requests — Ollama's default
+                # 5-minute idle timeout means the first request after any gap
+                # pays full weight-load time on top of generation. Same
+                # reasoning applies to ollama_lore_chat_client.py's answer().
+                "keep_alive": -1,
             },
         )
         response.raise_for_status()

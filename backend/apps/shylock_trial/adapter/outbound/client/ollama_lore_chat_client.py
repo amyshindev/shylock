@@ -74,6 +74,13 @@ class OllamaLoreChatClient(LoreChatLlmPort):
                 "messages": messages,
                 "stream": False,
                 "think": False,
+                # Never unload the model between requests — Ollama's default
+                # 5-minute idle timeout means the first request after any gap
+                # pays full weight-load time on top of generation (measured:
+                # ~19GB model, negligible load_duration once warm vs several
+                # seconds cold). Same reasoning applies to
+                # ollama_portia_response_client.py's _chat().
+                "keep_alive": -1,
             },
         )
         response.raise_for_status()
