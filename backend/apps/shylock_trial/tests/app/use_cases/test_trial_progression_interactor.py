@@ -83,6 +83,32 @@ class FakeTubalEnhancementClient:
         return original_choice
 
 
+class FakeCharacterRelationUseCase:
+    """Defaults to an empty graph, matching NullCharacterRelationRepository —
+    most tests here don't care about character_context, only the tests that
+    explicitly assert on it (see test_portia_prompt.py) construct nodes."""
+
+    def __init__(
+        self,
+        nodes: dict[str, object] | None = None,
+        relations_by_character: dict[str, list] | None = None,
+    ) -> None:
+        self._nodes = nodes or {}
+        self._relations_by_character = relations_by_character or {}
+
+    async def get_character(self, character_id: str):
+        return self._nodes.get(character_id)
+
+    async def list_characters(self):
+        return list(self._nodes.values())
+
+    async def get_relations_for(self, character_id: str):
+        return list(self._relations_by_character.get(character_id, []))
+
+    async def trace_relationship(self, from_character_id, to_character_id, max_hops=4):
+        return []
+
+
 class InMemoryTrialPort:
     def __init__(self) -> None:
         self._store = {}
@@ -112,6 +138,7 @@ async def test_start_trial_returns_scene_dialogue() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     result = await interactor.start()
 
@@ -136,6 +163,7 @@ async def test_submit_choice_deducts_hp_and_applies_dp() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
     choice = await interactor.submit_choice(
@@ -161,6 +189,7 @@ async def test_bassanio_plea_reaction_is_voiced_by_bassanio() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(BASSANIO_PLEA_SCENE_INDEX, 50)
     choice = await interactor.submit_choice(
@@ -188,6 +217,7 @@ async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
     choice = await interactor.submit_choice(
@@ -197,6 +227,106 @@ async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
     assert portia.last_prompt.reactor_speaker == "PORTIA"
     assert choice.portia_response_speaker == "PORTIA"
     assert choice.portia_response_speaker_label == "포샤"
+
+
+@pytest.mark.asyncio
+async def test_bassanio_plea_character_context_includes_his_relations() -> None:
+    from shylock_trial.app.constants.scene_progression import BASSANIO_PLEA_SCENE_INDEX
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+    from shylock_trial.domain.entities.character_relation_entity import (
+        CharacterNode,
+        CharacterRelation,
+    )
+
+    bassanio_node = CharacterNode(
+        character_id="bassanio",
+        name_ko="바사니오",
+        name_en="Bassanio",
+        description="안토니오의 친구. 포샤에게 구혼하기 위해 안토니오의 돈이 필요하다.",
+    )
+    friendship = CharacterRelation(
+        from_character_id="bassanio",
+        relation_type="financed_by",
+        to_character_id="antonio",
+        description="바사니오가 안토니오에게 갚아야 할 빚이 있음을 인정한다.",
+        evidence_ftln_start=1001138,
+        evidence_ftln_end=1001141,
+    )
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(
+            nodes={"bassanio": bassanio_node},
+            relations_by_character={"bassanio": [friendship]},
+        ),
+    )
+    started = await interactor.start_dev_scene(BASSANIO_PLEA_SCENE_INDEX, 50)
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
+    )
+
+    assert "바사니오가 안토니오에게 갚아야 할 빚이 있음을 인정한다" in portia.last_prompt.character_context
+    # Bassanio has nothing to hide — his own node description is safe to include.
+    assert "안토니오의 친구" in portia.last_prompt.character_context
+
+
+@pytest.mark.asyncio
+async def test_portia_character_context_withholds_her_own_disguise_secret() -> None:
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+    from shylock_trial.domain.entities.character_relation_entity import (
+        CharacterNode,
+        CharacterRelation,
+    )
+
+    portia_node = CharacterNode(
+        character_id="portia",
+        name_ko="포샤",
+        name_en="Portia",
+        description="벨몬트의 부유한 상속녀. 재판에서 발타자르로 변장해 판결을 내린다.",
+    )
+    secret_marriage = CharacterRelation(
+        from_character_id="portia",
+        relation_type="married_to",
+        to_character_id="bassanio",
+        description="포샤가 바사니오에게 반지를 주며 아내가 되기로 서약한다.",
+        evidence_ftln_start=3002169,
+        evidence_ftln_end=3002175,
+    )
+    safe_fact = CharacterRelation(
+        from_character_id="portia",
+        relation_type="presides_over",
+        to_character_id="shylock",
+        description="포샤가 이 재판을 주재한다.",
+        evidence_ftln_start=1,
+        evidence_ftln_end=2,
+    )
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(
+            nodes={"portia": portia_node},
+            relations_by_character={"portia": [secret_marriage, safe_fact]},
+        ),
+    )
+    # scene_index=1 (portia_opens) isn't in REACTOR_OVERRIDE_SCENES, so Portia reacts.
+    started = await interactor.start_dev_scene(1, 50)
+    await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="bond_signature"),
+    )
+
+    context = portia.last_prompt.character_context
+    assert "발타자르로 변장" not in context
+    assert "married_to" not in context
+    assert "아내가 되기로 서약" not in context
+    assert "포샤가 이 재판을 주재한다" in context
 
 
 @pytest.mark.asyncio
@@ -215,6 +345,7 @@ async def test_launcelot_skill_applies_dp_and_hp() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
     result = await interactor.use_launcelot_skill(started.trial_id)
@@ -240,6 +371,7 @@ async def test_venice_paradox_skill_after_crowd_jeers() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX + 1, SHYLOCK_DP_START)
     skill = await interactor.use_venice_paradox_skill(started.trial_id)
@@ -259,6 +391,7 @@ async def test_venice_paradox_skill_rejects_before_crowd_jeers() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
 
@@ -276,6 +409,7 @@ async def test_venice_paradox_skill_is_one_time() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX + 1, 50)
     await interactor.use_venice_paradox_skill(started.trial_id)
@@ -295,6 +429,7 @@ async def test_jessica_duet_scene_uses_fixed_script_without_llm() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX - 1, 50)
     result = await interactor.advance_scene(started.trial_id)
@@ -326,6 +461,7 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX, 50)
     result = await interactor.advance_scene(started.trial_id)
@@ -365,6 +501,7 @@ async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(HATH_NOT_SCENE_INDEX, 50)
     result = await interactor.advance_scene(started.trial_id)
@@ -389,6 +526,7 @@ async def test_submit_choice_passes_reaction_history_to_next_prompt() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
     await interactor.submit_choice(
@@ -429,6 +567,7 @@ async def test_submit_choice_passes_folger_context_to_portia() -> None:
         portia=portia,
         evidence=evidence,
         tubal_enhancement=FakeTubalEnhancementClient(),
+        characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
     await interactor.submit_choice(

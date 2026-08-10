@@ -26,6 +26,13 @@ class PortiaResponsePromptDto:
     # trial_progression_interactor._build_portia_prompt for where it's resolved.
     reactor_speaker: str = "PORTIA"
     reactor_speaker_label: str = "포샤"
+    # Pre-formatted "인물 관계 정보" block (see character_relation_prompt.py),
+    # already filtered for whatever's safe to show reactor_speaker — e.g.
+    # Portia's own married_to edge is withheld to protect her disguise. Empty
+    # when the reactor isn't a character_relation graph node (CROWD) or the
+    # graph is unavailable (NullCharacterRelationRepository). Only populated
+    # for request_type=reaction — see trial_progression_interactor.
+    character_context: str = ""
 
 
 @dataclass(frozen=True, slots=True)

@@ -7,11 +7,26 @@ TrialProgressionPort is wired into this slice), so it structurally cannot
 leak scene/hint information even if a player tries to prompt-inject it.
 """
 
-from shylock_trial.domain.entities.character_relation_entity import (
-    CharacterNode,
-    CharacterRelation,
+# Re-exported for lore_chat_interactor.py's existing import site — the actual
+# definitions moved to character_relation_prompt.py once portia_prompt.py
+# needed them too (see that module's docstring).
+from shylock_trial.app.constants.character_relation_prompt import (
+    build_character_context_block,
+    build_relationship_path_block,
+    format_character,
+    format_relationship_path,
 )
 from shylock_trial.domain.entities.play_line_entity import PlayLine
+
+__all__ = [
+    "LORE_CHAT_SYSTEM_PROMPT",
+    "build_context_block",
+    "format_passage",
+    "build_character_context_block",
+    "build_relationship_path_block",
+    "format_character",
+    "format_relationship_path",
+]
 
 LORE_CHAT_SYSTEM_PROMPT = """\
 당신은 "샤일록의 법정" 게임에 등장하는 셰익스피어 『베니스의 상인』과
@@ -53,49 +68,3 @@ def format_passage(line: PlayLine) -> str:
     (Claude) and ollama_lore_chat_client.py (local) so both providers build
     context the same way."""
     return f"FTLN {line.ftln} ({line.speaker}, {line.act_scene}): {line.text}"
-
-
-def format_character(node: CharacterNode, relations: list[CharacterRelation]) -> str:
-    """Formats one character's node description plus every relation touching
-    it, for players asking "who is X" / "how are X and Y connected". This is
-    the structured counterpart to format_passage()/build_context_block() —
-    pgvector search over play lines is a poor fit for broad character
-    questions (nearest-neighbor line retrieval surfaces vocative/name-mention
-    lines, not biography), so this pulls from the curated character_relation
-    graph instead. See LoreChatInteractor._build_character_context."""
-    lines = [f"[{node.name_ko} ({node.name_en})] {node.description}"]
-    lines.extend(f"- {relation.description} ({relation.relation_type})" for relation in relations)
-    return "\n".join(lines)
-
-
-def build_character_context_block(character_blocks: list[str]) -> str:
-    if not character_blocks:
-        return ""
-    joined = "\n\n".join(character_blocks)
-    return f"인물 관계 정보:\n{joined}"
-
-
-def format_relationship_path(path: list[CharacterRelation], name_by_id: dict[str, str]) -> str:
-    """Formats a multi-hop chain (see CharacterRelationUseCase.trace_relationship)
-    as an explicit "A → B → C" line plus the fact behind each hop. Two
-    characters mentioned in the same question rarely have a *direct* relation
-    row between them (e.g. Portia/Antonio never interact directly) — the
-    actual connection (Portia married_to Bassanio, Bassanio financed_by
-    Antonio) only exists as separate rows on each of their individual
-    format_character() blocks, and a smaller local model won't reliably
-    chain those itself. Spelling the path out here is what makes the
-    conflict-of-interest example (the original motivation for this graph)
-    actually show up in answers instead of relying on the LLM to notice it."""
-    if not path:
-        return ""
-    node_chain = [name_by_id.get(path[0].from_character_id, path[0].from_character_id)]
-    node_chain.extend(name_by_id.get(relation.to_character_id, relation.to_character_id) for relation in path)
-    facts = " → ".join(relation.description for relation in path)
-    return f"{' → '.join(node_chain)}: {facts}"
-
-
-def build_relationship_path_block(path_lines: list[str]) -> str:
-    if not path_lines:
-        return ""
-    joined = "\n".join(f"- {line}" for line in path_lines)
-    return f"인물 간 연결 관계:\n{joined}"

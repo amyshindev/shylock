@@ -29,6 +29,10 @@ from shylock_trial.app.constants.scene_choices import (
     get_choice_evidence_id,
     get_skill_effect,
 )
+from shylock_trial.app.constants.character_relation_prompt import (
+    build_character_context_block,
+    format_character,
+)
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_DP_BONUS
 from shylock_trial.app.utils.choice_folger_context import get_choice_folger_context
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
@@ -45,6 +49,7 @@ from shylock_trial.app.dtos.trial_progression_dto import (
     SubmitChoiceResultDto,
     VeniceParadoxSkillResultDto,
 )
+from shylock_trial.app.ports.input.character_relation_use_case import CharacterRelationUseCase
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
@@ -63,10 +68,12 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         portia: PortiaResponseUseCase,
         evidence: EvidenceSearchUseCase,
         tubal_enhancement: TubalEnhancementClient,
+        characters: CharacterRelationUseCase,
     ) -> None:
         self._port = port
         self._portia = portia
         self._evidence = evidence
+        self._characters = characters
         self._tubal_enhancement = tubal_enhancement
 
     async def start(self, user_id: UUID | None = None) -> StartTrialResultDto:
@@ -130,7 +137,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             self._evidence,
             choice_label=choice_label,
         )
-        portia_prompt = self._build_portia_prompt(
+        portia_prompt = await self._build_portia_prompt(
             trial,
             context=f"choice:{input_dto.choice_id}",
             request_type="reaction",
@@ -211,13 +218,12 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia_hp=trial.portia_hp.value,
         )
 
-        ending = await self._portia.generate(
-            self._build_portia_prompt(
-                trial,
-                context=f"final_ending:{ending_type.value}",
-                request_type="ending",
-            )
+        ending_prompt = await self._build_portia_prompt(
+            trial,
+            context=f"final_ending:{ending_type.value}",
+            request_type="ending",
         )
+        ending = await self._portia.generate(ending_prompt)
 
         trial.phase = TrialPhase.ENDED
         trial.narration_text = ending.text
@@ -346,7 +352,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             raise ValueError(f"Trial not found: {trial_id}")
         return trial
 
-    def _build_portia_prompt(
+    async def _build_portia_prompt(
         self,
         trial: Trial,
         *,
@@ -356,6 +362,11 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         folger_context: str | None = None,
     ) -> PortiaResponsePromptDto:
         reactor_speaker, reactor_speaker_label = self._resolve_reactor(trial, request_type)
+        character_context = (
+            await self._build_character_context(reactor_speaker)
+            if request_type == "reaction"
+            else ""
+        )
         return PortiaResponsePromptDto(
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
@@ -372,6 +383,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             folger_context=folger_context,
             reactor_speaker=reactor_speaker,
             reactor_speaker_label=reactor_speaker_label,
+            character_context=character_context,
         )
 
     def _resolve_reactor(self, trial: Trial, request_type: str) -> tuple[str, str]:
@@ -385,6 +397,45 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             template = get_scene_template(trial.scene_index)
             return template.speaker, template.speaker_label
         return "PORTIA", "포샤"
+
+    # Maps SceneTemplate.speaker's uppercase English tags to character_relation's
+    # character_id. CROWD/NARRATOR intentionally absent — CROWD isn't a graph
+    # node (it's a collective, not an individual; see 031's migration
+    # docstring), and NARRATOR is never a reactor.
+    _REACTOR_CHARACTER_ID: dict[str, str] = {
+        "PORTIA": "portia",
+        "BASSANIO": "bassanio",
+        "JESSICA": "jessica",
+        "SHYLOCK": "shylock",
+        "LORENZO": "lorenzo",
+    }
+
+    # Relation types withheld from Portia's own reaction prompt specifically —
+    # her disguise as Balthazar and marriage to Bassanio are the central
+    # dramatic-irony secret PORTIA_PERSONA already guards ("NEVER explain or
+    # reveal any of this"). Every other reactor has nothing to hide about
+    # their own relationships, so this filter only applies when
+    # reactor_speaker == "PORTIA".
+    _PORTIA_HIDDEN_RELATION_TYPES = frozenset({"married_to"})
+
+    async def _build_character_context(self, reactor_speaker: str) -> str:
+        character_id = self._REACTOR_CHARACTER_ID.get(reactor_speaker)
+        if character_id is None:
+            return ""
+        node = await self._characters.get_character(character_id)
+        if node is None:
+            return ""
+        relations = await self._characters.get_relations_for(character_id)
+        if reactor_speaker == "PORTIA":
+            relations = [
+                relation
+                for relation in relations
+                if relation.relation_type not in self._PORTIA_HIDDEN_RELATION_TYPES
+            ]
+            block = format_character(node, relations, include_description=False)
+        else:
+            block = format_character(node, relations)
+        return build_character_context_block([block])
 
     def _choice_label_for(self, trial: Trial, choice_id: str) -> str | None:
         scene_dialogue = trial.scene_dialogues.get(trial.scene_index)

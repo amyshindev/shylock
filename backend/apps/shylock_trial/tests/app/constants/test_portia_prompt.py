@@ -197,6 +197,18 @@ def test_reaction_prompt_switches_to_non_portia_reactor() -> None:
     assert "포샤 본인의 입으로" not in message
 
 
+def test_non_portia_reaction_guards_against_wrong_friend_referent() -> None:
+    # Local model observed live saying "당신의 벗인 안토니오" (Antonio as
+    # Shylock's friend) instead of "나의 벗" (Bassanio's own friend) — Antonio
+    # and Shylock are enemies in the graph, so that's backwards.
+    message = build_user_message(
+        _reaction_prompt(reactor_speaker="BASSANIO", reactor_speaker_label="바사니오")
+    )
+
+    assert "나의 벗" in message
+    assert "샤일록의 친구가 아니다" in message
+
+
 def test_non_portia_reaction_drops_composure_gauge() -> None:
     message = build_user_message(
         _reaction_prompt(reactor_speaker="BASSANIO", reactor_speaker_label="바사니오")
@@ -216,6 +228,27 @@ def test_non_portia_reaction_still_carries_folger_context() -> None:
     )
 
     assert "I owe the most in money and in love" in message
+
+
+def test_reaction_prompt_includes_character_context() -> None:
+    character_context = "인물 관계 정보:\n- 안토니오가 자신의 재산과 목숨을 바사니오를 위해 내놓는다. (guarantor_for)"
+    message = build_user_message(_reaction_prompt(character_context=character_context))
+
+    assert "guarantor_for" in message
+    assert "자연스럽게 녹여" in message
+
+
+def test_non_portia_reaction_includes_character_context() -> None:
+    character_context = "인물 관계 정보:\n[바사니오 (Bassanio)] 안토니오의 친구."
+    message = build_user_message(
+        _reaction_prompt(
+            reactor_speaker="BASSANIO",
+            reactor_speaker_label="바사니오",
+            character_context=character_context,
+        )
+    )
+
+    assert "안토니오의 친구" in message
 
 
 def test_reaction_prompt_includes_folger_context() -> None:

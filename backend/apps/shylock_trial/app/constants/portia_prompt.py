@@ -401,6 +401,21 @@ def _folger_context_instruction(folger_context: str | None) -> str:
     return f"\n{folger_context}\n"
 
 
+def _character_context_instruction(character_context: str) -> str:
+    """See PortiaResponsePromptDto.character_context — already filtered by
+    the caller for whatever's safe for this reactor to know (e.g. Portia's
+    own married_to edge withheld). The "weave in, don't recite" framing
+    matters here specifically: unlike folger_context (quoted lines a
+    character can just say), a raw relation list read verbatim would sound
+    like the character is reciting a dossier about themselves."""
+    if not character_context:
+        return ""
+    return (
+        f"\n다음은 참고할 인물 관계 정보다 — 답변에 자연스럽게 녹여 쓰되, "
+        f"목록을 그대로 나열하거나 설명하듯 말하지 마라:\n{character_context}\n"
+    )
+
+
 # Reaction register for non-Portia reactors — see REACTOR_OVERRIDE_SCENES in
 # scene_progression.py. Deliberately much shorter than Portia's own
 # instruction block below: no portia_hp/composure-tier system (that's
@@ -413,6 +428,48 @@ _NON_PORTIA_REACTOR_REGISTER: dict[str, str] = {
     "BASSANIO": "~이오/~겠소/~시오, 필사적인 애원조 (법정 재판관의 격식체 아님)",
 }
 
+# Targeted fixes for specific pronoun/possessive confusions actually observed
+# live with the local model — not a general referent-tracking solution (that's
+# an inherent local-model reliability gap this project already accepts, same
+# reasoning as keeping FallbackPortiaResponseClient around), just closing the
+# one mix-up seen repeatedly: the local model sometimes calls Antonio "당신의
+# 벗"(Shylock's friend) instead of "나의 벗"(Bassanio's own friend) —
+# backwards, since Antonio and Shylock are enemies in this graph, not friends.
+_NON_PORTIA_REFERENT_GUARDRAIL: dict[str, str] = {
+    "BASSANIO": (
+        "안토니오는 너(바사니오)의 친구이지 샤일록의 친구가 아니다 — "
+        "'당신의 벗'이 아니라 '나의 벗'/'내 친구'라고만 써라."
+    ),
+}
+
+# Non-Portia counterpart to STIMULUS_REACTION_GUIDE — that guide is written
+# entirely as judicial strategy ("measured deflection", "reframe to...
+# contract wording", "procedural pressure"), which is exactly wrong for a
+# plea-maker and was actively pulling Bassanio's "reason" clause toward
+# courtroom-procedure language instead of his own relationship to Antonio
+# (confirmed live: reusing STIMULUS_REACTION_GUIDE here made "법의 엄격한
+# 형식과 절차" show up in a Bassanio reaction). Framed around raw personal
+# stakes instead, so the character_context block below has room to actually
+# be the "reason" the model reaches for.
+_NON_PORTIA_STIMULUS_GUIDE: dict[str, str] = {
+    "logical": (
+        "Shylock pressed a rational/legal point. Don't out-argue him with law — you're not a "
+        "jurist. Answer with what this bond actually costs the person you love, not courtroom logic."
+    ),
+    "emotional": (
+        "Shylock appealed to feeling, injury, or personal wound. Meet it directly — grieve with "
+        "him or beg harder. This is your register already; don't retreat into formality."
+    ),
+    "silence": (
+        "Shylock answered with silence or a wordless gesture. Don't read it as a legal concession "
+        "— read it as a person shutting you out. Push emotionally: ask him to just look at you."
+    ),
+    "provocation": (
+        "Shylock taunted, accused, or defied the court. You're stung and it shows — push back with "
+        "hurt or anger, but don't threaten him; you still need him to relent."
+    ),
+}
+
 
 def _non_portia_reaction_instruction(
     prompt: PortiaResponsePromptDto,
@@ -420,21 +477,26 @@ def _non_portia_reaction_instruction(
     choice_id: str | None,
     choice_brief: str,
     stimulus: str,
-    stimulus_guide: str,
 ) -> str:
     register = _NON_PORTIA_REACTOR_REGISTER.get(prompt.reactor_speaker, "~이오/~겠소/~시오")
+    stimulus_guide = _NON_PORTIA_STIMULUS_GUIDE.get(stimulus, _NON_PORTIA_STIMULUS_GUIDE["logical"])
+    referent_guardrail = _NON_PORTIA_REFERENT_GUARDRAIL.get(prompt.reactor_speaker, "")
     return (
         f"중요: 이번 반응은 포샤가 아니라 {prompt.reactor_speaker_label}({prompt.reactor_speaker})이 "
         "말한다. 위 시스템 지침의 '포샤 전용' 반응 규칙은 이번 요청에는 적용하지 마라 — "
         f"포샤를 언급하거나 포샤의 어조를 쓰지 말고, {prompt.reactor_speaker_label} 본인의 입으로만 "
         "샤일록에게 직접 말하는 대사를 써라. 3인칭 서술·'라고 말하였다' 형식 금지.\n"
-        f"Register: {register}. 1–3문장.\n"
+        f"Register: {register}. 2–3문장 — 감정적 호소 한 문장과, 아래 '인물 관계 정보'에 근거한 "
+        "구체적 이유 한 문장으로 나눠라. 법 절차나 계약 조항으로 근거를 대지 마라 — "
+        f"{prompt.reactor_speaker_label}은 판사가 아니다.\n"
+        f"{referent_guardrail}\n"
         f"평정심 게이지(portia_hp)는 포샤 전용 장치이니 이 반응엔 적용하지 마라 — "
         f"{prompt.reactor_speaker_label}은 지금 샤일록의 대답에 감정적으로 반응하는 한 사람일 뿐, "
         "판정을 회피하거나 우위를 유지할 필요가 없다.\n\n"
         f"샤일록의 방금 대답 ({choice_id or 'unknown'}): {choice_brief}\n"
         f"자극 유형: {stimulus} — {stimulus_guide}\n"
         f"{_folger_context_instruction(prompt.folger_context)}"
+        f"{_character_context_instruction(prompt.character_context)}"
     )
 
 
@@ -453,7 +515,6 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
             choice_id=choice_id,
             choice_brief=choice_brief,
             stimulus=stimulus,
-            stimulus_guide=stimulus_guide,
         )
 
     return (
@@ -471,7 +532,8 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
         f"{_portia_hp_tone_instruction(prompt.portia_hp)}\n"
         f"{_composure_signal_instruction(prompt.scene_index, prompt.portia_hp)}"
         f"{_previous_reactions_instruction(prompt.previous_portia_reactions)}"
-        f"{_folger_context_instruction(prompt.folger_context)}\n"
+        f"{_folger_context_instruction(prompt.folger_context)}"
+        f"{_character_context_instruction(prompt.character_context)}\n"
         "Anti-pattern: do NOT conclude with '자비를 베풀라' or any mercy plea unless the stimulus "
         "is explicitly emotional AND portia_hp is high. Vary your closing move: procedure, reframe, "
         "authority, dry irony, or a pointed question."
