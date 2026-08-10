@@ -78,15 +78,19 @@ def _strip_json_fence(raw: str) -> str | None:
     return match.group(1).strip() if match else raw.strip()
 
 
-def _parse_reaction(raw: str, request_type: str) -> PortiaResponseResultDto:
+def _parse_reaction(raw: str, prompt: PortiaResponsePromptDto) -> PortiaResponseResultDto:
     try:
         parsed = _PortiaResponseOutput.model_validate_json(_strip_json_fence(raw))
         text = parsed.text.strip()
         if text:
             cleaned = sanitize_game_text(text)
-            if request_type == "reaction":
+            if prompt.request_type == "reaction":
                 cleaned = sanitize_character_direct_speech(cleaned)
-            return PortiaResponseResultDto(text=cleaned)
+            return PortiaResponseResultDto(
+                text=cleaned,
+                speaker=prompt.reactor_speaker,
+                speaker_label=prompt.reactor_speaker_label,
+            )
     except (ValidationError, json.JSONDecodeError):
         pass
 
@@ -95,7 +99,12 @@ def _parse_reaction(raw: str, request_type: str) -> PortiaResponseResultDto:
     # best-effort-extracted, so FallbackPortiaResponseClient sees
     # fallback_used=True and escalates to Claude instead of ever serving a
     # player a mangled response.
-    return PortiaResponseResultDto(text=REACTION_FALLBACK_TEXT, fallback_used=True)
+    return PortiaResponseResultDto(
+        text=REACTION_FALLBACK_TEXT,
+        fallback_used=True,
+        speaker=prompt.reactor_speaker,
+        speaker_label=prompt.reactor_speaker_label,
+    )
 
 
 def _line_speaker_from_template(template, index: int, kind: DialogueLineKind) -> str:
@@ -153,7 +162,7 @@ class OllamaPortiaResponseClient(PortiaResponsePort):
 
     async def generate(self, prompt: PortiaResponsePromptDto) -> PortiaResponseResultDto:
         raw = await self._chat(SYSTEM_PROMPT, build_user_message(prompt))
-        return _parse_reaction(raw, prompt.request_type)
+        return _parse_reaction(raw, prompt)
 
     async def generate_scene_dialogue(
         self,

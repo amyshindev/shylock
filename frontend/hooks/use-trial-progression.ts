@@ -140,11 +140,18 @@ export function useTrialProgression(trialId: string) {
   const [veniceDpShield, setVeniceDpShield] = useState(false);
   const [veniceParadoxUsed, setVeniceParadoxUsed] = useState(false);
   const [portiaReply, setPortiaReply] = useState("");
+  // Who portiaReply is voiced as — mirrors the backend's per-scene reactor
+  // override (see SubmitChoiceResponse.portia_response_speaker). Defaults to
+  // Portia; only set otherwise once an actual API response says so.
+  const [portiaReplySpeaker, setPortiaReplySpeaker] = useState("PORTIA");
+  const [portiaReplySpeakerLabel, setPortiaReplySpeakerLabel] = useState("포샤");
   const [loadingReply, setLoadingReply] = useState(false);
   const [loadingScene, setLoadingScene] = useState(false);
   const [showChallenge, setShowChallenge] = useState(false);
   const [selectedChoiceItem, setSelectedChoiceItem] = useState<string | null>(null);
   const [pendingPortiaReply, setPendingPortiaReply] = useState<string | null>(null);
+  const [pendingPortiaReplySpeaker, setPendingPortiaReplySpeaker] = useState("PORTIA");
+  const [pendingPortiaReplySpeakerLabel, setPendingPortiaReplySpeakerLabel] = useState("포샤");
   const [climaxMode, setClimaxMode] = useState(false);
   const [showPressPresent, setShowPressPresent] = useState(false);
   const [testimonyIndex, setTestimonyIndex] = useState(0);
@@ -258,13 +265,15 @@ export function useTrialProgression(trialId: string) {
       : "NARRATOR"
     : isVeniceSkillActive
       ? "SHYLOCK"
-      : portiaReply || isTubalActive
+      : isTubalActive
       ? "PORTIA"
-      : shylockPressReply
-        ? "SHYLOCK"
-        : showPressPresent
-          ? "CROWD"
-          : currentLineEntry?.speaker ?? scene.speaker;
+      : portiaReply
+        ? portiaReplySpeaker
+        : shylockPressReply
+          ? "SHYLOCK"
+          : showPressPresent
+            ? "CROWD"
+            : currentLineEntry?.speaker ?? scene.speaker;
   const speakerLabel = isLauncelotActive
     ? launcelotPhase === "speaking"
       ? "론슬롯"
@@ -274,7 +283,7 @@ export function useTrialProgression(trialId: string) {
       : isTubalActive
       ? "투발"
       : portiaReply
-        ? "포샤"
+        ? portiaReplySpeakerLabel
         : shylockPressReply
           ? "샤일록"
           : showPressPresent
@@ -445,6 +454,8 @@ export function useTrialProgression(trialId: string) {
     sceneAdvanceLockRef.current = true;
 
     setPortiaReply("");
+    setPortiaReplySpeaker("PORTIA");
+    setPortiaReplySpeakerLabel("포샤");
     setTubalPhase("idle");
     setTubalMessage(null);
     setLauncelotPhase("idle");
@@ -458,6 +469,8 @@ export function useTrialProgression(trialId: string) {
     setShowChallenge(false);
     setSelectedChoiceItem(null);
     setPendingPortiaReply(null);
+    setPendingPortiaReplySpeaker("PORTIA");
+    setPendingPortiaReplySpeakerLabel("포샤");
     setLineIdx(0);
     setError(null);
 
@@ -593,6 +606,8 @@ export function useTrialProgression(trialId: string) {
 
     if (pendingPortiaReply) {
       setPortiaReply(pendingPortiaReply);
+      setPortiaReplySpeaker(pendingPortiaReplySpeaker);
+      setPortiaReplySpeakerLabel(pendingPortiaReplySpeakerLabel);
       setPendingPortiaReply(null);
       return;
     }
@@ -626,6 +641,8 @@ export function useTrialProgression(trialId: string) {
     isLastLine,
     challengeLineIndex,
     pendingPortiaReply,
+    pendingPortiaReplySpeaker,
+    pendingPortiaReplySpeakerLabel,
     scene.challenge,
     showChallenge,
     isLastScene,
@@ -699,15 +716,21 @@ export function useTrialProgression(trialId: string) {
         }
 
         const portiaText = extractPortiaText(res.portia_response);
+        const replySpeaker = res.portia_response_speaker ?? "PORTIA";
+        const replySpeakerLabel = res.portia_response_speaker_label ?? "포샤";
         const afterLine = scene.challengeAfterLineIndex;
         if (
           afterLine !== undefined &&
           afterLine < scene.lines.length - 1
         ) {
           setPendingPortiaReply(portiaText);
+          setPendingPortiaReplySpeaker(replySpeaker);
+          setPendingPortiaReplySpeakerLabel(replySpeakerLabel);
           setLineIdx(afterLine + 1);
         } else {
           setPortiaReply(portiaText);
+          setPortiaReplySpeaker(replySpeaker);
+          setPortiaReplySpeakerLabel(replySpeakerLabel);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Choice failed");

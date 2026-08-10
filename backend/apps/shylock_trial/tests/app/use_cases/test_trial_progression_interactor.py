@@ -18,7 +18,17 @@ class FakePortiaUseCase:
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
 
         self.last_prompt = prompt
-        return PortiaResponseResultDto(text="Portia speaks.", fallback_used=False)
+        # Real Port implementations echo prompt.reactor_speaker/_label into
+        # the result (see portia_response_client.py / ollama_portia_response_
+        # client.py) — mirroring that here so tests exercise the full
+        # submit_choice -> ... -> SubmitChoiceResultDto plumbing, not just
+        # prompt construction.
+        return PortiaResponseResultDto(
+            text="Portia speaks.",
+            fallback_used=False,
+            speaker=prompt.reactor_speaker,
+            speaker_label=prompt.reactor_speaker_label,
+        )
 
     async def generate_scene_dialogue(self, prompt):
         from shylock_trial.app.constants.scene_catalog import fallback_scene_dialogue
@@ -137,6 +147,56 @@ async def test_submit_choice_deducts_hp_and_applies_dp() -> None:
     assert choice.dp == SHYLOCK_DP_START + 13
     assert started.portia_hp == PORTIA_HP_START
     assert choice.portia_hp == PORTIA_HP_START - 7
+
+
+@pytest.mark.asyncio
+async def test_bassanio_plea_reaction_is_voiced_by_bassanio() -> None:
+    from shylock_trial.app.constants.scene_progression import BASSANIO_PLEA_SCENE_INDEX
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(BASSANIO_PLEA_SCENE_INDEX, 50)
+    choice = await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
+    )
+
+    assert portia.last_prompt.reactor_speaker == "BASSANIO"
+    assert portia.last_prompt.reactor_speaker_label == "바사니오"
+    assert choice.portia_response_speaker == "BASSANIO"
+    assert choice.portia_response_speaker_label == "바사니오"
+
+
+@pytest.mark.asyncio
+async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
+    # crowd_jeers isn't in REACTOR_OVERRIDE_SCENES yet — this scene's own
+    # speaker (CROWD) must NOT bleed into the reactor override until that's
+    # deliberately added, same as every other non-opted-in scene.
+    from shylock_trial.app.constants.scene_progression import CROWD_JEERS_SCENE_INDEX
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    portia = FakePortiaUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=portia,
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+    )
+    started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
+    choice = await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="coat_show_spit"),
+    )
+
+    assert portia.last_prompt.reactor_speaker == "PORTIA"
+    assert choice.portia_response_speaker == "PORTIA"
+    assert choice.portia_response_speaker_label == "포샤"
 
 
 @pytest.mark.asyncio
@@ -378,4 +438,3 @@ async def test_submit_choice_passes_folger_context_to_portia() -> None:
     assert portia.last_prompt is not None
     assert portia.last_prompt.folger_context is not None
     assert "spit upon my Jewish gaberdine" in portia.last_prompt.folger_context
-

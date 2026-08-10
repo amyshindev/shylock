@@ -184,14 +184,15 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     !!portiaReply;
 
   const dialogueProps = {
-    speaker: isLauncelotActive ? speaker : isTubalActive ? "PORTIA" : speaker,
-    speakerLabel: isLauncelotActive
-      ? speakerLabel
-      : isTubalActive
-        ? "투발"
-        : portiaReply || loadingReply
-          ? "포샤"
-          : speakerLabel,
+    // speaker/speakerLabel already resolve isLauncelotActive/isTubalActive/
+    // portiaReply cases inside the hook (use-trial-progression.ts) — no need
+    // to redo that branching here. This used to also force "포샤" during
+    // loadingReply specifically, which is wrong once a scene's reaction can
+    // be voiced by someone else (see REACTOR_OVERRIDE_SCENES on the backend):
+    // it's now correct to just let the loading gap fall through to the
+    // scene's own speaker instead of guessing Portia.
+    speaker,
+    speakerLabel,
     showSpeakerTab,
     text: loadingScene
       ? ""

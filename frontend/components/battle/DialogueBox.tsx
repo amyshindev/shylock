@@ -19,6 +19,7 @@ import { theme } from "@/styles/theme";
 const SPEAKER_LABEL: Record<string, string> = {
   NARRATOR: "NARRATOR",
   PORTIA: "포샤",
+  BASSANIO: "바사니오",
   CROWD: "군중",
   JESSICA: "제시카",
   LORENZO: "로렌조",
@@ -93,10 +94,13 @@ export function DialogueBox({
   const isClickable =
     canAdvanceLine || canAdvanceReply || canCompleteReply || canSkipTyping;
 
+  // Portia-branch loading text stays speaker-neutral on purpose: this same
+  // "portia" replyMode/loadingReply state covers both a mid-scene reaction
+  // AND the ending narration fetch after a scripted no-choice scene (e.g.
+  // jessica_intervention) — there's no single character it's always
+  // accurate to name here.
   const loadingMessage =
-    replyMode === "tubal"
-      ? sanitizeDialogueLine(text) || "증거를 찾고 있소…"
-      : "포샤가 반응하고 있다...";
+    replyMode === "tubal" ? sanitizeDialogueLine(text) || "증거를 찾고 있소…" : "...";
 
   const portiaReplyStyle = {
     margin: 0,

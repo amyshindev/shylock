@@ -401,6 +401,43 @@ def _folger_context_instruction(folger_context: str | None) -> str:
     return f"\n{folger_context}\n"
 
 
+# Reaction register for non-Portia reactors — see REACTOR_OVERRIDE_SCENES in
+# scene_progression.py. Deliberately much shorter than Portia's own
+# instruction block below: no portia_hp/composure-tier system (that's
+# Portia's own strained-composure arc across the whole trial, not relevant to
+# a one-scene NPC) and no "avoid a direct verdict" judicial posture (that's a
+# judge's move, not a plea-maker's). Register strings match
+# SCENE_DIALOGUE_SYSTEM_PROMPT's speaker table so a scene's opening dialogue
+# and its post-choice reaction sound like the same character.
+_NON_PORTIA_REACTOR_REGISTER: dict[str, str] = {
+    "BASSANIO": "~이오/~겠소/~시오, 필사적인 애원조 (법정 재판관의 격식체 아님)",
+}
+
+
+def _non_portia_reaction_instruction(
+    prompt: PortiaResponsePromptDto,
+    *,
+    choice_id: str | None,
+    choice_brief: str,
+    stimulus: str,
+    stimulus_guide: str,
+) -> str:
+    register = _NON_PORTIA_REACTOR_REGISTER.get(prompt.reactor_speaker, "~이오/~겠소/~시오")
+    return (
+        f"중요: 이번 반응은 포샤가 아니라 {prompt.reactor_speaker_label}({prompt.reactor_speaker})이 "
+        "말한다. 위 시스템 지침의 '포샤 전용' 반응 규칙은 이번 요청에는 적용하지 마라 — "
+        f"포샤를 언급하거나 포샤의 어조를 쓰지 말고, {prompt.reactor_speaker_label} 본인의 입으로만 "
+        "샤일록에게 직접 말하는 대사를 써라. 3인칭 서술·'라고 말하였다' 형식 금지.\n"
+        f"Register: {register}. 1–3문장.\n"
+        f"평정심 게이지(portia_hp)는 포샤 전용 장치이니 이 반응엔 적용하지 마라 — "
+        f"{prompt.reactor_speaker_label}은 지금 샤일록의 대답에 감정적으로 반응하는 한 사람일 뿐, "
+        "판정을 회피하거나 우위를 유지할 필요가 없다.\n\n"
+        f"샤일록의 방금 대답 ({choice_id or 'unknown'}): {choice_brief}\n"
+        f"자극 유형: {stimulus} — {stimulus_guide}\n"
+        f"{_folger_context_instruction(prompt.folger_context)}"
+    )
+
+
 def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
     choice_id = prompt.choice_id
     if choice_id is None and prompt.context.startswith("choice:"):
@@ -409,6 +446,15 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
     stimulus = CHOICE_STIMULUS.get(choice_id or "", "logical")
     stimulus_guide = STIMULUS_REACTION_GUIDE.get(stimulus, STIMULUS_REACTION_GUIDE["logical"])
     choice_brief = CHOICE_BRIEFS.get(choice_id or "", prompt.context)
+
+    if prompt.reactor_speaker != "PORTIA":
+        return _non_portia_reaction_instruction(
+            prompt,
+            choice_id=choice_id,
+            choice_brief=choice_brief,
+            stimulus=stimulus,
+            stimulus_guide=stimulus_guide,
+        )
 
     return (
         "포샤가 샤일록의 최근 선택에 직접 말하는 대사만 작성하라. "
@@ -467,4 +513,3 @@ tubal: {tubal_context}
 evidence: {evidence_context}
 
 {return_format}"""
-

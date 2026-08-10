@@ -160,6 +160,11 @@ class SubmitChoiceResponse(BaseModel):
     portia_hp: int
     phase: TrialPhase
     portia_response: str
+    # Who portia_response is voiced as — "PORTIA"/"포샤" for every scene except
+    # the small opt-in set in scene_progression.REACTOR_OVERRIDE_SCENES (e.g.
+    # bassanio_plea). Defaults keep old API consumers (if any) unaffected.
+    portia_response_speaker: str = "PORTIA"
+    portia_response_speaker_label: str = "포샤"
     ending_type: str | None = None
     is_ending: bool
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)

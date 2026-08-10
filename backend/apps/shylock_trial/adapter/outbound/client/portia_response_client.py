@@ -146,6 +146,8 @@ class PortiaResponseClient(PortiaResponsePort):
             if text:
                 return PortiaResponseResultDto(
                     text=self._finalize_portia_text(text, prompt.request_type),
+                    speaker=prompt.reactor_speaker,
+                    speaker_label=prompt.reactor_speaker_label,
                 )
         except (ValidationError, json.JSONDecodeError):
             pass
@@ -153,9 +155,14 @@ class PortiaResponseClient(PortiaResponsePort):
         text = self._finalize_portia_text(extract_portia_text(raw), prompt.request_type)
         if not text:
             return PortiaResponseResultDto(
-                text=REACTION_FALLBACK_TEXT, fallback_used=True
+                text=REACTION_FALLBACK_TEXT,
+                fallback_used=True,
+                speaker=prompt.reactor_speaker,
+                speaker_label=prompt.reactor_speaker_label,
             )
-        return PortiaResponseResultDto(text=text)
+        return PortiaResponseResultDto(
+            text=text, speaker=prompt.reactor_speaker, speaker_label=prompt.reactor_speaker_label
+        )
 
     def _finalize_portia_text(self, text: str, request_type: str) -> str:
         cleaned = sanitize_game_text(text)

@@ -127,6 +127,8 @@ async def submit_choice(
         portia_hp=result.portia_hp,
         phase=result.phase,
         portia_response=result.portia_response,
+        portia_response_speaker=result.portia_response_speaker,
+        portia_response_speaker_label=result.portia_response_speaker_label,
         ending_type=result.ending_type.value if result.ending_type else None,
         is_ending=result.is_ending,
         tubal_enhanced_choices=result.tubal_enhanced_choices,

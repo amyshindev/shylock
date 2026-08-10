@@ -69,7 +69,12 @@ class FallbackPortiaResponseClient(PortiaResponsePort):
                 prompt.context,
                 exc_info=True,
             )
-            return PortiaResponseResultDto(text=REACTION_FALLBACK_TEXT, fallback_used=True)
+            return PortiaResponseResultDto(
+                text=REACTION_FALLBACK_TEXT,
+                fallback_used=True,
+                speaker=prompt.reactor_speaker,
+                speaker_label=prompt.reactor_speaker_label,
+            )
 
     async def generate_scene_dialogue(
         self,

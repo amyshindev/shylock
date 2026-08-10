@@ -26,7 +26,12 @@ class PortiaResponseInteractor(PortiaResponseUseCase):
             return await self._port.generate(prompt)
         except Exception:
             logger.exception("Portia LLM request failed; returning fallback text")
-            return PortiaResponseResultDto(text=FALLBACK_TEXT, fallback_used=True)
+            return PortiaResponseResultDto(
+                text=FALLBACK_TEXT,
+                fallback_used=True,
+                speaker=prompt.reactor_speaker,
+                speaker_label=prompt.reactor_speaker_label,
+            )
 
     async def generate_scene_dialogue(
         self,

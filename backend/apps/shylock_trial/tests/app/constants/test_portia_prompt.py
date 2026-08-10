@@ -172,6 +172,52 @@ def test_other_endings_keep_standard_legal_defeat_note() -> None:
     assert "halts the alien-law verdict" not in message
 
 
+def test_reaction_prompt_defaults_to_portia_voice() -> None:
+    message = build_user_message(_reaction_prompt())
+
+    assert "포샤 본인의 입으로" in message
+    assert "이번 반응은 포샤가 아니라" not in message
+
+
+def test_reaction_prompt_switches_to_non_portia_reactor() -> None:
+    message = build_user_message(
+        _reaction_prompt(
+            scene_index=2,
+            choice_id="gold_refuse_direct",
+            context="choice:gold_refuse_direct",
+            reactor_speaker="BASSANIO",
+            reactor_speaker_label="바사니오",
+        )
+    )
+
+    assert "이번 반응은 포샤가 아니라 바사니오(BASSANIO)이 말한다" in message
+    assert "필사적인 애원조" in message
+    # Portia-only machinery must not leak into the non-Portia instruction block.
+    assert "판정 회피 원칙" not in message
+    assert "포샤 본인의 입으로" not in message
+
+
+def test_non_portia_reaction_drops_composure_gauge() -> None:
+    message = build_user_message(
+        _reaction_prompt(reactor_speaker="BASSANIO", reactor_speaker_label="바사니오")
+    )
+
+    assert "평정심 게이지(portia_hp)는 포샤 전용 장치" in message
+
+
+def test_non_portia_reaction_still_carries_folger_context() -> None:
+    folger_context = "## 원작 맥락 (Folger MV RAG)\n[1.3] BASSANIO: I owe the most in money and in love"
+    message = build_user_message(
+        _reaction_prompt(
+            reactor_speaker="BASSANIO",
+            reactor_speaker_label="바사니오",
+            folger_context=folger_context,
+        )
+    )
+
+    assert "I owe the most in money and in love" in message
+
+
 def test_reaction_prompt_includes_folger_context() -> None:
     folger_context = (
         "## 원작 맥락 (Folger MV RAG)\n"

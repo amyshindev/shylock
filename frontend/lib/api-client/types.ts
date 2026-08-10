@@ -57,6 +57,11 @@ export interface SubmitChoiceResponse {
   portia_hp: number;
   phase: TrialPhase;
   portia_response: string;
+  // Who portia_response is voiced as — "PORTIA"/"포샤" for almost every scene;
+  // a small opt-in set (see backend's scene_progression.REACTOR_OVERRIDE_SCENES,
+  // e.g. bassanio_plea) swaps this to that scene's own speaker instead.
+  portia_response_speaker?: string;
+  portia_response_speaker_label?: string;
   ending_type: string | null;
   is_ending: boolean;
   tubal_enhanced_choices?: Record<string, string>;

@@ -13,11 +13,13 @@ from shylock_trial.app.constants.game_balance import (
 )
 from shylock_trial.app.constants.scene_catalog import (
     fallback_scene_dialogue,
+    get_scene_template,
     is_fixed_script_scene,
 )
 from shylock_trial.app.constants.scene_progression import (
     CROWD_JEERS_SCENE_INDEX,
     HATH_NOT_SCENE_INDEX,
+    REACTOR_OVERRIDE_SCENES,
     resolve_next_scene_index,
 )
 from shylock_trial.app.constants.scene_choices import (
@@ -161,6 +163,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             portia_hp=trial.portia_hp.value,
             phase=trial.phase,
             portia_response=portia.text,
+            portia_response_speaker=portia.speaker,
+            portia_response_speaker_label=portia.speaker_label,
             ending_type=None,
             is_ending=is_ending,
             tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
@@ -351,6 +355,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         choice_id: str | None = None,
         folger_context: str | None = None,
     ) -> PortiaResponsePromptDto:
+        reactor_speaker, reactor_speaker_label = self._resolve_reactor(trial, request_type)
         return PortiaResponsePromptDto(
             trial_id=trial.trial_id,
             scene_index=trial.scene_index,
@@ -365,7 +370,21 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             tubal_used_scenes=trial.tubal_used_scenes,
             presented_evidence=trial.presented_evidence,
             folger_context=folger_context,
+            reactor_speaker=reactor_speaker,
+            reactor_speaker_label=reactor_speaker_label,
         )
+
+    def _resolve_reactor(self, trial: Trial, request_type: str) -> tuple[str, str]:
+        """Who request_type=reaction should be voiced as. Only reaction calls
+        for scenes in REACTOR_OVERRIDE_SCENES swap away from Portia — narration/
+        ending requests, and every scene not in that set, keep the original
+        Portia-always behavior unchanged. See scene_progression.py's docstring
+        for why this is an explicit allowlist rather than "whatever the scene's
+        own speaker is"."""
+        if request_type == "reaction" and trial.scene_index in REACTOR_OVERRIDE_SCENES:
+            template = get_scene_template(trial.scene_index)
+            return template.speaker, template.speaker_label
+        return "PORTIA", "포샤"
 
     def _choice_label_for(self, trial: Trial, choice_id: str) -> str | None:
         scene_dialogue = trial.scene_dialogues.get(trial.scene_index)

@@ -36,6 +36,8 @@ class SubmitChoiceResultDto:
     is_ending: bool
     tubal_enhanced_choices: dict[str, str]
     venice_dp_shield: bool
+    portia_response_speaker: str = "PORTIA"
+    portia_response_speaker_label: str = "포샤"
 
 
 @dataclass(frozen=True, slots=True)
