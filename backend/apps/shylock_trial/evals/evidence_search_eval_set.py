@@ -75,10 +75,4 @@ EVAL_CASES: tuple[EvidenceSearchEvalCase, ...] = (
         gold_evidence_ids=("blood", "bond_wording"),
         confidence="inferred",  # both evidence items are on-topic for the "no blood" ruling
     ),
-    EvidenceSearchEvalCase(
-        scene_id="alien_law_reveal",
-        query=PORTIA_LOGICAL_FLAWS["alien_law_reveal"],
-        gold_evidence_ids=("alien_law",),
-        confidence="inferred",
-    ),
 )

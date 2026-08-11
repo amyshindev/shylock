@@ -653,7 +653,7 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
       },
     ],
     challengeTemplate: null,
-    availableEvidence: ["alien_law", "blood", "hath_not", "jessica"],
+    availableEvidence: ["blood", "hath_not", "jessica"],
   },
   {
     // Fixed climax scene — scripted verbatim, no item/choice UI (same pattern as
