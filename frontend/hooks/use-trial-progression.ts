@@ -51,6 +51,8 @@ import {
 import { TUBAL_ENHANCEMENT_BY_SCENE } from "@/lib/constants/tubal-enhancement-map";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
 import { isLastNarrativeScene } from "@/lib/constants/scene-progression";
+import { resolveRoundVerdict, type RoundVerdict } from "@/lib/constants/round-verdict";
+import { SCENE_ITEM_GATE_BY_SCENE_ID } from "@/lib/constants/scene-item-gate";
 import { extractPortiaText } from "@/lib/portia-text";
 import { resolveSpeakerLabel } from "@/lib/speaker-labels";
 
@@ -192,6 +194,7 @@ export function useTrialProgression(trialId: string) {
 
   const [dpGainFlash, setDpGainFlash] = useState<number | null>(null);
   const [hpGainFlash, setHpGainFlash] = useState<number | null>(null);
+  const [roundVerdict, setRoundVerdict] = useState<RoundVerdict | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -205,6 +208,8 @@ export function useTrialProgression(trialId: string) {
     scene.challengeAfterLineIndex ??
     (scene.challenge ? scene.lines.length - 1 : -1);
   const isLastScene = isLastNarrativeScene(sceneIdx, portiaHp);
+  const sceneItemGate = SCENE_ITEM_GATE_BY_SCENE_ID[scene.id];
+  const showSceneItemGate = sceneItemGate !== undefined && lineIdx === sceneItemGate.atLineIndex;
 
   // Tubal's find for *this* scene, if any — surfaced as an extra item-choice card.
   const activeTubalItem = useMemo(() => {
@@ -491,7 +496,9 @@ export function useTrialProgression(trialId: string) {
         [result.scene_index]: result.scene_dialogue,
       }));
       setSceneIdx(result.scene_index);
-      // Fixed scenes (jessica_duet, hath_not_moment) apply stat effects server-side on advance.
+      // Fixed scenes (jessica_duet, hath_not_moment) apply stat effects server-side on advance —
+      // resolve this scene's round verdict off that same delta before dp moves on.
+      setRoundVerdict((current) => current ?? resolveRoundVerdict(scene.id, result.dp - dp));
       setDp(result.dp);
       setHp(result.hp);
       setPortiaHp(result.portia_hp);
@@ -502,7 +509,7 @@ export function useTrialProgression(trialId: string) {
       setLoadingScene(false);
       sceneAdvanceLockRef.current = false;
     }
-  }, [isLastScene, trialId, finishToEnding, loadingScene, triggerGameOverIfNeeded]);
+  }, [isLastScene, trialId, finishToEnding, loadingScene, triggerGameOverIfNeeded, scene, dp]);
 
   const applyLauncelotHpGain = useCallback(() => {
     if (launcelotHpGainAppliedRef.current || launcelotPendingHpRef.current === null) {
@@ -567,7 +574,8 @@ export function useTrialProgression(trialId: string) {
       loadingVeniceSkill ||
       choiceLockRef.current ||
       climaxMode ||
-      evidenceDetailView
+      evidenceDetailView ||
+      roundVerdict
     ) {
       return;
     }
@@ -598,6 +606,10 @@ export function useTrialProgression(trialId: string) {
     if (!isLastLine) {
       if (scene.challenge && !showChallenge && lineIdx === challengeLineIndex) {
         setShowChallenge(true);
+        return;
+      }
+      if (showSceneItemGate) {
+        // Blocked here until selectSceneItemGate() jumps lineIdx forward itself.
         return;
       }
       setLineIdx((i) => i + 1);
@@ -635,11 +647,13 @@ export function useTrialProgression(trialId: string) {
     advanceVeniceSkillStep,
     climaxMode,
     evidenceDetailView,
+    roundVerdict,
     portiaReply,
     tubalMessage,
     tubalPhase,
     isLastLine,
     challengeLineIndex,
+    showSceneItemGate,
     pendingPortiaReply,
     pendingPortiaReplySpeaker,
     pendingPortiaReplySpeakerLabel,
@@ -680,6 +694,7 @@ export function useTrialProgression(trialId: string) {
       setHp(nextHp);
       setPortiaHp(nextPortiaHp);
       setVeniceDpShield(nextShield);
+      setRoundVerdict(resolveRoundVerdict(scene.id, nextDp - dp));
 
       if (triggerGameOverIfNeeded(nextDp, nextHp)) {
         choiceLockRef.current = false;
@@ -761,6 +776,13 @@ export function useTrialProgression(trialId: string) {
   const clearChoiceItem = useCallback(() => {
     setSelectedChoiceItem(null);
   }, []);
+
+  // See lib/constants/scene-item-gate.ts — jumps straight to the gate's
+  // target line, no submitChoice/ChoiceList step (unlike selectChoiceItem).
+  const selectSceneItemGate = useCallback(() => {
+    if (!sceneItemGate) return;
+    setLineIdx(sceneItemGate.targetLineIndex);
+  }, [sceneItemGate]);
 
   const executeTubalSearch = useCallback(async () => {
     setLoadingTubal(true);
@@ -1039,6 +1061,16 @@ export function useTrialProgression(trialId: string) {
     return () => window.clearTimeout(timer);
   }, [dpGainFlash]);
 
+  const dismissRoundVerdict = useCallback(() => {
+    setRoundVerdict(null);
+  }, []);
+
+  useEffect(() => {
+    if (roundVerdict === null) return;
+    const timer = window.setTimeout(() => setRoundVerdict(null), TIMING.choiceSequenceMs);
+    return () => window.clearTimeout(timer);
+  }, [roundVerdict]);
+
   return {
     phase,
     gameOverReason,
@@ -1051,6 +1083,8 @@ export function useTrialProgression(trialId: string) {
     portiaHp,
     dpGainFlash,
     hpGainFlash,
+    roundVerdict,
+    dismissRoundVerdict,
     veniceDpShield,
     veniceParadoxUsed,
     speaker,
@@ -1076,6 +1110,8 @@ export function useTrialProgression(trialId: string) {
     loadingScene,
     showChallenge,
     selectedChoiceItem,
+    showSceneItemGate,
+    sceneItemGateEvidenceId: sceneItemGate?.evidenceId ?? null,
     showPressPresent,
     pressPresentComplete,
     pressedTestimonyIds,
@@ -1105,6 +1141,7 @@ export function useTrialProgression(trialId: string) {
     makeChoice,
     selectChoiceItem,
     clearChoiceItem,
+    selectSceneItemGate,
     useSkill,
     dismissClimax,
     dismissTubalMessage,
