@@ -1,6 +1,10 @@
 "use client";
 
+import Image, { getImageProps } from "next/image";
+
+import { SCENE_TEMPLATES } from "@/data/scenes";
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
+import { ILLUSTRATION_IMAGE_QUALITY } from "@/lib/constants/image-optimization";
 import { vwSize } from "@/styles/responsive";
 import { textBoxDockStyle, textBoxDockInnerStyle, gameFontFamily } from "@/styles/text-box";
 import { gameFontSize } from "@/styles/text-box";
@@ -22,6 +26,7 @@ import {
   LEFT_HUD_INSET,
 } from "./MeterDisplay";
 import { PressPresentPanel } from "./PressPresentPanel";
+import { RoundVerdictBanner } from "./RoundVerdictBanner";
 import { SkillPanel } from "./SkillPanel";
 
 import type { useTrialProgression } from "@/hooks/use-trial-progression";
@@ -48,18 +53,63 @@ function SceneBackground({
       style={{
         position: "absolute",
         inset: 0,
-        ...(backgroundImage
-          ? {
-              // Landscape compact: keep the mid-screen (faces) open; shade only bottom dock area.
-              backgroundImage: compact
-                ? `linear-gradient(to top, rgba(8,3,10,0.55) 0%, rgba(8,3,10,0.12) 18%, transparent 34%), url(${backgroundImage})`
-                : `linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%), url(${backgroundImage})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center center",
-            }
-          : {}),
+        overflow: "hidden",
         backgroundColor: theme.background,
       }}
+    >
+      {backgroundImage && (
+        <>
+          <Image
+            key={backgroundImage}
+            src={backgroundImage}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            quality={ILLUSTRATION_IMAGE_QUALITY}
+            style={{ objectFit: "cover", objectPosition: "center center" }}
+          />
+          {/* Landscape compact: keep the mid-screen (faces) open; shade only bottom dock area. */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              backgroundImage: compact
+                ? "linear-gradient(to top, rgba(8,3,10,0.55) 0%, rgba(8,3,10,0.12) 18%, transparent 34%)"
+                : "linear-gradient(to top, rgba(8,3,10,0.7) 0%, rgba(8,3,10,0.2) 35%, transparent 55%)",
+            }}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Warms the browser (and Next's image-optimizer cache) with the *next*
+ * scene's background before the player reaches it, by rendering a
+ * <link rel="preload"> built from the same next/image optimizer params
+ * SceneBackground uses. Targets the jessica_attack -> jessica_duet handoff
+ * specifically: two never-before-seen, heavy illustrations back to back
+ * with no dialogue-reading buffer to hide a cold fetch behind (unlike e.g.
+ * opening -> crowd_jeers, which reuses an already-cached image).
+ */
+function NextSceneImagePreload({ src }: { src: string }) {
+  if (!src) return null;
+  const { props } = getImageProps({
+    src,
+    alt: "",
+    fill: true,
+    sizes: "100vw",
+    quality: ILLUSTRATION_IMAGE_QUALITY,
+  });
+  return (
+    <link
+      rel="preload"
+      as="image"
+      href={props.src}
+      imageSrcSet={props.srcSet}
+      imageSizes={props.sizes}
     />
   );
 }
@@ -75,6 +125,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     veniceParadoxUsed,
     dpGainFlash,
     hpGainFlash,
+    roundVerdict,
+    dismissRoundVerdict,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -88,6 +140,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     activeTubalItem,
     showChallenge,
     selectedChoiceItem,
+    showSceneItemGate,
+    sceneItemGateEvidenceId,
     showPressPresent,
     pressPresentComplete,
     pressedTestimonyIds,
@@ -108,6 +162,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     makeChoice,
     selectChoiceItem,
     clearChoiceItem,
+    selectSceneItemGate,
     useSkill,
     dismissClimax,
     dismissTubalMessage,
@@ -129,9 +184,15 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   const challengeOptions = scene.challenge?.options ?? [];
   const isItemFirst =
     challengeOptions.length > 0 && challengeOptions.every((opt) => opt.evidence);
+  // hath_not_moment has no scene.challenge (see scene-item-gate.ts), so its
+  // one evidence item can't come from challengeOptions like every other
+  // item-first scene — fall back to the gate's evidence id so the left-side
+  // HUD bar still shows it, same as every other scene's icon strip.
   const itemChoiceIds = isItemFirst
     ? Array.from(new Set(challengeOptions.map((opt) => opt.evidence as string)))
-    : [];
+    : sceneItemGateEvidenceId
+      ? [sceneItemGateEvidenceId]
+      : [];
   const showItemPhase = isItemFirst && !selectedChoiceItem;
   const visibleChoiceOptions =
     isItemFirst && selectedChoiceItem
@@ -146,6 +207,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     showBattleHud &&
     (itemChoiceIds.length > 0 || sceneTubalRecords.length > 0) &&
     !showChallenge &&
+    !showSceneItemGate &&
     !showPressPresent &&
     !portiaReply &&
     !isTubalActive &&
@@ -160,6 +222,16 @@ export function BattleScreen({ trial }: BattleScreenProps) {
         : isTubalActive
           ? TUBAL_SCENE_IMAGE
           : (lineBackgroundImage ?? scene.backgroundImage);
+
+  // sceneIdx indexes SCENE_TEMPLATES linearly (no branching scene lists —
+  // see CLAUDE.md), so the upcoming scene's background is just the next
+  // slot. Skip preloading when it's unchanged from the current background
+  // (nothing new to warm) or blank (Antonio-cut placeholder scenes).
+  const nextSceneBackgroundImage = SCENE_TEMPLATES[sceneIdx + 1]?.backgroundImage ?? "";
+  const preloadBackgroundImage =
+    nextSceneBackgroundImage && nextSceneBackgroundImage !== backgroundImage
+      ? nextSceneBackgroundImage
+      : "";
 
   const handlePortiaComplete = () => {
     if (isTubalActive) {
@@ -181,7 +253,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isVeniceSkillActive ||
     isTubalActive ||
     showPressPresent ||
-    !!portiaReply;
+    !!portiaReply ||
+    !!roundVerdict ||
+    showSceneItemGate;
 
   const dialogueProps = {
     // speaker/speakerLabel already resolve isLauncelotActive/isTubalActive/
@@ -210,10 +284,12 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     disabled:
       isTypingBlocked ||
       (showChallenge && !isLauncelotActive && !isVeniceSkillActive) ||
+      showSceneItemGate ||
       loadingScene ||
       (showPressPresent && !shylockPressReply),
     showAdvanceArrow:
       (!showChallenge || isLauncelotActive || isVeniceSkillActive) &&
+      !showSceneItemGate &&
       !portiaReply &&
       !isTubalActive &&
       !loadingReply &&
@@ -236,10 +312,17 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       !isLauncelotActive &&
       !isVeniceSkillActive,
   );
+  // hath_not_moment's item gate (lib/constants/scene-item-gate.ts) shares this
+  // same panel — same look, but selecting it skips straight past the
+  // ChoiceList branch below via selectSceneItemGate, no scene.challenge needed.
+  const itemGatePanelActive = Boolean(
+    showSceneItemGate && !portiaReply && !isTubalActive && !isLauncelotActive && !isVeniceSkillActive,
+  );
+  const choicePanelActive = challengeActive || itemGatePanelActive;
   // Mobile landscape: choices replace the dialogue dock to free vertical space.
-  const hideDialogueForChoices = isMobile && challengeActive;
+  const hideDialogueForChoices = isMobile && choicePanelActive;
 
-  const challengePanel = challengeActive ? (
+  const challengePanel = choicePanelActive ? (
     <div
       style={
         isMobile
@@ -259,7 +342,13 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       }
     >
       <div style={{ ...textBoxDockInnerStyle(isMobile), pointerEvents: "auto" }}>
-        {showItemPhase ? (
+        {itemGatePanelActive ? (
+          <ItemChoiceList
+            itemIds={sceneItemGateEvidenceId ? [sceneItemGateEvidenceId] : []}
+            onSelect={selectSceneItemGate}
+            disabled={loadingReply || loadingScene}
+          />
+        ) : showItemPhase ? (
           <ItemChoiceList
             itemIds={itemChoiceIds}
             tubalItem={activeTubalItem}
@@ -321,6 +410,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       }}
     >
       <SceneBackground backgroundImage={backgroundImage} compact={isMobile} />
+      <NextSceneImagePreload src={preloadBackgroundImage} />
 
       <div
         style={{
@@ -487,6 +577,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       )}
       {climaxMode && (
         <ClimaxOverlay quote={climaxQuote} onContinue={dismissClimax} />
+      )}
+      {roundVerdict && (
+        <RoundVerdictBanner verdict={roundVerdict} onDismiss={dismissRoundVerdict} />
       )}
       {evidenceDetailView && (
         <CourtEvidenceModal

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { AuthScreen } from "@/components/auth/AuthScreen";
@@ -10,6 +11,7 @@ import { useTitleActive } from "@/hooks/use-title-active";
 import { fetchMe, logout } from "@/lib/api-client/auth";
 import { startTrial } from "@/lib/api-client/trial-progression";
 import type { UserFromApi } from "@/lib/api-client/types";
+import { ILLUSTRATION_IMAGE_QUALITY } from "@/lib/constants/image-optimization";
 import { gameFontFamily, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
 
@@ -104,14 +106,21 @@ export function TitleScreen() {
       <div
         style={{
           position: "relative",
+          overflow: "hidden",
           width: `min(100vw, calc(${appShellHeight} * ${TITLE_IMAGE_RATIO}))`,
           height: `min(${appShellHeight}, calc(100vw / ${TITLE_IMAGE_RATIO}))`,
-          backgroundImage: "url(/assets/title-screen.png)",
-          backgroundSize: "100% 100%",
-          backgroundRepeat: "no-repeat",
           fontFamily: "Georgia, serif",
         }}
       >
+        <Image
+          src="/assets/title-screen.png"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          quality={ILLUSTRATION_IMAGE_QUALITY}
+          style={{ objectFit: "cover" }}
+        />
         <div
           // Fixed (not absolute) so this sits at the true screen corner
           // instead of the top of the title *image*'s own box — on screens
@@ -218,14 +227,6 @@ export function TitleScreen() {
             style={{
               position: "absolute",
               inset: 0,
-              backgroundImage: `url(${
-                loading ? "/assets/button-loading-plaque.png" : "/assets/button-start-plaque.png"
-              })`,
-              // Both plaques are cropped close enough to this box's ratio to
-              // fill edge-to-edge without letterboxing or visible stretch.
-              backgroundSize: "100% 100%",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
               borderRadius: 6,
               pointerEvents: "none",
               // drop-shadow, not box-shadow: it follows the plaque art's own
@@ -240,7 +241,19 @@ export function TitleScreen() {
               animation: !loading && startHovered ? "startButtonGlow 1.6s ease-in-out infinite" : "none",
               transition: "filter 0.2s ease",
             }}
-          />
+          >
+            <Image
+              key={loading ? "loading" : "start"}
+              src={loading ? "/assets/button-loading-plaque.png" : "/assets/button-start-plaque.png"}
+              alt=""
+              fill
+              sizes="20vw"
+              quality={ILLUSTRATION_IMAGE_QUALITY}
+              // Both plaques are cropped close enough to this box's ratio to
+              // fill edge-to-edge without letterboxing or visible stretch.
+              style={{ objectFit: "cover" }}
+            />
+          </div>
           <button
             type="button"
             onClick={() => void handleStart()}
