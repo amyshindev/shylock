@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 
 import { askLoreChat } from "@/lib/api-client/lore-chat";
@@ -30,6 +31,7 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hovered, setHovered] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -72,26 +74,47 @@ export function LoreChatWidget({ hidden }: LoreChatWidgetProps) {
           aria-label="극 안내인에게 묻기"
           title="극 안내인에게 묻기"
           onClick={() => setIsOpen(true)}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocus={() => setHovered(true)}
+          onBlur={() => setHovered(false)}
           style={{
             position: "fixed",
             bottom: vwSize(16),
             left: vwSize(16),
             zIndex: 38,
-            width: vwSize(40),
-            height: vwSize(40),
+            width: vwSize(64),
+            height: vwSize(64),
             borderRadius: "50%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: vwSize(18),
             background: "rgba(20, 10, 18, 0.95)",
-            color: "#f0d8c8",
             border: "1px solid #5a3848",
             boxShadow: "0 2px 8px rgba(0, 0, 0, 0.45)",
             cursor: "pointer",
+            padding: 0,
+            overflow: "visible",
+            transform: hovered ? "scale(1.15)" : "scale(1)",
+            transition: "transform 0.2s ease",
           }}
         >
-          📖
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: "50%",
+              overflow: "hidden",
+            }}
+          >
+            <Image
+              src="/assets/lore-chat-icon.png"
+              alt="극 안내인에게 묻기"
+              width={64}
+              height={64}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          </div>
         </button>
       )}
 
