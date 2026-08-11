@@ -26,7 +26,6 @@ import {
   LEFT_HUD_INSET,
 } from "./MeterDisplay";
 import { PressPresentPanel } from "./PressPresentPanel";
-import { RoundVerdictBanner } from "./RoundVerdictBanner";
 import { SkillPanel } from "./SkillPanel";
 
 import type { useTrialProgression } from "@/hooks/use-trial-progression";
@@ -125,8 +124,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     veniceParadoxUsed,
     dpGainFlash,
     hpGainFlash,
-    roundVerdict,
-    dismissRoundVerdict,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -254,7 +251,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isTubalActive ||
     showPressPresent ||
     !!portiaReply ||
-    !!roundVerdict ||
     showSceneItemGate;
 
   const dialogueProps = {
@@ -577,9 +573,6 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       )}
       {climaxMode && (
         <ClimaxOverlay quote={climaxQuote} onContinue={dismissClimax} />
-      )}
-      {roundVerdict && (
-        <RoundVerdictBanner verdict={roundVerdict} onDismiss={dismissRoundVerdict} />
       )}
       {evidenceDetailView && (
         <CourtEvidenceModal
