@@ -60,7 +60,7 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Local Embedding Server",
+    title="Shylock Local Embedding Server",
     description="Home-Mac e5 embedding endpoint for shylock_trial's local-embedding fallback chain.",
     lifespan=lifespan,
     docs_url=None,
