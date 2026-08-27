@@ -1,19 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 import { loginWithGoogle } from "@/lib/api-client/auth";
 import { useAppShellHeight, useIsMobile } from "@/hooks/use-is-mobile";
-import { gameFontFamily, gameFontSize, textBoxPanelStyle } from "@/styles/text-box";
+import { ILLUSTRATION_IMAGE_QUALITY } from "@/lib/constants/image-optimization";
+import { gameFontFamily, gameFontSize } from "@/styles/text-box";
 import { theme } from "@/styles/theme";
+
+// login-modal-panel.png에는 제목/버튼 라벨/skip-link 텍스트가 이미 그려져 있음
+// (그린스크린 소스에서 border-flood-fill 크로마키로 크롭함 — 단순 색상 threshold가
+// 아니라서, 순진한 방식이었다면 Google 로고 자체의 초록색 부분에 구멍을 뚫었을
+// 텐데 그러지 않음; 그려진 "✕" 닫기 아이콘도 대칭인 좌측 상단 모서리를 미러링해서
+// 지워버림), 원본 917x590 그대로. 아래 두 개의 상호작용 가능한 hit-area는 그
+// 소스 이미지 자체의 픽셀 bbox 기준으로 배치된 투명 버튼이지 눈대중 아님:
+//   Google 버튼(흰색 pill): (167,275)-(749,369)
+//   "로그인 없이 계속하기" 텍스트: (329,423)-(588,467) (그려진 작은 텍스트 주변에
+//   편안한 hit target을 위해 몇 px 여유를 둠)
+const LOGIN_MODAL_RATIO = "917 / 590";
+const GOOGLE_BUTTON_RECT = { left: "18.21%", top: "46.61%", width: "63.47%", height: "15.93%" };
+const SKIP_BUTTON_RECT = { left: "35.88%", top: "71.69%", width: "28.24%", height: "7.46%" };
 
 interface AuthScreenProps {
   /**
-   * When provided, renders as a fixed-position modal overlay on top of
-   * whatever's already on screen, instead of the full-page layout — used by
-   * TitleScreen so clicking "로그인" doesn't navigate away. Calling it
-   * dismisses the modal without navigating.
+   * 전달되면 전체 페이지 레이아웃 대신 화면에 이미 떠 있는 것 위에 fixed-position
+   * 모달 오버레이로 렌더링됨 — TitleScreen에서 "로그인" 클릭 시 다른 페이지로
+   * 이동하지 않도록 쓰임. 호출하면 이동 없이 모달만 닫힘.
    */
   onClose?: () => void;
 }
@@ -62,7 +76,7 @@ export function AuthScreen({ onClose }: AuthScreenProps = {}) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Google callback redirects back with ?error=google on failure.
+    // 실패하면 Google 콜백이 ?error=google을 붙여서 리다이렉트해옴.
     const params = new URLSearchParams(window.location.search);
     if (params.get("error") === "google") {
       setError("구글 로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.");
@@ -134,19 +148,19 @@ export function AuthScreen({ onClose }: AuthScreenProps = {}) {
   );
 
   if (onClose) {
-    // Deliberately NOT a portal to document.body: ForceLandscape wraps
-    // {children} in a container it CSS-rotates on narrow/portrait viewports
-    // (see globals.css .force-landscape-frame), which also makes that
-    // container the containing block for any `position: fixed` descendant.
-    // A portal to document.body escapes that container, so it never got the
-    // same rotation/sizing. Rendering inline here keeps it inside the same
-    // rotated frame as everything else.
+    // 의도적으로 document.body에 대한 portal을 쓰지 않음: ForceLandscape는 좁은/세로
+    // 뷰포트에서 {children}을 CSS로 회전시키는 컨테이너로 감싸는데(globals.css의
+    // .force-landscape-frame 참고), 이 컨테이너가 `position: fixed` descendant의
+    // containing block 역할도 함께 함. document.body로의 portal은 이 컨테이너를
+    // 벗어나버려서 같은 회전/사이징을 절대 받지 못함. 여기서 inline으로 렌더링하면
+    // 나머지 모든 것과 같은 회전된 프레임 안에 남아있게 됨.
     //
-    // Same panel chrome as every other in-game text box (textBoxPanelStyle)
-    // rather than a standalone art asset — no separate image to keep in
-    // sync with the rest of the UI, and no image-aspect-ratio sizing to get
-    // wrong across viewports (an earlier parchment-image version of this
-    // modal broke specifically that way in real browser fullscreen).
+    // login-modal-panel.png에는 제목 + 버튼 라벨 + skip-link 텍스트가 이미 아트로
+    // 그려져 있음(그 소스 hit-area 픽셀은 파일 최상단 주석 참고). 사이징은
+    // `width: min(92vw, 400px)` + CSS `aspect-ratio` 조합임 (TitleScreen의 배경이
+    // 필요로 하는 이전의 vw/vh dual-min() 방식이 아님) — 모달은 max-width 상한만
+    // 있으면 되니까, aspect-ratio로 높이를 유도하는 방식이 이 모달의 이전 이미지
+    // 버전이 실제 브라우저 fullscreen에서 깨졌던 수동 사이징 버그를 피하게 해줌.
     return (
       <div
         onClick={onClose}
@@ -155,6 +169,7 @@ export function AuthScreen({ onClose }: AuthScreenProps = {}) {
           inset: 0,
           zIndex: 50,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           background: "rgba(0, 0, 0, 0.7)",
@@ -164,66 +179,78 @@ export function AuthScreen({ onClose }: AuthScreenProps = {}) {
         <div
           onClick={(e) => e.stopPropagation()}
           style={{
-            ...textBoxPanelStyle(false),
+            position: "relative",
             width: "min(92vw, 400px)",
-            padding: "24px 26px 28px",
-            fontFamily: gameFontFamily,
-            textAlign: "center",
+            aspectRatio: LOGIN_MODAL_RATIO,
           }}
         >
+          <Image
+            src="/assets/login-modal-panel.png"
+            alt="그대의 이름을 법정에 새기시오"
+            fill
+            sizes="400px"
+            quality={ILLUSTRATION_IMAGE_QUALITY}
+            style={{ objectFit: "contain" }}
+          />
+
           <button
             type="button"
-            aria-label="닫기"
+            aria-label="Google로 로그인하기"
+            disabled={loading}
+            onClick={() => void handleGoogleLogin()}
+            style={{
+              position: "absolute",
+              ...GOOGLE_BUTTON_RECT,
+              background: "transparent",
+              border: "none",
+              padding: 0,
+              cursor: loading ? "wait" : "pointer",
+            }}
+          />
+          {loading && (
+            // 이미 그려진 라벨은 예전 실제 <button> 텍스트가 하던 것처럼
+            // "이동하는 중…"으로 바꿔치기가 안 되니까 — 대신 흰 pill을 어둡게
+            // 하고 그 위에 같은 로딩 문구를 오버레이함.
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                ...GOOGLE_BUTTON_RECT,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "rgba(10, 6, 10, 0.6)",
+                borderRadius: 14,
+                color: "#e0c090",
+                fontFamily: gameFontFamily,
+                fontSize: gameFontSize.sm,
+                pointerEvents: "none",
+              }}
+            >
+              이동하는 중…
+            </div>
+          )}
+
+          <button
+            type="button"
+            aria-label="로그인 없이 계속하기"
             onClick={onClose}
             style={{
               position: "absolute",
-              top: 10,
-              right: 12,
+              ...SKIP_BUTTON_RECT,
               background: "transparent",
               border: "none",
-              color: theme.textMuted,
-              fontSize: gameFontSize.md,
+              padding: 0,
               cursor: "pointer",
-              padding: 4,
             }}
-          >
-            ✕
-          </button>
-
-          <p
-            style={{
-              color: theme.gold,
-              fontWeight: 600,
-              fontSize: gameFontSize.md,
-              fontFamily: gameFontFamily,
-              letterSpacing: 0.5,
-              margin: "0 0 16px",
-              textShadow: "0 0 24px rgba(255, 215, 0, 0.3)",
-            }}
-          >
-            그대의 이름을 법정에 새기시오
-          </p>
-
-          {errorMessage}
-          {googleButton}
-
-          <button
-            type="button"
-            onClick={onClose}
-            style={{
-              marginTop: 12,
-              background: "none",
-              border: "none",
-              color: "#5a4a3a",
-              fontSize: gameFontSize.sm,
-              fontFamily: gameFontFamily,
-              cursor: "pointer",
-              textAlign: "center",
-            }}
-          >
-            로그인 없이 계속하기
-          </button>
+          />
         </div>
+
+        {errorMessage && (
+          <div onClick={(e) => e.stopPropagation()} style={{ marginTop: 14 }}>
+            {errorMessage}
+          </div>
+        )}
       </div>
     );
   }

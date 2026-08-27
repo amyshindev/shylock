@@ -38,18 +38,13 @@ export function TextBox({
   return (
     <div style={{ ...textBoxPanelStyle(isMobile), ...style }}>
       {displayTab && speaker && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            borderBottom: "1px solid #2a1020",
-            margin: `-1px -1px 0`,
-            paddingBottom: 0,
-          }}
-        >
-          <div style={{ ...speakerTabStyle(speaker), marginLeft: vwSize(isMobile ? 8 : 12), marginTop: -1 }}>
-            {label}
-          </div>
+        // 이제 그냥 텍스트 라벨임 — chip/card chrome(background, border,
+        // radius) 없음. 예전에 이 태그가 갖고 있던 `margin: -1px -1px 0`은
+        // 이 행 자신의 border를 패널의 옛 1px flat border에 딱 맞붙이기
+        // 위한 것이었는데, 그 트릭이 border-image 프레임에는 적용되지
+        // 않아서 나머지 card 스타일링과 함께 빠짐.
+        <div style={{ paddingTop: topPad, paddingLeft: `calc(${sidePad} + ${vwSize(10)})` }}>
+          <span style={speakerTabStyle()}>{label}</span>
         </div>
       )}
 

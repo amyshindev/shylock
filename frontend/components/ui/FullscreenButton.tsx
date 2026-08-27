@@ -7,32 +7,30 @@ import { useFullscreen } from "@/hooks/use-fullscreen";
 import { useTitleActive } from "@/hooks/use-title-active";
 import { gameFontFamily, gameFontSize } from "@/styles/text-box";
 
-const ICON_COLOR = "#f0d8c8"; // same light parchment tone used elsewhere (SkillPanel, LoreChatWidget)
-// Matches the fullscreenHintFade keyframes' own total duration (globals.css) —
-// the timeout just unmounts the hint once that animation has finished.
+const ICON_COLOR = "#f0d8c8"; // 다른 곳(SkillPanel, LoreChatWidget)에서 쓰는 것과 같은 밝은 양피지 톤
+// fullscreenHintFade 키프레임(globals.css) 자체의 전체 duration과 일치 —
+// 타임아웃은 그 애니메이션이 끝난 시점에 hint를 그냥 unmount시킬 뿐.
 const HINT_DURATION_MS = 2600;
 
 /**
- * Global fullscreen toggle, rendered once in the root layout so it's
- * available on every screen (title, battle, ending, records). Sits at
- * bottom-right (bottom:16, right:16) — the mirror image of LoreChatWidget's
- * launcher button at bottom-left (bottom:16, left:16).
+ * 전역 fullscreen 토글 — root layout에 한 번만 렌더링해서 모든 화면(title, battle,
+ * ending, records)에서 쓸 수 있게 함. 우측 하단(bottom:16, right:16)에 위치 —
+ * 좌측 하단(bottom:16, left:16)에 있는 LoreChatWidget의 launcher 버튼과 대칭.
  *
- * Enter-only: once in fullscreen there's no on-screen button to leave it
- * (browsers already bind Esc to exit fullscreen; a top-center toast reminds
- * the player of that on the way in, then fades itself out — no UI clutter
- * needed for the whole time they're fullscreen).
+ * 진입 전용: 일단 fullscreen에 들어가면 그걸 벗어나는 화면상의 버튼은 없음
+ * (브라우저가 이미 Esc를 fullscreen 종료에 바인딩해두고 있어서, 진입 시 화면 상단
+ * 중앙에 그 사실을 알려주는 토스트가 뜬 뒤 스스로 사라짐 — fullscreen인 동안 내내
+ * UI가 어수선해질 필요는 없음).
  *
- * On the title splash itself the enter button is always visible (dim,
- * brightens on hover). Everywhere else — including the black prologue
- * screen, which is still the "/" route so pathname alone can't tell it
- * apart from the title, hence useTitleActive() — it's hidden by default and
- * only rises up (fade + slide) when the mouse comes near the corner, so it
- * doesn't compete for attention during the game itself.
+ * 타이틀 스플래시 화면 자체에서는 진입 버튼이 항상 보임(희미하게, hover 시 밝아짐).
+ * 그 외 모든 곳 — 검은 프롤로그 화면 포함 (이 화면도 여전히 "/" 라우트라 pathname만
+ * 으로는 타이틀과 구분이 안 돼서 useTitleActive()를 쓰는 이유) — 에서는 기본적으로
+ * 숨겨져 있다가 마우스가 모서리 근처로 올 때만 (fade + slide로) 떠오름 — 게임 진행
+ * 중에는 시선을 뺏지 않기 위함.
  *
- * iOS Safari has no Fullscreen API for arbitrary elements (only <video>),
- * so isSupported is false there and nothing here renders at all rather than
- * showing something that would silently no-op.
+ * iOS Safari는 임의 엘리먼트에 대한 Fullscreen API가 없어서(<video>만 가능),
+ * 거기서는 isSupported가 false가 되고 조용히 no-op으로 보이는 것보다는 아예
+ * 아무것도 렌더링하지 않음.
  */
 export function FullscreenButton() {
   const { isFullscreen, isSupported, toggleFullscreen } = useFullscreen();
@@ -43,12 +41,12 @@ export function FullscreenButton() {
 
   useEffect(() => {
     if (!isFullscreen) {
-      // Without this, exiting before the timer below fires leaves showHint
-      // stuck at true — re-entering fullscreen later sets it to true again,
-      // which React treats as a no-op update, so <FullscreenHint> never
-      // remounts and its CSS animation never replays. Explicitly resetting
-      // here guarantees a real false->true transition (and a fresh DOM
-      // node) on every single entry.
+      // 이게 없으면, 아래 타이머가 발동하기 전에 나가버릴 경우 showHint가
+      // true로 멈춰있게 됨 — 나중에 다시 fullscreen에 진입하면 다시 true로
+      // 세팅되는데, React는 이걸 no-op 업데이트로 취급해서 <FullscreenHint>가
+      // 절대 remount되지 않고 CSS 애니메이션도 다시 재생되지 않음. 여기서
+      // 명시적으로 리셋해줘야 매번 진입할 때마다 진짜 false->true 전환
+      // (그리고 새 DOM 노드)이 보장됨.
       setShowHint(false);
       return;
     }
@@ -68,10 +66,9 @@ export function FullscreenButton() {
 
       {!isFullscreen && (
         <div
-          // Centered around bottom:16, right:16 — the mirror image of
-          // LoreChatWidget's bottom:16, left:16 — so the hover-catch area
-          // grows in every direction without shifting where the icon itself
-          // actually sits.
+          // bottom:16, right:16을 중심으로 — LoreChatWidget의 bottom:16, left:16과
+          // 대칭 — hover 감지 영역이 사방으로 넓어져도 아이콘 자체가 실제로 놓이는
+          // 위치는 바뀌지 않게 함.
           style={{
             position: "fixed",
             bottom: 16 - 86,
