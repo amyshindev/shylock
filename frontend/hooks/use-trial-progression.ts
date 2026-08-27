@@ -18,6 +18,7 @@ import type {
   EndingResponse,
   EvidenceFromApi,
   SceneDialogueFromApi,
+  SubmitChoiceResponse,
 } from "@/lib/api-client/types";
 import { listEvidence } from "@/lib/api-client/evidence-search";
 import { buildScene } from "@/lib/build-scene";
@@ -29,11 +30,7 @@ import {
   type TubalCourtRecord,
 } from "@/lib/tubal-evidence";
 import {
-  DP_MAX,
-  HP_MAX,
-  PORTIA_HP_MAX,
   PORTIA_HP_START,
-  LOW_HP_THRESHOLD,
   SHYLOCK_DP_START,
   SHYLOCK_HP_START,
   LAUNCELOT_SKILL_HP_GAIN,
@@ -50,6 +47,7 @@ import {
 } from "@/lib/constants/game-balance";
 import { TUBAL_ENHANCEMENT_BY_SCENE } from "@/lib/constants/tubal-enhancement-map";
 import type { GameOverReason } from "@/lib/constants/ending-thresholds";
+import { buildRoundVerdict, type RoundVerdict } from "@/lib/constants/round-verdict";
 import { isLastNarrativeScene } from "@/lib/constants/scene-progression";
 import { SCENE_ITEM_GATE_BY_SCENE_ID } from "@/lib/constants/scene-item-gate";
 import { extractPortiaText } from "@/lib/portia-text";
@@ -83,47 +81,6 @@ function resolvePortiaClaim(
   return lastSpeech?.text ?? scene.lines[scene.lines.length - 1]?.text ?? "";
 }
 
-function clampDp(value: number): number {
-  return Math.max(0, Math.min(DP_MAX, value));
-}
-
-function clampHp(value: number): number {
-  return Math.max(0, Math.min(HP_MAX, value));
-}
-
-function clampPortiaHp(value: number): number {
-  return Math.max(0, Math.min(PORTIA_HP_MAX, value));
-}
-
-function previewChoiceEffect(
-  currentDp: number,
-  currentHp: number,
-  currentPortiaHp: number,
-  dpChange: number,
-  hpCost: number,
-  portiaDamage: number,
-  veniceDpShield: boolean,
-): { nextDp: number; nextHp: number; nextPortiaHp: number; nextShield: boolean } {
-  let delta = dpChange;
-  let nextShield = veniceDpShield;
-  if (veniceDpShield) {
-    if (delta < 0) delta = 0;
-    nextShield = false;
-  }
-
-  let dpGain = delta;
-  if (currentHp <= LOW_HP_THRESHOLD && dpGain > 0) {
-    dpGain = Math.floor(dpGain / 2);
-  }
-
-  return {
-    nextDp: clampDp(currentDp + dpGain),
-    nextHp: clampHp(currentHp - hpCost),
-    nextPortiaHp: clampPortiaHp(currentPortiaHp - portiaDamage),
-    nextShield,
-  };
-}
-
 function resolveGameOver(dp: number, hp: number): GameOverReason | null {
   if (hp <= 0) return "hp";
   if (dp <= 0) return "dp";
@@ -141,9 +98,9 @@ export function useTrialProgression(trialId: string) {
   const [veniceDpShield, setVeniceDpShield] = useState(false);
   const [veniceParadoxUsed, setVeniceParadoxUsed] = useState(false);
   const [portiaReply, setPortiaReply] = useState("");
-  // Who portiaReply is voiced as — mirrors the backend's per-scene reactor
-  // override (see SubmitChoiceResponse.portia_response_speaker). Defaults to
-  // Portia; only set otherwise once an actual API response says so.
+  // portiaReply가 누구 목소리로 나오는지 — 백엔드의 씬별 reactor override를
+  // 그대로 따라감(SubmitChoiceResponse.portia_response_speaker 참고). 기본값은
+  // Portia이고, 실제 API 응답이 그렇다고 말할 때만 다른 값으로 세팅됨.
   const [portiaReplySpeaker, setPortiaReplySpeaker] = useState("PORTIA");
   const [portiaReplySpeakerLabel, setPortiaReplySpeakerLabel] = useState("포샤");
   const [loadingReply, setLoadingReply] = useState(false);
@@ -190,9 +147,15 @@ export function useTrialProgression(trialId: string) {
   const climaxResolveRef = useRef<(() => void) | null>(null);
   const launcelotPendingHpRef = useRef<number | null>(null);
   const launcelotHpGainAppliedRef = useRef(false);
+  // dukeVerdict가 표시되는 동안 방금 받아온 submit_choice 응답을 붙들고 있음 —
+  // 아래 포샤-답변 reveal은 인라인으로 바로 실행하는 대신 dismiss 시점에 이걸
+  // 다시 읽어서, 플레이어가 포샤의 인캐릭터 반응보다 공작의 판결을 먼저 보게 됨
+  // (runChoiceSequence/dismissDukeVerdict 참고).
+  const pendingChoiceResultRef = useRef<SubmitChoiceResponse | null>(null);
 
   const [dpGainFlash, setDpGainFlash] = useState<number | null>(null);
   const [hpGainFlash, setHpGainFlash] = useState<number | null>(null);
+  const [dukeVerdict, setDukeVerdict] = useState<RoundVerdict | null>(null);
 
   const template = SCENE_TEMPLATES[sceneIdx] ?? SCENE_TEMPLATES[0];
   const scene = useMemo(
@@ -209,7 +172,7 @@ export function useTrialProgression(trialId: string) {
   const sceneItemGate = SCENE_ITEM_GATE_BY_SCENE_ID[scene.id];
   const showSceneItemGate = sceneItemGate !== undefined && lineIdx === sceneItemGate.atLineIndex;
 
-  // Tubal's find for *this* scene, if any — surfaced as an extra item-choice card.
+  // *이* 씬에 대한 투발의 발견물이 있다면 — 추가 아이템 선택 카드로 표시됨.
   const activeTubalItem = useMemo(() => {
     const targetChoiceId = TUBAL_ENHANCEMENT_BY_SCENE[scene.id];
     if (!targetChoiceId) return null;
@@ -241,6 +204,7 @@ export function useTrialProgression(trialId: string) {
     if (tubalPhase === "intro") return TUBAL_INTRO_LINE;
     if (isTubalSearching) return TUBAL_SEARCHING_LINE;
     if (tubalMessage) return tubalMessage;
+    if (dukeVerdict) return dukeVerdict.line;
     if (portiaReply) return portiaReply;
     if (shylockPressReply) return shylockPressReply;
     if (showPressPresent && currentTestimony) return currentTestimony.text;
@@ -254,6 +218,7 @@ export function useTrialProgression(trialId: string) {
     tubalPhase,
     isTubalSearching,
     tubalMessage,
+    dukeVerdict,
     portiaReply,
     shylockPressReply,
     showPressPresent,
@@ -270,13 +235,15 @@ export function useTrialProgression(trialId: string) {
       ? "SHYLOCK"
       : isTubalActive
       ? "PORTIA"
-      : portiaReply
-        ? portiaReplySpeaker
-        : shylockPressReply
-          ? "SHYLOCK"
-          : showPressPresent
-            ? "CROWD"
-            : currentLineEntry?.speaker ?? scene.speaker;
+      : dukeVerdict
+        ? "DUKE"
+        : portiaReply
+          ? portiaReplySpeaker
+          : shylockPressReply
+            ? "SHYLOCK"
+            : showPressPresent
+              ? "CROWD"
+              : currentLineEntry?.speaker ?? scene.speaker;
   const speakerLabel = isLauncelotActive
     ? launcelotPhase === "speaking"
       ? "론슬롯"
@@ -285,19 +252,23 @@ export function useTrialProgression(trialId: string) {
       ? "샤일록"
       : isTubalActive
       ? "투발"
-      : portiaReply
-        ? portiaReplySpeakerLabel
-        : shylockPressReply
-          ? "샤일록"
-          : showPressPresent
-            ? scene.speakerLabel ?? "군중"
-            : resolveSpeakerLabel(currentLineEntry?.speaker, currentLineEntry?.speakerLabel)
-              ?? scene.speakerLabel;
+      : dukeVerdict
+        ? "공작"
+        : portiaReply
+          ? portiaReplySpeakerLabel
+          : shylockPressReply
+            ? "샤일록"
+            : showPressPresent
+              ? scene.speakerLabel ?? "군중"
+              : resolveSpeakerLabel(currentLineEntry?.speaker, currentLineEntry?.speakerLabel)
+                ?? scene.speakerLabel;
   const showSpeakerTab =
     !loadingScene &&
     (isLauncelotActive
       ? launcelotPhase === "speaking"
       : isVeniceSkillActive
+        ? true
+        : dukeVerdict
         ? true
         : portiaReply
         ? true
@@ -325,8 +296,8 @@ export function useTrialProgression(trialId: string) {
         kind: "curated",
         evidenceId,
         name: meta?.name ?? evidenceId,
-        // Raw Folger quote only (may be empty, e.g. ghetto_gate) — the modal shows
-        // this alongside meta.desc rather than falling back to desc here.
+        // Folger 원문 인용만 (비어있을 수 있음, 예: ghetto_gate) — 모달은 여기서
+        // desc로 폴백하는 대신 meta.desc와 나란히 이걸 보여줌.
         quote: quotesById[evidenceId]?.quote?.trim() ?? "",
       };
     },
@@ -494,7 +465,7 @@ export function useTrialProgression(trialId: string) {
         [result.scene_index]: result.scene_dialogue,
       }));
       setSceneIdx(result.scene_index);
-      // Fixed scenes (jessica_duet, hath_not_moment) apply stat effects server-side on advance.
+      // 고정 씬(jessica_duet, hath_not_moment)은 advance 시점에 스탯 효과가 서버 쪽에서 적용됨.
       setDp(result.dp);
       setHp(result.hp);
       setPortiaHp(result.portia_hp);
@@ -604,7 +575,7 @@ export function useTrialProgression(trialId: string) {
         return;
       }
       if (showSceneItemGate) {
-        // Blocked here until selectSceneItemGate() jumps lineIdx forward itself.
+        // selectSceneItemGate()가 직접 lineIdx를 앞으로 점프시킬 때까지 여기서 막힘.
         return;
       }
       setLineIdx((i) => i + 1);
@@ -662,6 +633,39 @@ export function useTrialProgression(trialId: string) {
     testimonyIndex,
   ]);
 
+  // 예전엔 runChoiceSequence의 끝부분이 무조건 하던 일을 마무리함: 포샤의 답변을
+  // 보여주고(즉시, 또는 씬의 남은 줄들 뒤에 순서대로), 그다음 choice lock을 해제.
+  // 바로 실행되거나(씬에 라운드 배너가 없는 경우) dismissDukeVerdict 이후에
+  // 실행될 수 있도록 따로 분리함.
+  const revealChoiceResult = useCallback(
+    (res: SubmitChoiceResponse) => {
+      const portiaText = extractPortiaText(res.portia_response);
+      const replySpeaker = res.portia_response_speaker ?? "PORTIA";
+      const replySpeakerLabel = res.portia_response_speaker_label ?? "포샤";
+      const afterLine = scene.challengeAfterLineIndex;
+      if (afterLine !== undefined && afterLine < scene.lines.length - 1) {
+        setPendingPortiaReply(portiaText);
+        setPendingPortiaReplySpeaker(replySpeaker);
+        setPendingPortiaReplySpeakerLabel(replySpeakerLabel);
+        setLineIdx(afterLine + 1);
+      } else {
+        setPortiaReply(portiaText);
+        setPortiaReplySpeaker(replySpeaker);
+        setPortiaReplySpeakerLabel(replySpeakerLabel);
+      }
+      setLoadingReply(false);
+      choiceLockRef.current = false;
+    },
+    [scene],
+  );
+
+  const dismissDukeVerdict = useCallback(() => {
+    setDukeVerdict(null);
+    const res = pendingChoiceResultRef.current;
+    pendingChoiceResultRef.current = null;
+    if (res) revealChoiceResult(res);
+  }, [revealChoiceResult]);
+
   const runChoiceSequence = useCallback(
     async (option: ChoiceOption) => {
       choiceLockRef.current = true;
@@ -674,31 +678,15 @@ export function useTrialProgression(trialId: string) {
       setLauncelotLineIdx(0);
       setVeniceSkillPhase("idle");
       setVeniceLineIdx(0);
-
-      const { nextDp, nextHp, nextPortiaHp, nextShield } = previewChoiceEffect(
-        dp,
-        hp,
-        portiaHp,
-        option.dpChange,
-        option.hpCost,
-        option.portiaDamage,
-        veniceDpShield,
-      );
-      setDp(nextDp);
-      setHp(nextHp);
-      setPortiaHp(nextPortiaHp);
-      setVeniceDpShield(nextShield);
-
-      if (triggerGameOverIfNeeded(nextDp, nextHp)) {
-        choiceLockRef.current = false;
-        return;
-      }
-
       setLoadingReply(true);
+
       const wasEnhanced = option.id in tubalEnhancedChoices;
       const consumedFtln = wasEnhanced ? tubalRecordFtlnByChoiceId[option.id] : undefined;
 
       try {
+        // dp/hp/portia_hp는 서버 응답에서 바로 그대로 적용됨, 미리 추측한 값이
+        // 아님 — 이미 공작의 판결을 반영한 값이라(trial_progression_interactor.
+        // _judge_choice 참고), 이게 resolve되기 전에 보여줄 만한 올바른 값이 없음.
         const res = await submitChoice(trialId, option.id);
         setDp(res.dp);
         setHp(res.hp);
@@ -720,34 +708,37 @@ export function useTrialProgression(trialId: string) {
         }
 
         if (triggerGameOverIfNeeded(res.dp, res.hp)) {
+          setLoadingReply(false);
+          choiceLockRef.current = false;
           return;
         }
 
-        const portiaText = extractPortiaText(res.portia_response);
-        const replySpeaker = res.portia_response_speaker ?? "PORTIA";
-        const replySpeakerLabel = res.portia_response_speaker_label ?? "포샤";
-        const afterLine = scene.challengeAfterLineIndex;
-        if (
-          afterLine !== undefined &&
-          afterLine < scene.lines.length - 1
-        ) {
-          setPendingPortiaReply(portiaText);
-          setPendingPortiaReplySpeaker(replySpeaker);
-          setPendingPortiaReplySpeakerLabel(replySpeakerLabel);
-          setLineIdx(afterLine + 1);
+        const verdict = buildRoundVerdict(scene.id, res.duke_verdict_result, res.duke_verdict_line);
+        if (verdict) {
+          // 공작의 판결은 이제 로딩 상태 placeholder가 아니라 진짜 dialogue-box
+          // 콘텐츠(타이핑되는 줄, speaker tab "공작" — 아래 dialogueText/speaker
+          // 참고)라서, dismissDukeVerdict의 나중 reveal을 기다리지 않고 여기서
+          // 스피너를 꺼야 함.
+          pendingChoiceResultRef.current = res;
+          setDukeVerdict(verdict);
+          setLoadingReply(false);
         } else {
-          setPortiaReply(portiaText);
-          setPortiaReplySpeaker(replySpeaker);
-          setPortiaReplySpeakerLabel(replySpeakerLabel);
+          revealChoiceResult(res);
         }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Choice failed");
-      } finally {
         setLoadingReply(false);
         choiceLockRef.current = false;
       }
     },
-    [trialId, dp, hp, portiaHp, veniceDpShield, tubalEnhancedChoices, tubalRecordFtlnByChoiceId, triggerGameOverIfNeeded, scene],
+    [
+      trialId,
+      tubalEnhancedChoices,
+      tubalRecordFtlnByChoiceId,
+      triggerGameOverIfNeeded,
+      scene,
+      revealChoiceResult,
+    ],
   );
 
   const makeChoice = useCallback(
@@ -770,8 +761,8 @@ export function useTrialProgression(trialId: string) {
     setSelectedChoiceItem(null);
   }, []);
 
-  // See lib/constants/scene-item-gate.ts — jumps straight to the gate's
-  // target line, no submitChoice/ChoiceList step (unlike selectChoiceItem).
+  // lib/constants/scene-item-gate.ts 참고 — gate의 target line으로 바로
+  // 점프함, submitChoice/ChoiceList 단계 없음 (selectChoiceItem과 다름).
   const selectSceneItemGate = useCallback(() => {
     if (!sceneItemGate) return;
     setLineIdx(sceneItemGate.targetLineIndex);
@@ -865,7 +856,7 @@ export function useTrialProgression(trialId: string) {
       setVeniceSkillPhase("speaking");
       setVeniceLineIdx(0);
     } catch {
-      // Availability is enforced in SkillPanel; no user-facing error.
+      // 사용 가능 여부는 SkillPanel에서 강제되니까 — 사용자에게 보여줄 에러 없음.
     } finally {
       setLoadingVeniceSkill(false);
     }
@@ -1066,6 +1057,8 @@ export function useTrialProgression(trialId: string) {
     portiaHp,
     dpGainFlash,
     hpGainFlash,
+    dukeVerdict,
+    dismissDukeVerdict,
     veniceDpShield,
     veniceParadoxUsed,
     speaker,

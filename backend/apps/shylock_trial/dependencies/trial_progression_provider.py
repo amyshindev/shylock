@@ -11,12 +11,14 @@ from shylock_trial.adapter.outbound.memory.trial_progression_repository import (
 from shylock_trial.adapter.outbound.pg.trial_progression_repository import TrialProgressionPgRepository
 from shylock_trial.adapter.outbound.client.tubal_enhancement_client import TubalEnhancementClient
 from shylock_trial.app.ports.input.character_relation_use_case import CharacterRelationUseCase
+from shylock_trial.app.ports.input.duke_verdict_use_case import DukeVerdictUseCase
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
 from shylock_trial.app.ports.output.trial_progression_port import TrialProgressionPort
 from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
 from shylock_trial.dependencies.character_relation_provider import get_character_relation_use_case
+from shylock_trial.dependencies.duke_verdict_provider import get_duke_verdict_use_case
 from shylock_trial.dependencies.evidence_search_provider import get_evidence_search_use_case
 from shylock_trial.dependencies.portia_response_provider import get_portia_response_use_case
 from shylock_trial.dependencies.tubal_enhancement_provider import get_tubal_enhancement_client
@@ -38,6 +40,7 @@ def get_trial_progression_use_case(
     evidence: EvidenceSearchUseCase = Depends(get_evidence_search_use_case),
     tubal_enhancement: TubalEnhancementClient = Depends(get_tubal_enhancement_client),
     characters: CharacterRelationUseCase = Depends(get_character_relation_use_case),
+    duke: DukeVerdictUseCase = Depends(get_duke_verdict_use_case),
 ) -> TrialProgressionUseCase:
     return TrialProgressionInteractor(
         port=port,
@@ -45,4 +48,5 @@ def get_trial_progression_use_case(
         evidence=evidence,
         tubal_enhancement=tubal_enhancement,
         characters=characters,
+        duke=duke,
     )

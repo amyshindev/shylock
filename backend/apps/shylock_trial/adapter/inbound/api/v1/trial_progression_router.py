@@ -133,6 +133,8 @@ async def submit_choice(
         is_ending=result.is_ending,
         tubal_enhanced_choices=result.tubal_enhanced_choices,
         venice_dp_shield=result.venice_dp_shield,
+        duke_verdict_result=result.duke_verdict_result,
+        duke_verdict_line=result.duke_verdict_line,
     )
 
 

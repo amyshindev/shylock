@@ -160,9 +160,10 @@ class SubmitChoiceResponse(BaseModel):
     portia_hp: int
     phase: TrialPhase
     portia_response: str
-    # Who portia_response is voiced as — "PORTIA"/"포샤" for every scene except
-    # the small opt-in set in scene_progression.REACTOR_OVERRIDE_SCENES (e.g.
-    # bassanio_plea). Defaults keep old API consumers (if any) unaffected.
+    # portia_response를 누구 목소리로 낼지 — scene_progression.
+    # REACTOR_OVERRIDE_SCENES에 작게 opt-in된 씬들(예: bassanio_plea)을
+    # 제외한 모든 씬에서는 "PORTIA"/"포샤". 기본값을 유지해 (있다면) 기존
+    # API 소비자에게 영향이 없도록 한다.
     portia_response_speaker: str = "PORTIA"
     portia_response_speaker_label: str = "포샤"
     ending_type: str | None = None
@@ -170,6 +171,10 @@ class SubmitChoiceResponse(BaseModel):
     tubal_enhanced_choices: dict[str, str] = Field(default_factory=dict)
     venice_dp_shield: bool = False
     venice_paradox_used: bool = False
+    # 이번 라운드에 대한 공작(Duke)의 판결 — trial_progression_dto의
+    # SubmitChoiceResultDto.duke_verdict_result/_line 참고.
+    duke_verdict_result: Literal["win", "lose"] = "win"
+    duke_verdict_line: str = ""
 
 
 class AdvanceSceneResponse(BaseModel):

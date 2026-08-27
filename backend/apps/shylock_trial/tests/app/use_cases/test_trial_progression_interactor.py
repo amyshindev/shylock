@@ -13,16 +13,17 @@ class FakePortiaUseCase:
     def __init__(self) -> None:
         self.last_prompt = None
         self.scene_dialogue_calls = 0
+        self.last_scene_dialogue_prompt = None
 
     async def generate(self, prompt):
         from shylock_trial.app.dtos.portia_response_dto import PortiaResponseResultDto
 
         self.last_prompt = prompt
-        # Real Port implementations echo prompt.reactor_speaker/_label into
-        # the result (see portia_response_client.py / ollama_portia_response_
-        # client.py) — mirroring that here so tests exercise the full
-        # submit_choice -> ... -> SubmitChoiceResultDto plumbing, not just
-        # prompt construction.
+        # 실제 Port 구현체들은 prompt.reactor_speaker/_label을 결과에 그대로
+        # 반영한다(portia_response_client.py / ollama_portia_response_
+        # client.py 참고) — 테스트가 프롬프트 구성뿐 아니라 submit_choice ->
+        # ... -> SubmitChoiceResultDto 전체 배관을 검증하도록 여기서도
+        # 똑같이 재현한다.
         return PortiaResponseResultDto(
             text="Portia speaks.",
             fallback_used=False,
@@ -35,6 +36,7 @@ class FakePortiaUseCase:
         from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialogueResultDto
 
         self.scene_dialogue_calls += 1
+        self.last_scene_dialogue_prompt = prompt
         return SceneDialogueResultDto(
             content=fallback_scene_dialogue(prompt.scene_index),
             fallback_used=False,
@@ -83,10 +85,29 @@ class FakeTubalEnhancementClient:
         return original_choice
 
 
+class FakeDukeVerdictUseCase:
+    """기본값은 WIN — 공작 판정자가 생기기 전에 작성된 기존 dp/hp/portia_hp
+    assert들이 계속 "선택지에 설계된 ChoiceEffect가 그대로 적용됐다"고
+    검증하도록 한다. LOSE 경로는 아래
+    test_duke_verdict_lose_zeroes_dp_and_portia_damage 참고."""
+
+    def __init__(self, result: str = "win", line: str = "판결.") -> None:
+        self._result = result
+        self._line = line
+        self.last_prompt = None
+
+    async def judge(self, prompt):
+        from shylock_trial.app.dtos.duke_verdict_dto import DukeVerdictResultDto
+
+        self.last_prompt = prompt
+        return DukeVerdictResultDto(result=self._result, line=self._line)
+
+
 class FakeCharacterRelationUseCase:
-    """Defaults to an empty graph, matching NullCharacterRelationRepository —
-    most tests here don't care about character_context, only the tests that
-    explicitly assert on it (see test_portia_prompt.py) construct nodes."""
+    """기본값은 빈 그래프로, NullCharacterRelationRepository와 대응된다 —
+    여기 있는 대부분의 테스트는 character_context에 신경 쓰지 않고,
+    명시적으로 그걸 assert하는 테스트만(test_portia_prompt.py 참고) 노드를
+    구성한다."""
 
     def __init__(
         self,
@@ -138,6 +159,7 @@ async def test_start_trial_returns_scene_dialogue() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     result = await interactor.start()
@@ -163,6 +185,7 @@ async def test_submit_choice_deducts_hp_and_applies_dp() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
@@ -189,6 +212,7 @@ async def test_bassanio_plea_reaction_is_voiced_by_bassanio() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(BASSANIO_PLEA_SCENE_INDEX, 50)
@@ -203,10 +227,11 @@ async def test_bassanio_plea_reaction_is_voiced_by_bassanio() -> None:
 
 
 @pytest.mark.asyncio
-async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
-    # crowd_jeers isn't in REACTOR_OVERRIDE_SCENES yet — this scene's own
-    # speaker (CROWD) must NOT bleed into the reactor override until that's
-    # deliberately added, same as every other non-opted-in scene.
+async def test_crowd_jeers_reaction_still_voiced_by_duke() -> None:
+    # crowd_jeers는 아직 REACTOR_OVERRIDE_SCENES에 없다 — 의도적으로 추가되기
+    # 전까지는 다른 opt-in되지 않은 씬들과 마찬가지로 이 씬 자체의 화자(CROWD)
+    # 가 reactor override로 새어 들어가면 안 되고, reaction의 기본 화자인
+    # 공작(DUKE) 그대로 나가야 한다 — bassanio_plea만 예외.
     from shylock_trial.app.constants.scene_progression import CROWD_JEERS_SCENE_INDEX
     from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
@@ -217,6 +242,7 @@ async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
@@ -224,9 +250,9 @@ async def test_crowd_jeers_reaction_still_voiced_by_portia() -> None:
         SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="coat_show_spit"),
     )
 
-    assert portia.last_prompt.reactor_speaker == "PORTIA"
-    assert choice.portia_response_speaker == "PORTIA"
-    assert choice.portia_response_speaker_label == "포샤"
+    assert portia.last_prompt.reactor_speaker == "DUKE"
+    assert choice.portia_response_speaker == "DUKE"
+    assert choice.portia_response_speaker_label == "공작"
 
 
 @pytest.mark.asyncio
@@ -259,6 +285,7 @@ async def test_bassanio_plea_character_context_includes_his_relations() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(
             nodes={"bassanio": bassanio_node},
             relations_by_character={"bassanio": [friendship]},
@@ -270,40 +297,36 @@ async def test_bassanio_plea_character_context_includes_his_relations() -> None:
     )
 
     assert "바사니오가 안토니오에게 갚아야 할 빚이 있음을 인정한다" in portia.last_prompt.character_context
-    # Bassanio has nothing to hide — his own node description is safe to include.
+    # 바사니오는 숨길 게 없다 — 자기 자신의 노드 설명을 포함해도 안전하다.
     assert "안토니오의 친구" in portia.last_prompt.character_context
 
 
 @pytest.mark.asyncio
-async def test_portia_character_context_withholds_her_own_disguise_secret() -> None:
-    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+async def test_scene_dialogue_generation_includes_shylock_character_context() -> None:
+    """choice_texts는 샤일록 본인의 말이라, 씬 대사 생성 프롬프트에도 그의
+    character_relation 그래프 컨텍스트가 실려야 한다 — "이 증서는 내게
+    생사가 걸린 약속"처럼 이해관계 당사자를 뒤바꿔 지어내는 걸 막기 위한
+    grounding(portia_prompt.py의 _shylock_character_context_instruction
+    참고)."""
     from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
     from shylock_trial.domain.entities.character_relation_entity import (
         CharacterNode,
         CharacterRelation,
     )
 
-    portia_node = CharacterNode(
-        character_id="portia",
-        name_ko="포샤",
-        name_en="Portia",
-        description="벨몬트의 부유한 상속녀. 재판에서 발타자르로 변장해 판결을 내린다.",
+    shylock_node = CharacterNode(
+        character_id="shylock",
+        name_ko="샤일록",
+        name_en="Shylock",
+        description="베니스의 유대인 대금업자. 안토니오에게 살 1파운드를 담보로 돈을 빌려준다.",
     )
-    secret_marriage = CharacterRelation(
-        from_character_id="portia",
-        relation_type="married_to",
-        to_character_id="bassanio",
-        description="포샤가 바사니오에게 반지를 주며 아내가 되기로 서약한다.",
-        evidence_ftln_start=3002169,
-        evidence_ftln_end=3002175,
-    )
-    safe_fact = CharacterRelation(
-        from_character_id="portia",
-        relation_type="presides_over",
-        to_character_id="shylock",
-        description="포샤가 이 재판을 주재한다.",
-        evidence_ftln_start=1,
-        evidence_ftln_end=2,
+    creditor_relation = CharacterRelation(
+        from_character_id="shylock",
+        relation_type="creditor_of",
+        to_character_id="antonio",
+        description="샤일록이 안토니오에게 살 1파운드를 담보로 돈을 빌려준다.",
+        evidence_ftln_start=1003158,
+        evidence_ftln_end=1003165,
     )
     portia = FakePortiaUseCase()
     interactor = TrialProgressionInteractor(
@@ -311,22 +334,24 @@ async def test_portia_character_context_withholds_her_own_disguise_secret() -> N
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(
-            nodes={"portia": portia_node},
-            relations_by_character={"portia": [secret_marriage, safe_fact]},
+            nodes={"shylock": shylock_node},
+            relations_by_character={"shylock": [creditor_relation]},
         ),
     )
-    # scene_index=1 (portia_opens) isn't in REACTOR_OVERRIDE_SCENES, so Portia reacts.
-    started = await interactor.start_dev_scene(1, 50)
-    await interactor.submit_choice(
-        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="bond_signature"),
-    )
 
-    context = portia.last_prompt.character_context
-    assert "발타자르로 변장" not in context
-    assert "married_to" not in context
-    assert "아내가 되기로 서약" not in context
-    assert "포샤가 이 재판을 주재한다" in context
+    await interactor.start()
+
+    assert portia.last_scene_dialogue_prompt is not None
+    assert "안토니오에게 살 1파운드를 담보로 돈을 빌려준다" in portia.last_scene_dialogue_prompt.character_context
+
+
+# 포샤 자신의 married_to 관계 숨김 필터링 테스트는
+# tests/app/utils/test_character_context.py로 옮겨감 — reaction의 기본
+# 화자가 공작으로 바뀌면서(_resolve_reactor 참고) submit_choice로는 더 이상
+# 포샤를 reaction의 reactor로 부를 수 없어서, build_character_context를
+# 직접 검증하는 게 더 정확해졌다.
 
 
 @pytest.mark.asyncio
@@ -345,6 +370,7 @@ async def test_launcelot_skill_applies_dp_and_hp() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
@@ -371,6 +397,7 @@ async def test_venice_paradox_skill_after_crowd_jeers() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX + 1, SHYLOCK_DP_START)
@@ -391,6 +418,7 @@ async def test_venice_paradox_skill_rejects_before_crowd_jeers() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)
@@ -409,6 +437,7 @@ async def test_venice_paradox_skill_is_one_time() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX + 1, 50)
@@ -429,6 +458,7 @@ async def test_jessica_duet_scene_uses_fixed_script_without_llm() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX - 1, 50)
@@ -461,6 +491,7 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(JESSICA_DUET_SCENE_INDEX, 50)
@@ -476,9 +507,9 @@ async def test_hath_not_scene_uses_fixed_script_without_llm() -> None:
     speakers = [line.speaker for line in result.scene_dialogue.lines]
     assert speakers[0] == "PORTIA"
     assert "SHYLOCK" in speakers
-    # Antonio cut closes the scene after Portia's final line.
+    # 안토니오 컷이 포샤의 마지막 대사 뒤 씬을 마무리한다.
     assert speakers[-3:] == ["NARRATOR", "ANTONIO", "NARRATOR"]
-    # Entering the scene costs nothing — the effect lands when it finishes.
+    # 씬에 진입하는 것 자체는 비용이 없다 — 효과는 씬이 끝날 때 적용된다.
     assert result.dp == 50
     assert result.hp == 100
     assert result.portia_hp == PORTIA_HP_START
@@ -501,6 +532,7 @@ async def test_advancing_past_hath_not_scene_applies_fixed_effect() -> None:
         portia=FakePortiaUseCase(),
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(HATH_NOT_SCENE_INDEX, 50)
@@ -526,6 +558,7 @@ async def test_submit_choice_passes_reaction_history_to_next_prompt() -> None:
         portia=portia,
         evidence=FakeEvidenceUseCase(),
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start()
@@ -542,6 +575,71 @@ async def test_submit_choice_passes_reaction_history_to_next_prompt() -> None:
     assert portia.last_prompt.previous_portia_reactions == ("Portia speaks.",)
     trial = await port.find_by_id(started.trial_id)
     assert trial.portia_reactions == ["Portia speaks.", "Portia speaks."]
+
+
+@pytest.mark.asyncio
+async def test_duke_verdict_lose_zeroes_dp_and_portia_damage() -> None:
+    """bold 선택지에 대한 LOSE는 그 선택지가 원래 주기로 설계된 이득과 포샤
+    피해를 0으로 만든다 — 하지만 hp_cost는 그대로 적용된다(submit_choice의
+    is_bold/landed 주석 참고: 논쟁은 먹히지 않아도 샤일록에게 대가를
+    치르게 한다)."""
+    from shylock_trial.app.constants.game_balance import (
+        PORTIA_HP_START,
+        SHYLOCK_DP_START,
+        SHYLOCK_HP_START,
+    )
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(result="lose", line="기각하오."),
+        characters=FakeCharacterRelationUseCase(),
+    )
+    started = await interactor.start()
+    choice = await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="gold_refuse_direct"),
+    )
+
+    assert choice.dp == SHYLOCK_DP_START  # dp_delta (13) zeroed by the LOSE
+    assert choice.hp == SHYLOCK_HP_START - 9  # hp_cost still paid
+    assert choice.portia_hp == PORTIA_HP_START  # portia_damage (7) zeroed by the LOSE
+    assert choice.duke_verdict_result == "lose"
+    assert choice.duke_verdict_line == "기각하오."
+
+
+@pytest.mark.asyncio
+async def test_concede_choice_skips_duke_judge_but_still_applies_penalty() -> None:
+    """dp_delta <= 0인 선택지(concede/silent)는 LLM 판정자를 거치지 않는다 —
+    _judge_choice가 여기서 short-circuit된다 — 하지만 (음수) 효과는 그대로
+    전부 적용되며, 이때 받는 결정론적 "lose" 판정은 배너 표시용일 뿐이다."""
+    from shylock_trial.app.constants.duke_prompt import CONCEDE_LOSE_LINE
+    from shylock_trial.app.constants.game_balance import SHYLOCK_DP_START, SHYLOCK_HP_START
+    from shylock_trial.app.dtos.trial_progression_dto import SubmitChoiceInputDto
+    from shylock_trial.app.use_cases.trial_progression_interactor import TrialProgressionInteractor
+
+    duke = FakeDukeVerdictUseCase()
+    interactor = TrialProgressionInteractor(
+        port=InMemoryTrialPort(),
+        portia=FakePortiaUseCase(),
+        evidence=FakeEvidenceUseCase(),
+        tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=duke,
+        characters=FakeCharacterRelationUseCase(),
+    )
+    started = await interactor.start()
+    choice = await interactor.submit_choice(
+        SubmitChoiceInputDto(trial_id=started.trial_id, choice_id="bond_lay_down"),
+    )
+
+    assert duke.last_prompt is None  # judge() never called
+    assert choice.dp == SHYLOCK_DP_START - 8
+    assert choice.hp == SHYLOCK_HP_START
+    assert choice.duke_verdict_result == "lose"
+    assert choice.duke_verdict_line == CONCEDE_LOSE_LINE
 
 
 @pytest.mark.asyncio
@@ -567,6 +665,7 @@ async def test_submit_choice_passes_folger_context_to_portia() -> None:
         portia=portia,
         evidence=evidence,
         tubal_enhancement=FakeTubalEnhancementClient(),
+        duke=FakeDukeVerdictUseCase(),
         characters=FakeCharacterRelationUseCase(),
     )
     started = await interactor.start_dev_scene(CROWD_JEERS_SCENE_INDEX, 50)

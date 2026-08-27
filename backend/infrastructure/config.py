@@ -140,6 +140,18 @@ class Settings(BaseSettings):
     # dependencies/lore_chat_provider.py), same never-runs-bare reasoning as
     # LLM_PROVIDER/EMBEDDING_PROVIDER.
     lore_chat_provider: str = Field(default="claude", validation_alias="LORE_CHAT_PROVIDER")
+    # lore_chat_provider와 같은 이유로 LLM_PROVIDER와 분리했다 — Duke의
+    # 판정 호출은 모든 "대담한(bold)" 선택 제출의 한가운데에 자리잡고 있어서
+    # (그게 끝날 때까지 플레이어는 아무것도 볼 수 없다), 가끔 느려도 괜찮은
+    # Portia의 반응/씬 대사 호출과는 다르다. "local"은 GemmaDukeVerdictClient
+    # (단일 빠른 호출, muse-glimmer 없음)를 돌린다 — 코드베이스에 존재함에도
+    # muse-glimmer의 2단계 파이프라인을 여기 연결하지 않은 이유는
+    # dependencies/duke_verdict_provider.py 참고 (2026-08-12 실측: 판정 호출
+    # 하나가 130초 이상 걸림 — 서버가 죽은 것처럼 보이는 수준). gemma의 판정
+    # 품질이 버텨주지 못할 경우를 대비한 즉시 되돌리기용 값이 "claude"이지만,
+    # Claude 쪽은 먼저 결제 문제부터 고쳐야 한다(같은 날 크레딧이 떨어짐 —
+    # dependencies/duke_verdict_provider.py의 다른 주석 참고).
+    duke_verdict_provider: str = Field(default="local", validation_alias="DUKE_VERDICT_PROVIDER")
     ollama_base_url: str = Field(
         default="https://ollama.shylock-trial.xyz",
         validation_alias="OLLAMA_BASE_URL",
@@ -155,6 +167,28 @@ class Settings(BaseSettings):
         default=15.0,
         validation_alias="OLLAMA_TIMEOUT_SECONDS",
         description="Per-request timeout before falling back to Claude.",
+    )
+    # OllamaDukeVerdictClient의 win/lose 호출과 narration 호출은 서로 다른
+    # 모델 선택으로, ollama_model(Portia/씬 대사용 모델로 계속 남음)과는
+    # 의도적으로 분리되어 있다 — reasoning/agent에 튜닝된 모델이 판정을
+    # 맡고, 다른 모델이 법정체 문장만 써내려가는 식. 기본값은 narrator를
+    # 프로젝트 전역과 같은 모델로 유지하고, judge만 다른 모델을 쓴다.
+    # 그냥 "muse-glimmer"(GGUF 태그를 받아옴)가 아니라 정확히 :30b-mlx —
+    # Apple Silicon에서 이 모델을 고른 이유 자체가 MLX 빌드다,
+    # ollama.com/blog/muse-glimmer 참고.
+    duke_judge_model: str = Field(default="muse-glimmer:30b-mlx", validation_alias="DUKE_JUDGE_MODEL")
+    duke_narrator_model: str = Field(
+        default="gemma4:26b-mlx", validation_alias="DUKE_NARRATOR_MODEL"
+    )
+    # ollama_timeout_seconds(15초)를 재사용하지 않고 의도적으로 별도 설정으로
+    # 뒀다 — 그 값은 gemma의 ~2-5초짜리 호출(Portia 반응, 씬 대사)에 맞춰
+    # 튜닝된 것이다. 실측 결과: muse-glimmer의 judge 호출 하나(think="medium")
+    # 조차 15초를 일상적으로 넘겨서, 타임아웃을 공유하면 judge 호출이 실제로는
+    # 항상 Claude로 페일오버해버렸다 — 로컬 judge가 조용히 전혀 쓰이지 않고
+    # 있었던 것. narrate 단계는 여전히 ollama_timeout_seconds를 쓴다(gemma,
+    # 다른 곳과 같은 속도 특성); judge 단계만 더 긴 상한이 필요하다.
+    duke_judge_timeout_seconds: float = Field(
+        default=120.0, validation_alias="DUKE_JUDGE_TIMEOUT_SECONDS"
     )
     # Cloudflare Access Service Token — only needed once OLLAMA_BASE_URL points
     # at a public Cloudflare Tunnel hostname (e.g. the home Mac) gated by an

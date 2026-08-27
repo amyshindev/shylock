@@ -68,7 +68,7 @@ function SceneBackground({
             quality={ILLUSTRATION_IMAGE_QUALITY}
             style={{ objectFit: "cover", objectPosition: "center center" }}
           />
-          {/* Landscape compact: keep the mid-screen (faces) open; shade only bottom dock area. */}
+          {/* Landscape compact: 화면 중앙(얼굴들)은 비워두고, 하단 dock 영역만 어둡게. */}
           <div
             style={{
               position: "absolute",
@@ -85,13 +85,13 @@ function SceneBackground({
 }
 
 /**
- * Warms the browser (and Next's image-optimizer cache) with the *next*
- * scene's background before the player reaches it, by rendering a
- * <link rel="preload"> built from the same next/image optimizer params
- * SceneBackground uses. Targets the jessica_attack -> jessica_duet handoff
- * specifically: two never-before-seen, heavy illustrations back to back
- * with no dialogue-reading buffer to hide a cold fetch behind (unlike e.g.
- * opening -> crowd_jeers, which reuses an already-cached image).
+ * 플레이어가 다음 씬에 도달하기 전에, SceneBackground가 쓰는 것과 같은
+ * next/image optimizer 파라미터로 만든 <link rel="preload">를 렌더링해서
+ * 브라우저(와 Next의 image-optimizer 캐시)를 그 *다음* 씬 배경으로 미리
+ * 데워둠. 특히 jessica_attack -> jessica_duet 전환을 겨냥한 것: 한 번도
+ * 본 적 없는 무거운 일러스트 두 장이 연달아 나오는데, 콜드 fetch를 가려줄
+ * 대사 읽는 버퍼 시간이 없음 (반면 opening -> crowd_jeers 같은 경우는 이미
+ * 캐시된 이미지를 재사용하므로 해당 없음).
  */
 function NextSceneImagePreload({ src }: { src: string }) {
   if (!src) return null;
@@ -124,6 +124,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     veniceParadoxUsed,
     dpGainFlash,
     hpGainFlash,
+    dukeVerdict,
+    dismissDukeVerdict,
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -172,19 +174,19 @@ export function BattleScreen({ trial }: BattleScreenProps) {
 
   const isMobile = useIsMobile();
   const appShellHeight = useAppShellHeight();
-  // jessica_duet keeps the gauge panel visible (like a normal scene) but, like
-  // opening, blocks skills/evidence/choices — a scripted duet the player only
-  // watches. showGauges/showBattleHud diverge only for these two scene ids.
+  // jessica_duet는 (일반 씬처럼) 게이지 패널은 계속 보여주지만, opening처럼
+  // skills/evidence/choices는 막음 — 플레이어가 지켜보기만 하는 연출된 듀엣.
+  // showGauges/showBattleHud는 이 두 씬 id에서만 갈라짐.
   const showGauges = scene.id !== "opening";
   const showBattleHud = scene.id !== "opening" && scene.id !== "jessica_duet";
 
   const challengeOptions = scene.challenge?.options ?? [];
   const isItemFirst =
     challengeOptions.length > 0 && challengeOptions.every((opt) => opt.evidence);
-  // hath_not_moment has no scene.challenge (see scene-item-gate.ts), so its
-  // one evidence item can't come from challengeOptions like every other
-  // item-first scene — fall back to the gate's evidence id so the left-side
-  // HUD bar still shows it, same as every other scene's icon strip.
+  // hath_not_moment는 scene.challenge가 없어서 (scene-item-gate.ts 참고),
+  // 다른 모든 item-first 씬처럼 그 하나뿐인 evidence 아이템을
+  // challengeOptions에서 가져올 수 없음 — gate의 evidence id로 폴백해서
+  // 왼쪽 HUD 바가 다른 모든 씬의 아이콘 스트립과 똑같이 이걸 보여주게 함.
   const itemChoiceIds = isItemFirst
     ? Array.from(new Set(challengeOptions.map((opt) => opt.evidence as string)))
     : sceneItemGateEvidenceId
@@ -196,8 +198,8 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       ? challengeOptions.filter((opt) => opt.evidence === selectedChoiceItem)
       : challengeOptions;
 
-  // Scope the HUD item panel to this scene's own choices only — evidence and
-  // Tubal finds from earlier scenes must not linger once the scene has passed.
+  // HUD 아이템 패널의 범위를 이 씬 자신의 choices로만 한정 — 이전 씬의
+  // evidence와 투발이 찾은 것들이 씬이 지나간 뒤에도 남아있으면 안 됨.
   const sceneTubalRecords = activeTubalItem ? [activeTubalItem.record] : [];
 
   const showEvidenceBar =
@@ -206,6 +208,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     !showChallenge &&
     !showSceneItemGate &&
     !showPressPresent &&
+    !dukeVerdict &&
     !portiaReply &&
     !isTubalActive &&
     !isLauncelotActive &&
@@ -220,10 +223,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           ? TUBAL_SCENE_IMAGE
           : (lineBackgroundImage ?? scene.backgroundImage);
 
-  // sceneIdx indexes SCENE_TEMPLATES linearly (no branching scene lists —
-  // see CLAUDE.md), so the upcoming scene's background is just the next
-  // slot. Skip preloading when it's unchanged from the current background
-  // (nothing new to warm) or blank (Antonio-cut placeholder scenes).
+  // sceneIdx는 SCENE_TEMPLATES를 선형으로 인덱싱함 (씬 리스트가 분기하지
+  // 않음 — CLAUDE.md 참고), 그래서 다음에 올 씬의 배경은 그냥 다음 슬롯임.
+  // 현재 배경과 동일하면 (새로 데울 게 없음) 또는 비어있으면(Antonio-cut
+  // placeholder 씬) preload를 건너뜀.
   const nextSceneBackgroundImage = SCENE_TEMPLATES[sceneIdx + 1]?.backgroundImage ?? "";
   const preloadBackgroundImage =
     nextSceneBackgroundImage && nextSceneBackgroundImage !== backgroundImage
@@ -233,6 +236,13 @@ export function BattleScreen({ trial }: BattleScreenProps) {
   const handlePortiaComplete = () => {
     if (isTubalActive) {
       dismissTubalMessage();
+      return;
+    }
+    // 공작의 판결은 포샤의 반응보다 앞선 자신만의 reply 단계임 — 클릭해서
+    // 넘기면 다음으로 그녀의 실제 반응이 드러날 뿐, 아직 씬을 진행시키지는
+    // 않음 (use-trial-progression.ts의 dismissDukeVerdict 참고).
+    if (dukeVerdict) {
+      dismissDukeVerdict();
       return;
     }
     if (pressPresentComplete || portiaReply) {
@@ -250,17 +260,18 @@ export function BattleScreen({ trial }: BattleScreenProps) {
     isVeniceSkillActive ||
     isTubalActive ||
     showPressPresent ||
+    !!dukeVerdict ||
     !!portiaReply ||
     showSceneItemGate;
 
   const dialogueProps = {
-    // speaker/speakerLabel already resolve isLauncelotActive/isTubalActive/
-    // portiaReply cases inside the hook (use-trial-progression.ts) — no need
-    // to redo that branching here. This used to also force "포샤" during
-    // loadingReply specifically, which is wrong once a scene's reaction can
-    // be voiced by someone else (see REACTOR_OVERRIDE_SCENES on the backend):
-    // it's now correct to just let the loading gap fall through to the
-    // scene's own speaker instead of guessing Portia.
+    // speaker/speakerLabel은 hook(use-trial-progression.ts) 안에서 이미
+    // isLauncelotActive/isTubalActive/portiaReply 케이스를 다 처리했음 —
+    // 여기서 그 분기를 다시 만들 필요 없음. 예전엔 이게 loadingReply일 때도
+    // "포샤"를 강제로 지정했었는데, 어떤 씬의 반응을 다른 누군가가 대신
+    // 낼 수도 있게 된 이상 그건 틀린 동작임(백엔드의
+    // REACTOR_OVERRIDE_SCENES 참고): 이제는 로딩 공백을 포샤로 추측하지
+    // 않고 그냥 씬 자신의 speaker로 흘러가게 두는 게 맞음.
     speaker,
     speakerLabel,
     showSpeakerTab,
@@ -273,7 +284,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           : dialogueText,
     replyMode: (isTubalActive
       ? "tubal"
-      : portiaReply || loadingReply
+      : dukeVerdict || portiaReply || loadingReply
         ? "portia"
         : undefined) as "tubal" | "portia" | undefined,
     loadingReply: isTubalSearching || loadingReply || loadingLauncelot || loadingVeniceSkill,
@@ -308,36 +319,32 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       !isLauncelotActive &&
       !isVeniceSkillActive,
   );
-  // hath_not_moment's item gate (lib/constants/scene-item-gate.ts) shares this
-  // same panel — same look, but selecting it skips straight past the
-  // ChoiceList branch below via selectSceneItemGate, no scene.challenge needed.
+  // hath_not_moment의 item gate(lib/constants/scene-item-gate.ts)도 이
+  // 패널을 함께 씀 — 겉모습은 같지만, 선택하면 selectSceneItemGate를 통해
+  // 아래 ChoiceList 분기를 건너뛰고 바로 넘어감, scene.challenge도 필요
+  // 없음.
   const itemGatePanelActive = Boolean(
     showSceneItemGate && !portiaReply && !isTubalActive && !isLauncelotActive && !isVeniceSkillActive,
   );
   const choicePanelActive = challengeActive || itemGatePanelActive;
-  // Mobile landscape: choices replace the dialogue dock to free vertical space.
-  const hideDialogueForChoices = isMobile && choicePanelActive;
-
+  // dialogue box 바로 위에 딱 붙여 도킹하던 방식 대신 이제 모달(fixed +
+  // centered + backdrop)로 바뀌어서, 모바일에서 공간을 만들려고 dialogue
+  // box를 빼낼 필요가 없어짐 — dialogue box는 그대로 있고 그 아래가 어둡게
+  // 처리됨.
   const challengePanel = choicePanelActive ? (
     <div
-      style={
-        isMobile
-          ? {
-              flexShrink: 0,
-              width: "100%",
-              zIndex: 12,
-            }
-          : {
-              position: "absolute",
-              left: vwSize(16),
-              right: vwSize(16),
-              bottom: vwSize(172),
-              zIndex: 12,
-              pointerEvents: "none",
-            }
-      }
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 58,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0, 0, 0, 0.7)",
+        padding: "max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))",
+      }}
     >
-      <div style={{ ...textBoxDockInnerStyle(isMobile), pointerEvents: "auto" }}>
+      <div style={{ ...textBoxDockInnerStyle(isMobile), width: "100%" }}>
         {itemGatePanelActive ? (
           <ItemChoiceList
             itemIds={sceneItemGateEvidenceId ? [sceneItemGateEvidenceId] : []}
@@ -420,7 +427,7 @@ export function BattleScreen({ trial }: BattleScreenProps) {
       >
         {isMobile ? (
           <>
-            {/* Landscape HUD: matching meter widths; icon-only items/skills under Shylock meters. */}
+            {/* Landscape HUD: meter 너비를 맞추고; 샤일록 meter 아래에 아이콘만 있는 items/skills. */}
             {showGauges && (
               <>
                 <div
@@ -477,17 +484,15 @@ export function BattleScreen({ trial }: BattleScreenProps) {
               </>
             )}
 
-            {/* Open midframe for courtroom art */}
+            {/* 법정 아트를 위해 화면 중간은 비워둠 */}
             <div style={{ flex: 1, minHeight: 0 }} />
 
             <div style={textBoxDockStyle(true)}>
               {challengePanel}
-              {!hideDialogueForChoices && (
-                <div style={textBoxDockInnerStyle(true)}>
-                  <DialogueBox {...dialogueProps} />
-                  {pressPresent}
-                </div>
-              )}
+              <div style={textBoxDockInnerStyle(true)}>
+                <DialogueBox {...dialogueProps} />
+                {pressPresent}
+              </div>
             </div>
           </>
         ) : (
@@ -495,10 +500,10 @@ export function BattleScreen({ trial }: BattleScreenProps) {
             <div style={{ position: "relative", flex: 1, minHeight: 0 }}>
               {showGauges && <PortiaMeterDisplay portiaHp={portiaHp} />}
               {(showGauges || showBattleHud) && (
-                // Meter + evidence + skill panel share one normal-flow flex
-                // column (instead of each guessing the others' rendered
-                // height for its own `top` offset) so they can never overlap
-                // regardless of viewport width or content size.
+                // Meter + evidence + skill panel이 (각자 자기 `top` offset을
+                // 위해 서로의 렌더링 높이를 추측하는 대신) 하나의
+                // normal-flow flex column을 공유해서, viewport 너비나
+                // content 크기와 무관하게 절대 겹치지 않음.
                 <div
                   style={{
                     position: "absolute",
@@ -580,8 +585,9 @@ export function BattleScreen({ trial }: BattleScreenProps) {
           onClose={evidenceDetailView.dismissible ? dismissEvidenceDetail : undefined}
         />
       )}
-      {/* LoreChatWidget follows showGauges, not showBattleHud — jessica_duet
-          hides skills/evidence/choices but keeps gauges and lore chat up. */}
+      {/* LoreChatWidget은 showBattleHud가 아니라 showGauges를 따름 —
+          jessica_duet는 skills/evidence/choices는 숨기지만 gauges와 lore
+          chat은 계속 띄워둠. */}
       {showGauges && (
         <LoreChatWidget hidden={climaxMode || loadingScene || !!evidenceDetailView} />
       )}

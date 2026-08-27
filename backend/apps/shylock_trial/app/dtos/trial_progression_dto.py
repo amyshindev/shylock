@@ -38,6 +38,11 @@ class SubmitChoiceResultDto:
     venice_dp_shield: bool
     portia_response_speaker: str = "PORTIA"
     portia_response_speaker_label: str = "포샤"
+    # Duke의 선택별 판정 — trial_progression_interactor._judge_choice 참고.
+    # "win"/"lose"는 이번 라운드에 effect.dp_delta/portia_damage가 실제로
+    # 적용되는지를 결정하는 게이트다; duke_verdict_line은 그의 법정체 판결문.
+    duke_verdict_result: str = "win"
+    duke_verdict_line: str = ""
 
 
 @dataclass(frozen=True, slots=True)
