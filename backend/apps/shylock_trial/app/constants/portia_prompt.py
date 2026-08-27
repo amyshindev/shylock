@@ -1,4 +1,4 @@
-"""LLM prompts grounded in shylock-trial.jsx / The Merchant of Venice."""
+"""shylock-trial.jsx / 《베니스의 상인》에 근거한 LLM 프롬프트."""
 
 from shylock_trial.app.constants.game_balance import (
     PORTIA_HP_HIGH_THRESHOLD,
@@ -9,6 +9,7 @@ from shylock_trial.app.constants.scene_progression import (
     BLOOD_REVEAL_SCENE_INDEX,
     HATH_NOT_SCENE_INDEX,
 )
+from shylock_trial.app.constants.curated_evidence import get_curated_evidence_for_choice
 from shylock_trial.app.constants.scene_catalog import get_scene_template
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import SceneDialoguePromptDto
@@ -32,31 +33,31 @@ SCENE_BRIEFS: dict[int, str] = {
 CHOICE_BRIEFS: dict[str, str] = {
     "bond_signature": "Both my signature and Antonio's are on this bond — what is the problem?",
     "bond_double_standard": "If a Venetian had made this contract, you would not question it like this.",
-    "bond_lay_down": "(Silently lays the bond down before the court.)",
+    "bond_lay_down": "\"...No. Never mind.\" (Tries to quietly fold the bond back away.)",
     "charter_merchant_trust": "If this court breaks a contract, what merchant will trust this city again?",
     "charter_law_precedent": "Once the law bends once, whose contract is safe next?",
     "charter_follow_law": "I merely follow the law of this city.",
     "gold_refuse_direct": "The sum is not the point — I want this bond.",
     "gold_shame_bribe": "You try to buy me off with money — you should be ashamed.",
-    "gold_push_away": "(Silently pushes the pile of coins away.)",
+    "gold_push_away": "\"...Very well. How much, then?\" (Reaches toward the coins after all.)",
     "scales_no_reason": "You ask my reason? There is none — it is simply my will.",
     "scales_humour": "Some cannot bear a pig, some a bagpipe; I merely cannot master my hatred of this man. (humour speech)",
-    "scales_weigh": "(Takes out the scales and quietly weighs the flesh.)",
+    "scales_weigh": "\"...I don't know. Even I don't know why.\" (Cannot answer — head bows.)",
     "coat_show_spit": "See — what you spat is still on this coat.",
     "coat_before_dry": "Before this stain even dries, you speak to me of mercy.",
-    "coat_show_silent": "(Silently shows the coat.)",
+    "coat_show_silent": "\"...I'll put it away. It was nothing.\" (Hastily hides the stained coat.)",
     "ghetto_curfew": "When the sun sets, I must return behind that gate — as you decreed.",
     "ghetto_who_guilty": "One locked away each night, one free to jeer each night — who is the guilty one here?",
-    "ghetto_look_silent": "(Says nothing, only gazes toward the gate to the ghetto.)",
+    "ghetto_look_silent": "\"...W-well, it is the law. What can be done.\" (Looks down, eyes averted.)",
     "defend_jessica": "Jessica is my daughter — the court has no reason to reopen that wound.",
     "letter_irrelevant": "Whatever choice my daughter made, it has nothing to do with this bond.",
-    "letter_fold_silent": "(Silently clenches his fist.)",
+    "letter_fold_silent": "\"...Let's — let's stop speaking of her.\" (Trails off, eyes down.)",
     "ring_leah_gift": (
         "This ring — I had it of Leah when I was a bachelor. "
         "I would not have given it for a wilderness of monkeys. (Leah's turquoise)"
     ),
     "ring_loss_dignity": "If you knew what I have lost, you would not dare call it a weakness.",
-    "ring_clutch_silent": "(Quietly clasps his bare finger where the ring once sat.)",
+    "ring_clutch_silent": "\"...It's only a ring. Nothing more.\" (Hides his bare finger in his sleeve.)",
     "blood_impossible": "Cutting flesh without blood is impossible!",
     "drop_knife": "Lowers the knife he whetted through the trial.",
     "take_principal_only": "Will take only the principal sum.",
@@ -70,7 +71,7 @@ CHOICE_BRIEFS: dict[str, str] = {
     "wording_reread_silent": "(Silently reads the bond's exact wording over again.)",
 }
 
-# Stimulus category for the most recent Shylock choice — drives Portia reaction tone.
+# 가장 최근 샤일록 선택지의 자극 유형 — 포샤 반응의 어조를 결정한다.
 CHOICE_STIMULUS: dict[str, str] = {
     "bond_signature": "logical",
     "bond_double_standard": "provocation",
@@ -127,8 +128,8 @@ STIMULUS_REACTION_GUIDE: dict[str, str] = {
     ),
 }
 
-# Portia's inner life — variety comes from one coherent character under strain,
-# not from a forced rotation of reaction types.
+# 포샤의 내면 — 다양성은 반응 유형을 억지로 순환시켜서가 아니라, 압박받는
+# 하나의 일관된 캐릭터에서 나온다.
 PORTIA_PERSONA = """\
 Portia's inner character (shapes tone only — NEVER explain or reveal any of this):
 - She is not a seasoned jurist. She is a young noblewoman of Belmont, disguised as a
@@ -154,7 +155,7 @@ moments when the emotion underneath actually moves. If a previous reaction this 
 already opened with such a gesture, do not open with one again.
 """
 
-# Scenes where the drama itself puts Portia's composure under real strain.
+# 극 자체가 포샤의 평정심을 실제로 시험에 들게 하는 씬들.
 COMPOSURE_CLIMAX_SCENE_INDICES: frozenset[int] = frozenset(
     {
         HATH_NOT_SCENE_INDEX,
@@ -165,7 +166,7 @@ COMPOSURE_CLIMAX_SCENE_INDICES: frozenset[int] = frozenset(
 
 
 def composure_break_allowed(scene_index: int, portia_hp: int) -> bool:
-    """Server-side gate for visible cracks: low composure, or a climax-weight scene."""
+    """겉으로 드러나는 동요를 서버 측에서 게이팅: 평정심이 낮거나, 클라이맥스급 씬일 때."""
     if portia_hp < PORTIA_HP_LOW_THRESHOLD:
         return True
     return scene_index in COMPOSURE_CLIMAX_SCENE_INDICES
@@ -214,14 +215,44 @@ request_type:
 - ending: literary narrator closing — reflect dp (moral dignity retained through the trial). Legal judgment is always the same as the play: Shylock loses in court (alien law, goods forfeited, forced conversion). DP only changes how broken or unbroken his spirit reads in the closing narration.
 """
 
-SCENE_DIALOGUE_SYSTEM_PROMPT = """\
+# choice_texts 자유 변주(아래 SCENE_DIALOGUE_SYSTEM_PROMPT의 "you have more
+# freedom" 문단)가 실제로 만들어낸 사실관계 왜곡을 겨냥한 grounding — 로컬
+# 모델이 "이 증서는 샤일록에게 신성하다"는 맞는 정서를, "생사가 걸렸다"는
+# (원작상 틀린) 과장과 섞어서 "내게는 생사가 걸린 신성한 약속이란 말이오!"
+# 같은 대사를 지어낸 사례가 실측됨(2026-08-16). topic 필드(curated_evidence의
+# description, 예: "안토니오와 맺은 계약. 법적으로 완전히 유효하다")만으로는
+# 계약의 실제 내용과 이해관계 당사자가 누구인지 모델에게 전혀 근거가 없었다
+# — duke_prompt.py의 _CASE_FACTS와 달리 이쪽엔 그런 고정 사실관계 블록이
+# 아예 없었던 게 원인. 라운드별 데이터(dp, choice_history 등)와 달리 극
+# 자체의 불변 사실이라 build_scene_dialogue_message가 아니라 여기 시스템
+# 프롬프트에 고정으로 박아둔다.
+_CASE_FACTS_GROUNDING = """\
+Case facts (fixed ground truth — never contradict these, even when inventing
+a new angle for choice_texts):
+- The bond: Antonio borrowed 3,000 ducats from Shylock. As collateral,
+  Antonio pledged one pound of his OWN flesh, forfeit to Shylock if the loan
+  is not repaid by the stated day.
+- The life-and-death stake in this bond belongs to ANTONIO, not Shylock.
+  Shylock's own body or life is never collateral for anything here — he is
+  the lender pressing to collect what the contract legally owes him, not
+  someone risking his own life by it. Shylock may call the bond sacred, an
+  oath, or something he will not break — but NEVER something his own life or
+  death depends on.
+"""
+
+SCENE_DIALOGUE_SYSTEM_PROMPT = f"""\
 You write in-game dialogue for *The Merchant of Venice* trial (Venice court, 16th century).
 Generate Korean only (한국어). Stay faithful to Shakespeare's trial arc.
 
+{_CASE_FACTS_GROUNDING}
 The judge is always **포샤** in Korean. Never use 발타자르, 발타사르, 포르샤, or Balthazar.
 
 Speaker roles and register (match the reference line's speaker tag):
-- NARRATOR: neutral third-person prose; no character speech endings.
+- NARRATOR: plain declarative "~다" endings only (e.g. "있다", "돌아선다", "떨린다",
+  "것인가?") — like novel narration, not something spoken aloud. NEVER use any
+  character speech ending here: ~소, ~오, ~구려, ~노라, ~겠소, ~요, ~죠, ~까 등은
+  전부 금지. This applies even in a courtroom scene where every other speaker uses
+  ~하오체 — narration stays plain regardless of who's on stage.
 - PORTIA: courtroom speech to Shylock — ~하오/~이오/~노라/~겠소.
 - BASSANIO: desperate court plea to Shylock — ~이오/~겠소/~시오.
 - CROWD: hostile jeers, short bursts.
@@ -240,7 +271,30 @@ Line kinds (required per line):
 - speech: a character speaks directly. Show name tab in UI.
 - narration: stage direction, third-person description — no name tab.
 
-Rewrite the reference copy with fresh wording but same beats, facts, emotional arc, and **per-line register**.
+Rewrite the reference DIALOGUE LINES (narration/speech — not choice labels) with
+fresh wording but same beats, facts, emotional arc, and **per-line register**.
+If a reference line opens with a pause ellipsis ("......"), your rewritten line
+must keep that exact "......" prefix — it's a deliberate beat, not filler to drop.
+No space between "......" and the word right after it (e.g. "......그것으로", not
+"...... 그것으로").
+
+For **choice_texts** specifically, you have more freedom than for dialogue lines:
+each choice_id's game effect (dp/hp/portia_hp) and evidence topic are already
+fixed regardless of what you write, so don't just reword the same argument every
+time — invent a different specific angle, example, or supporting detail, as long
+as it (a) stays recognizably about the given topic, (b) matches the given
+stimulus register below, (c) is something Shylock would plausibly say in this
+courtroom, and (d) never contradicts the case facts above, even for dramatic
+effect. The reference line is one example of that angle, not a script to
+paraphrase.
+
+Stimulus registers (given per choice below):
+- logical: a reasoned, procedural, or legal point — not an emotional appeal.
+- emotional: an appeal to feeling, grief, or personal wound.
+- provocation: a taunt, accusation, or open defiance of the court.
+- silence: a wordless or self-conceding gesture — minimal or no argument; don't
+  invent a substantive argument here, the point is that there isn't one.
+
 Do NOT include 포샤's post-choice reaction — that is generated separately.
 """
 
@@ -273,13 +327,34 @@ def _scene_register_hint(scene_id: str) -> str:
     )
 
 
+def _choice_variation_spec(cid: str, template) -> str:
+    stimulus = CHOICE_STIMULUS.get(cid, "logical")
+    evidence = get_curated_evidence_for_choice(cid)
+    topic = evidence.description if evidence else "(no fixed evidence topic — silence/gesture choice)"
+    reference = template.canonical_choice_texts.get(cid, cid)
+    return f'  "{cid}" [stimulus={stimulus}, topic: {topic}]: (reference angle — vary it) {reference}'
+
+
+def _shylock_character_context_instruction(character_context: str) -> str:
+    """SceneDialoguePromptDto.character_context(샤일록 자신의 character_relation
+    그래프 노드+관계)를 프롬프트에 꽂는다. choice_texts는 샤일록 본인의 말이므로
+    특히 거기서 이 사실관계를 근거로 삼으라고 명시한다 — 이게 없으면 topic
+    설명(예: "안토니오와 맺은 계약. 법적으로 완전히 유효하다")만으로 자유
+    변주를 하다가 실제 이해관계 당사자를 뒤바꾸는 사례가 실측됨(2026-08-16,
+    trial_progression_interactor._ensure_scene_dialogue 참고)."""
+    if not character_context:
+        return ""
+    return (
+        f"\n다음은 샤일록 자신에 대한 참고 인물 관계 정보다 — 특히 choice_texts"
+        f"(샤일록 본인의 대사)를 지어낼 때 이 사실관계를 근거로 삼아라. 목록을 "
+        f"그대로 나열하거나 설명하듯 말하지 말고 자연스럽게 녹여라:\n{character_context}\n"
+    )
+
+
 def build_scene_dialogue_message(prompt: SceneDialoguePromptDto) -> str:
     template = get_scene_template(prompt.scene_index)
     choices = [CHOICE_BRIEFS.get(cid, cid) for cid in prompt.choice_history]
-    choice_specs = [
-        f'  "{cid}": (reference) {template.canonical_choice_texts.get(cid, cid)}'
-        for cid in template.choice_ids
-    ]
+    choice_specs = [_choice_variation_spec(cid, template) for cid in template.choice_ids]
 
     return f"""Generate scene dialogue for scene_index={prompt.scene_index} ({template.scene_id}).
 
@@ -288,12 +363,15 @@ primary speaker: {template.speaker}
 dp: {prompt.dp}
 prior choices: {choices if choices else ["(none)"]}
 {_scene_register_hint(template.scene_id)}
+{_shylock_character_context_instruction(prompt.character_context)}
 Reference lines (same meaning, new Korean wording; keep each line's kind and speaker register):
 {_reference_line_specs(template)}
 
 Reference challenge prompt: {template.canonical_challenge_text or "(none — opening scene)"}
 
-Choice ids and reference labels — output one Korean label per id in choice_texts:
+Choice ids — output one Korean label per id in choice_texts. Each has a fixed
+stimulus register and topic (see system prompt); vary the specific angle within
+those, don't just reword the reference:
 {chr(10).join(choice_specs) if choice_specs else "  (none)"}
 
 Return JSON only:
@@ -310,10 +388,10 @@ Use exactly {len(template.canonical_lines)} lines with matching kinds per refere
 
 
 ENDING_BRIEFS: dict[str, str] = {
-    # Reached when portia_hp <= 0 at the end of alien_law_reveal — Jessica bursts
-    # into court (jessica_intervention) as Shylock turns to leave, and the Duke
-    # halts the alien-law verdict before it is carried out. This is the one
-    # ending with a genuinely different legal outcome — see _ending_instruction.
+    # alien_law_reveal이 끝날 때 portia_hp <= 0이면 도달 — 샤일록이 떠나려는
+    # 순간 제시카가 법정에 뛰어들고(jessica_intervention), 공작이 이방인법
+    # 판결의 집행을 막는다. 법적 결과 자체가 실제로 달라지는 유일한 엔딩이다
+    # — _ending_instruction 참고.
     "rescued_ending": (
         "portia_hp depleted (Jessica's intervention) — '구원받은 자'. Jessica's "
         "testimony moved the court; the Duke declares the alien-law verdict will "
@@ -335,15 +413,15 @@ ENDING_BRIEFS: dict[str, str] = {
     ),
 }
 
-# All endings except rescued_ending: the play's legal defeat stands as written.
+# rescued_ending을 제외한 모든 엔딩: 원작 그대로 법정에서의 패소가 유지된다.
 _STANDARD_LEGAL_NOTE = (
     "Legal outcome is fixed for this ending: Shylock loses the trial per the play "
     "(alien law, forfeiture, forced conversion). Do NOT imply he wins in court or changes history."
 )
 
-# rescued_ending is the one exception — jessica_intervention's script has the Duke
-# explicitly halt the alien-law verdict, so the standard "he loses" note above
-# would directly contradict what the player just watched happen.
+# rescued_ending만 유일한 예외다 — jessica_intervention 대본에서는 공작이
+# 이방인법 판결을 명시적으로 중단시키므로, 위의 표준 "그가 진다" 노트를
+# 그대로 쓰면 플레이어가 방금 본 것과 정면으로 모순된다.
 _RESCUED_LEGAL_NOTE = (
     "Legal outcome for THIS ending only (it differs from every other ending): "
     "Jessica's testimony halts the alien-law verdict before it is carried out — "
@@ -402,12 +480,12 @@ def _folger_context_instruction(folger_context: str | None) -> str:
 
 
 def _character_context_instruction(character_context: str) -> str:
-    """See PortiaResponsePromptDto.character_context — already filtered by
-    the caller for whatever's safe for this reactor to know (e.g. Portia's
-    own married_to edge withheld). The "weave in, don't recite" framing
-    matters here specifically: unlike folger_context (quoted lines a
-    character can just say), a raw relation list read verbatim would sound
-    like the character is reciting a dossier about themselves."""
+    """PortiaResponsePromptDto.character_context 참고 — 호출부에서 이미 이
+    reactor가 알아도 안전한 것만 필터링해 넘겨준 값이다 (예: 포샤 본인의
+    married_to 관계는 제외됨). 여기서 "그대로 읊지 말고 자연스럽게 녹여
+    쓰라"는 프레이밍이 특히 중요한 이유: folger_context(캐릭터가 그냥 말로
+    옮기면 되는 인용구)와 달리, 관계 목록을 날것 그대로 읽으면 캐릭터가
+    자기 자신에 대한 신상 자료를 읊는 것처럼 들리기 때문이다."""
     if not character_context:
         return ""
     return (
@@ -416,25 +494,25 @@ def _character_context_instruction(character_context: str) -> str:
     )
 
 
-# Reaction register for non-Portia reactors — see REACTOR_OVERRIDE_SCENES in
-# scene_progression.py. Deliberately much shorter than Portia's own
-# instruction block below: no portia_hp/composure-tier system (that's
-# Portia's own strained-composure arc across the whole trial, not relevant to
-# a one-scene NPC) and no "avoid a direct verdict" judicial posture (that's a
-# judge's move, not a plea-maker's). Register strings match
-# SCENE_DIALOGUE_SYSTEM_PROMPT's speaker table so a scene's opening dialogue
-# and its post-choice reaction sound like the same character.
+# 포샤가 아닌 reactor들의 반응 어투 — scene_progression.py의
+# REACTOR_OVERRIDE_SCENES 참고. 아래 포샤 전용 지침 블록보다 의도적으로
+# 훨씬 짧다: portia_hp/composure 단계 시스템이 없고(그건 트라이얼 전체에
+# 걸친 포샤 본인의 압박받는 평정심 아크이지, 한 씬짜리 NPC와는 무관하다),
+# "직접적인 판정을 피하라"는 재판관식 태도도 없다(그건 판사의 수법이지
+# 애원하는 사람의 수법이 아니다). 어투 문자열은 SCENE_DIALOGUE_SYSTEM_PROMPT
+# 의 화자 테이블과 맞춰서, 한 씬의 오프닝 대사와 선택 후 반응이 같은
+# 캐릭터처럼 들리게 한다.
 _NON_PORTIA_REACTOR_REGISTER: dict[str, str] = {
     "BASSANIO": "~이오/~겠소/~시오, 필사적인 애원조 (법정 재판관의 격식체 아님)",
 }
 
-# Targeted fixes for specific pronoun/possessive confusions actually observed
-# live with the local model — not a general referent-tracking solution (that's
-# an inherent local-model reliability gap this project already accepts, same
-# reasoning as keeping FallbackPortiaResponseClient around), just closing the
-# one mix-up seen repeatedly: the local model sometimes calls Antonio "당신의
-# 벗"(Shylock's friend) instead of "나의 벗"(Bassanio's own friend) —
-# backwards, since Antonio and Shylock are enemies in this graph, not friends.
+# 로컬 모델에서 실제로 관측된 특정 대명사/소유격 혼동을 겨냥한 땜빵 수정 —
+# 일반적인 지시대상 추적 문제를 해결하려는 게 아니다(그건 이 프로젝트가 이미
+# 감수하기로 한 로컬 모델 고유의 신뢰성 한계이고, FallbackPortiaResponseClient
+# 를 계속 두는 것과 같은 이유다), 그저 반복적으로 관측된 딱 한 가지 혼동만
+# 막는 것: 로컬 모델이 가끔 안토니오를 "나의 벗"(바사니오 본인의 친구) 대신
+# "당신의 벗"(샤일록의 친구)이라고 부른다 — 이 그래프에서 안토니오와
+# 샤일록은 친구가 아니라 적이므로 거꾸로다.
 _NON_PORTIA_REFERENT_GUARDRAIL: dict[str, str] = {
     "BASSANIO": (
         "안토니오는 너(바사니오)의 친구이지 샤일록의 친구가 아니다 — "
@@ -442,15 +520,14 @@ _NON_PORTIA_REFERENT_GUARDRAIL: dict[str, str] = {
     ),
 }
 
-# Non-Portia counterpart to STIMULUS_REACTION_GUIDE — that guide is written
-# entirely as judicial strategy ("measured deflection", "reframe to...
-# contract wording", "procedural pressure"), which is exactly wrong for a
-# plea-maker and was actively pulling Bassanio's "reason" clause toward
-# courtroom-procedure language instead of his own relationship to Antonio
-# (confirmed live: reusing STIMULUS_REACTION_GUIDE here made "법의 엄격한
-# 형식과 절차" show up in a Bassanio reaction). Framed around raw personal
-# stakes instead, so the character_context block below has room to actually
-# be the "reason" the model reaches for.
+# STIMULUS_REACTION_GUIDE의 non-Portia 버전 — 그 가이드는 전적으로 재판관의
+# 전략("절제된 회피", "계약 문언으로... 재구성", "절차적 압박")으로 쓰여
+# 있는데, 이건 애원하는 인물에게는 정확히 틀린 방향이고, 실제로 바사니오의
+# "이유" 절이 안토니오와의 관계 대신 법정 절차 언어 쪽으로 끌려가게 만들고
+# 있었다(실측 확인: 여기서 STIMULUS_REACTION_GUIDE를 재사용했더니 바사니오
+# 반응에 "법의 엄격한 형식과 절차"가 등장했다). 대신 날것의 개인적 이해관계
+# 중심으로 프레이밍해서, 아래 character_context 블록이 모델이 붙잡을 진짜
+# "이유"가 될 여지를 만든다.
 _NON_PORTIA_STIMULUS_GUIDE: dict[str, str] = {
     "logical": (
         "Shylock pressed a rational/legal point. Don't out-argue him with law — you're not a "
@@ -500,6 +577,47 @@ def _non_portia_reaction_instruction(
     )
 
 
+# 공작(DUKE)은 _NON_PORTIA_REACTOR_REGISTER/_non_portia_reaction_instruction과
+# 별도 경로다 — scene_progression.REACTOR_OVERRIDE_SCENES에 없는(즉 대부분의)
+# 씬에서 선택 후 반응의 기본 화자가 이제 포샤 대신 공작이기 때문에(
+# trial_progression_interactor._resolve_reactor 참고), 그 함수의 "너는 판사가
+# 아니다 / 법 절차로 근거대지 마라" 전제가 정확히 거꾸로 적용된다 — 공작은
+# 실제로 이 법정의 재판장이다. 어투는 duke_prompt.py의 공작과 맞추고,
+# 자극별 반응 가이드는 이미 재판관식 전략("절제된 회피", "계약 문언으로
+# 재구성", "절차적 압박")으로 쓰여 있는 STIMULUS_REACTION_GUIDE(포샤용)를
+# 그대로 재사용한다 — 그 가이드 자체는 포샤의 변장/평정심 같은 개인 사정을
+# 언급하지 않는, 화자 중립적인 "법정 인물의 전략" 텍스트라서 공작에게도
+# 그대로 맞는다.
+_DUKE_REGISTER = "~하오/~이오/~노라/~하겠소 — duke_prompt.py의 공작과 같은 근엄하고 절제된 재판장의 공식 어투"
+
+
+def _duke_reaction_instruction(
+    prompt: PortiaResponsePromptDto,
+    *,
+    choice_id: str | None,
+    choice_brief: str,
+    stimulus: str,
+    stimulus_guide: str,
+) -> str:
+    return (
+        "중요: 이번 반응은 포샤가 아니라 공작(DUKE)이 말한다. 위 시스템 지침의 "
+        "'포샤 전용' 반응 규칙(변장, 빌린 권위 등 포샤 개인의 내면 사정)은 이번 "
+        "요청에는 적용하지 마라 — 포샤를 언급하거나 포샤 특유의 사정을 끌어오지 "
+        "말고, 공작 본인의 입으로만 샤일록에게 직접 말하는 대사를 써라. 3인칭 "
+        "서술·'라고 말하였다' 형식 금지.\n"
+        f"Register: {_DUKE_REGISTER}. 2–3문장. 공작은 실제로 이 법정의 재판장이니 "
+        "법 절차·계약 문언·법정의 권위를 근거로 삼는 것이 정확히 공작다운 화법이다 "
+        "— 애원하거나 개인적 감정으로 호소하지 마라.\n"
+        "판정 회피 원칙: 이 반응 자체가 최종 판결은 아니다(승패는 이미 별도 절차로 "
+        "정해짐) — 매 반응을 확정적 판결처럼 끝맺지 말고, 절차를 이어가는 재판장의 "
+        "태도를 유지하라.\n\n"
+        f"샤일록의 방금 대답 ({choice_id or 'unknown'}): {choice_brief}\n"
+        f"자극 유형: {stimulus} — {stimulus_guide}\n"
+        f"{_folger_context_instruction(prompt.folger_context)}"
+        f"{_character_context_instruction(prompt.character_context)}"
+    )
+
+
 def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
     choice_id = prompt.choice_id
     if choice_id is None and prompt.context.startswith("choice:"):
@@ -507,7 +625,19 @@ def _reaction_instruction(prompt: PortiaResponsePromptDto) -> str:
 
     stimulus = CHOICE_STIMULUS.get(choice_id or "", "logical")
     stimulus_guide = STIMULUS_REACTION_GUIDE.get(stimulus, STIMULUS_REACTION_GUIDE["logical"])
-    choice_brief = CHOICE_BRIEFS.get(choice_id or "", prompt.context)
+    # 고정된 정본 요지보다, 플레이어가 이번 트라이얼에서 실제로 본 것을
+    # 우선한다(choice_texts는 이제 문구만이 아니라 구체적 각도까지 다양화될
+    # 수 있음 — build_scene_dialogue_message 참고).
+    choice_brief = prompt.choice_label or CHOICE_BRIEFS.get(choice_id or "", prompt.context)
+
+    if prompt.reactor_speaker == "DUKE":
+        return _duke_reaction_instruction(
+            prompt,
+            choice_id=choice_id,
+            choice_brief=choice_brief,
+            stimulus=stimulus,
+            stimulus_guide=stimulus_guide,
+        )
 
     if prompt.reactor_speaker != "PORTIA":
         return _non_portia_reaction_instruction(

@@ -174,6 +174,23 @@ class Settings(BaseSettings):
         default="", validation_alias="LOCAL_EMBEDDING_CF_ACCESS_CLIENT_SECRET"
     )
 
+    # character_relation 그래프의 백엔드 선택 — LLM_PROVIDER/EMBEDDING_PROVIDER와
+    # 같은 독립 스위치 패턴(infrastructure/config.py의 다른 *_provider 필드들
+    # 참고). "pg"(기본값)는 지금 프로덕션이 쓰는 Postgres + recursive CTE
+    # (character_relation_repository.py); "neo4j"는 포트폴리오용으로 추가한
+    # 대체 게이트웨이(character_relation_neo4j_repository.py) — 노드 7개/엣지
+    # 15개 규모에선 실질적으로 필요하진 않지만(recursive CTE로 이미 충분),
+    # 그래프 네이티브 질의(Cypher)와 매니지드 그래프 DB 경험을 보여주기 위해
+    # 의도적으로 추가함.
+    character_relation_backend: str = Field(default="pg", validation_alias="CHARACTER_RELATION_BACKEND")
+    neo4j_uri: str = Field(default="bolt://localhost:7687", validation_alias="NEO4J_URI")
+    neo4j_user: str = Field(default="neo4j", validation_alias="NEO4J_USER")
+    neo4j_password: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="NEO4J_PASSWORD",
+        description="로컬 Neo4j 인스턴스 초기 비밀번호 변경 후 여기에 설정.",
+    )
+
     # Cookie signing for /docs login gate (admin credential check comes later).
     docs_session_secret: SecretStr = Field(
         default=SecretStr("dev-only-change-me-docs-session-secret"),
@@ -213,6 +230,9 @@ class Settings(BaseSettings):
     def cohere_api_key_plain(self) -> str:
         """Plain Cohere key for outbound clients. Never log this value."""
         return self.cohere_api_key.get_secret_value()
+
+    def neo4j_password_plain(self) -> str:
+        return self.neo4j_password.get_secret_value()
 
 
 @lru_cache

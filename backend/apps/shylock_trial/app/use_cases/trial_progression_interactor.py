@@ -29,12 +29,12 @@ from shylock_trial.app.constants.scene_choices import (
     get_choice_evidence_id,
     get_skill_effect,
 )
-from shylock_trial.app.constants.character_relation_prompt import (
-    build_character_context_block,
-    format_character,
-)
 from shylock_trial.app.constants.tubal_enhancement_map import TUBAL_ENHANCEMENT_DP_BONUS
+from shylock_trial.app.constants.duke_prompt import CONCEDE_LOSE_LINE
+from shylock_trial.app.constants.portia_prompt import CHOICE_BRIEFS, CHOICE_STIMULUS
+from shylock_trial.app.utils.character_context import build_character_context
 from shylock_trial.app.utils.choice_folger_context import get_choice_folger_context
+from shylock_trial.app.dtos.duke_verdict_dto import DukeVerdictPromptDto, DukeVerdictResultDto
 from shylock_trial.app.dtos.portia_response_dto import PortiaResponsePromptDto
 from shylock_trial.app.dtos.scene_dialogue_dto import (
     SceneDialogueContent,
@@ -50,6 +50,7 @@ from shylock_trial.app.dtos.trial_progression_dto import (
     VeniceParadoxSkillResultDto,
 )
 from shylock_trial.app.ports.input.character_relation_use_case import CharacterRelationUseCase
+from shylock_trial.app.ports.input.duke_verdict_use_case import DukeVerdictUseCase
 from shylock_trial.app.ports.input.evidence_search_use_case import EvidenceSearchUseCase
 from shylock_trial.app.ports.input.portia_response_use_case import PortiaResponseUseCase
 from shylock_trial.app.ports.input.trial_progression_use_case import TrialProgressionUseCase
@@ -69,12 +70,14 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         evidence: EvidenceSearchUseCase,
         tubal_enhancement: TubalEnhancementClient,
         characters: CharacterRelationUseCase,
+        duke: DukeVerdictUseCase,
     ) -> None:
         self._port = port
         self._portia = portia
         self._evidence = evidence
         self._characters = characters
         self._tubal_enhancement = tubal_enhancement
+        self._duke = duke
 
     async def start(self, user_id: UUID | None = None) -> StartTrialResultDto:
         trial = Trial(
@@ -104,6 +107,44 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
     async def list_trials_by_user(self, user_id: UUID) -> list[Trial]:
         return await self._port.list_by_user_id(user_id)
 
+    async def _judge_choice(
+        self,
+        trial: Trial,
+        choice_id: str,
+        effect,
+        choice_label: str | None,
+    ) -> DukeVerdictResultDto:
+        """Duke의 선택별 판정 — effect의 dp 상승과 포샤 데미지가 실제로
+        적용될지를 결정한다(submit_choice 참고). 양보/침묵 선택
+        (dp_delta <= 0)은 절대 LLM까지 가지 않는다: 아무것도 걸지 않았으니
+        판정할 게 없다 — CHOICE_EFFECTS 자체 주석에서 그 선택지들이
+        아무것도 걸지 않았기 때문에 정확히 아무 대가도 없다고 한 것과
+        같은 이유다.
+
+        choice_label(_choice_label_for에서 옴)은 씬 대사 LLM이 생성해서
+        플레이어가 이번 재판에서 실제로 보고/클릭한 한국어 논거다 — 이제
+        CHOICE_BRIEFS의 고정된 영어 요약과 진짜로 달라질 수 있다
+        (portia_prompt.py의 build_scene_dialogue_message 참고: choice_texts는
+        그 선택의 고정된 stimulus/evidence 주제 안에서 단어 선택뿐 아니라
+        구체적인 각도까지 달라지는 게 허용된다). judge는 그 choice_id의
+        전형적인 예시가 아니라 플레이어가 실제로 본 것을 근거로 판단해야
+        하므로, choice_label이 fallback을 이긴다."""
+        if effect.dp_delta <= 0:
+            return DukeVerdictResultDto(result="lose", line=CONCEDE_LOSE_LINE)
+
+        return await self._duke.judge(
+            DukeVerdictPromptDto(
+                trial_id=trial.trial_id,
+                scene_index=trial.scene_index,
+                choice_id=choice_id,
+                choice_brief=choice_label or CHOICE_BRIEFS.get(choice_id, choice_id),
+                stimulus=CHOICE_STIMULUS.get(choice_id, "logical"),
+                dp=trial.dp.value,
+                portia_hp=trial.portia_hp.value,
+                round_number=len(trial.choice_history) + 1,
+            )
+        )
+
     async def submit_choice(self, input_dto: SubmitChoiceInputDto) -> SubmitChoiceResultDto:
         trial = await self._require_trial(input_dto.trial_id)
 
@@ -113,9 +154,32 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         if was_enhanced:
             del trial.tubal_enhanced_choices[input_dto.choice_id]
 
+        # 플레이어가 이번 재판에서 실제로 본 한국어 논거 텍스트 (씬 대사가 없는
+        # dev/test 경로에서는 None) — 앞단에서 한 번만 resolve해서, Duke의
+        # 판정과 포샤의 반응 둘 다 이 choice_id의 일반적인 전형 예시가 아니라
+        # 실제로 화면에 나온 것을 근거로 판단하게 한다. _judge_choice의
+        # docstring 참고.
+        choice_label = self._choice_label_for(trial, input_dto.choice_id)
+
+        # 게이지가 움직이기 전에 Duke가 판정한다. "대담한(bold)" 선택
+        # (effect.dp_delta > 0)만 실제로 판정된다 — 거기서 LOSE가 나오면
+        # 그 선택이 원래 입히도록 설계된 dp_delta와 포샤 데미지가 0이
+        # 되지만(논거가 먹히지 않은 것), hp_cost는 여전히 적용된다: 적대적인
+        # 법정 앞에서 주장하는 것 자체가, 그게 통하든 안 통하든 샤일록에게
+        # 대가를 치르게 한다. 양보/침묵 선택은 항상 (이미 음수, 이미 포샤
+        # 데미지 0인) 원래 설계된 effect를 그대로 적용한다 — 여기서 나오는
+        # 결정론적인 "lose" 판정은 배너용일 뿐, 여기서는 게이트 역할을
+        # 절대 하지 않는다. dp_bonus(Tubal의 강화)는 어느 쪽이든 영향받지
+        # 않는다 — 이건 아이템 버프이지 Duke가 판정하는 대상이 아니다.
+        is_bold = effect.dp_delta > 0
+        duke_verdict = await self._judge_choice(trial, input_dto.choice_id, effect, choice_label)
+        landed = duke_verdict.result == "win" if is_bold else True
+        effective_dp_delta = effect.dp_delta if landed else 0
+        effective_portia_damage = effect.portia_damage if landed else 0
+
         dp_gain, shield_consumed = compute_choice_dp_gain(
             trial.hp.value,
-            effect.dp_delta,
+            effective_dp_delta,
             dp_bonus=dp_bonus,
             venice_dp_shield=trial.venice_dp_shield,
         )
@@ -125,13 +189,12 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         trial.choice_history.append(input_dto.choice_id)
         trial.dp = trial.dp.apply_delta(dp_gain)
         trial.hp = trial.hp.apply_delta(-effect.hp_cost)
-        trial.portia_hp = trial.portia_hp.apply_delta(-effect.portia_damage)
+        trial.portia_hp = trial.portia_hp.apply_delta(-effective_portia_damage)
 
         evidence_id = get_choice_evidence_id(input_dto.choice_id)
         if evidence_id:
             trial.presented_evidence = append_unique(trial.presented_evidence, evidence_id)
 
-        choice_label = self._choice_label_for(trial, input_dto.choice_id)
         folger_context = await get_choice_folger_context(
             input_dto.choice_id,
             self._evidence,
@@ -143,6 +206,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             request_type="reaction",
             choice_id=input_dto.choice_id,
             folger_context=folger_context,
+            choice_label=choice_label,
         )
         next_scene_index = resolve_next_scene_index(
             trial.scene_index,
@@ -176,6 +240,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             is_ending=is_ending,
             tubal_enhanced_choices=dict(trial.tubal_enhanced_choices),
             venice_dp_shield=trial.venice_dp_shield,
+            duke_verdict_result=duke_verdict.result,
+            duke_verdict_line=duke_verdict.line,
         )
 
     async def advance_scene(self, trial_id: UUID) -> AdvanceSceneResultDto:
@@ -204,8 +270,8 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
 
     @staticmethod
     def _apply_hath_not_scene_effect(trial: Trial) -> None:
-        # Fixed climax scene: the speech itself lands as the trial's strongest blow,
-        # applied once when the player advances past the scene.
+        # 고정 클라이맥스 씬: 이 연설 자체가 재판 전체에서 가장 강한 일격으로
+        # 작용하며, 플레이어가 이 씬을 넘어갈 때 한 번 적용된다.
         trial.dp = trial.dp.apply_delta(HATH_NOT_SCENE_DP_GAIN)
         trial.hp = trial.hp.apply_delta(-HATH_NOT_SCENE_HP_COST)
         trial.portia_hp = trial.portia_hp.apply_delta(-HATH_NOT_SCENE_PORTIA_DAMAGE)
@@ -331,12 +397,22 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             return content
 
         try:
+            # 씬 대사의 choice_texts는 샤일록 본인의 말이다 — 그 자유 변주가
+            # (portia_prompt.py의 "you have more freedom" 문단) 원작과 어긋난
+            # 디테일을 지어내지 않도록, character_relation 그래프에서 샤일록
+            # 자신의 노드/관계를 grounding으로 함께 넘긴다. 실측된 사례:
+            # "이 증서는 내게 생사가 걸린 약속" — 담보로 목숨을 건 쪽은
+            # 안토니오지 샤일록이 아닌데도 로컬 모델이 뒤바꿔 지어낸 것
+            # (2026-08-16). 그래프의 shylock 노드 설명과 creditor_of 엣지가
+            # 정확히 이 사실관계를 담고 있다(031 마이그레이션 참고).
+            character_context = await self._build_character_context("SHYLOCK")
             result = await self._portia.generate_scene_dialogue(
                 SceneDialoguePromptDto(
                     trial_id=trial.trial_id,
                     scene_index=scene_index,
                     dp=trial.dp.value,
                     choice_history=tuple(trial.choice_history),
+                    character_context=character_context,
                 )
             )
             content = result.content
@@ -359,6 +435,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         context: str,
         request_type: str,
         choice_id: str | None = None,
+        choice_label: str | None = None,
         folger_context: str | None = None,
     ) -> PortiaResponsePromptDto:
         reactor_speaker, reactor_speaker_label = self._resolve_reactor(trial, request_type)
@@ -377,6 +454,7 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
             request_type=request_type,
             portia_hp=trial.portia_hp.value,
             choice_id=choice_id,
+            choice_label=choice_label,
             previous_portia_reactions=tuple(trial.portia_reactions),
             tubal_used_scenes=trial.tubal_used_scenes,
             presented_evidence=trial.presented_evidence,
@@ -387,55 +465,29 @@ class TrialProgressionInteractor(TrialProgressionUseCase):
         )
 
     def _resolve_reactor(self, trial: Trial, request_type: str) -> tuple[str, str]:
-        """Who request_type=reaction should be voiced as. Only reaction calls
-        for scenes in REACTOR_OVERRIDE_SCENES swap away from Portia — narration/
-        ending requests, and every scene not in that set, keep the original
-        Portia-always behavior unchanged. See scene_progression.py's docstring
-        for why this is an explicit allowlist rather than "whatever the scene's
-        own speaker is"."""
-        if request_type == "reaction" and trial.scene_index in REACTOR_OVERRIDE_SCENES:
-            template = get_scene_template(trial.scene_index)
-            return template.speaker, template.speaker_label
+        """request_type=reaction을 누구 목소리로 낼지 결정한다. REACTOR_OVERRIDE_SCENES에
+        속한 씬(현재 bassanio_plea만)의 reaction 호출은 그 씬 자신의 화자로
+        바뀐다. 그 집합에 속하지 않는 모든 씬의 reaction은 이제 기본값이
+        포샤가 아니라 공작(DUKE)이다 — 샤일록의 선택 직후 반응은 재판을
+        주재하는 공작이 내는 게 기본이고, 포샤는 bassanio_plea처럼 명시적으로
+        opt-out된 씬에서만 예외로 남는다(REACTOR_OVERRIDE_SCENES를 "포샤가
+        아닌 화자로 바꿀 씬"이 아니라 "공작이 아닌 화자로 바꿀 씬"으로
+        재해석한 것 — 이름은 그대로 두되 의미가 뒤집혔다). narration/ending
+        요청은 이 분기 대상이 아니라 항상 포샤 그대로다 — reaction만 해당."""
+        if request_type == "reaction":
+            if trial.scene_index in REACTOR_OVERRIDE_SCENES:
+                template = get_scene_template(trial.scene_index)
+                return template.speaker, template.speaker_label
+            return "DUKE", "공작"
         return "PORTIA", "포샤"
 
-    # Maps SceneTemplate.speaker's uppercase English tags to character_relation's
-    # character_id. CROWD/NARRATOR intentionally absent — CROWD isn't a graph
-    # node (it's a collective, not an individual; see 031's migration
-    # docstring), and NARRATOR is never a reactor.
-    _REACTOR_CHARACTER_ID: dict[str, str] = {
-        "PORTIA": "portia",
-        "BASSANIO": "bassanio",
-        "JESSICA": "jessica",
-        "SHYLOCK": "shylock",
-        "LORENZO": "lorenzo",
-    }
-
-    # Relation types withheld from Portia's own reaction prompt specifically —
-    # her disguise as Balthazar and marriage to Bassanio are the central
-    # dramatic-irony secret PORTIA_PERSONA already guards ("NEVER explain or
-    # reveal any of this"). Every other reactor has nothing to hide about
-    # their own relationships, so this filter only applies when
-    # reactor_speaker == "PORTIA".
-    _PORTIA_HIDDEN_RELATION_TYPES = frozenset({"married_to"})
-
     async def _build_character_context(self, reactor_speaker: str) -> str:
-        character_id = self._REACTOR_CHARACTER_ID.get(reactor_speaker)
-        if character_id is None:
-            return ""
-        node = await self._characters.get_character(character_id)
-        if node is None:
-            return ""
-        relations = await self._characters.get_relations_for(character_id)
-        if reactor_speaker == "PORTIA":
-            relations = [
-                relation
-                for relation in relations
-                if relation.relation_type not in self._PORTIA_HIDDEN_RELATION_TYPES
-            ]
-            block = format_character(node, relations, include_description=False)
-        else:
-            block = format_character(node, relations)
-        return build_character_context_block([block])
+        # 실제 매핑/포맷팅 규칙은 app/utils/character_context.py로 옮겨졌다
+        # — tubal_skill_interactor._prefetch_next_scene_dialogue도 같은
+        # 규칙(어떤 화자가 어떤 character_id인지, 포샤는 어떤 관계를
+        # 숨기는지)이 필요해져서, 두 인터랙터가 각자 따로 알지 않게
+        # 공용 헬퍼로 뽑아냈다. 이 메서드는 그 얇은 위임일 뿐.
+        return await build_character_context(self._characters, reactor_speaker)
 
     def _choice_label_for(self, trial: Trial, choice_id: str) -> str | None:
         scene_dialogue = trial.scene_dialogues.get(trial.scene_index)
